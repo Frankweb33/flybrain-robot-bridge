@@ -13,5 +13,12 @@ Validated locally with Python 3.11.15 on macOS:
 Not validated: webcam access, user-supplied video, physical UDP link, firmware
 compilation or hardware behavior. MaleCNS is deliberately unimplemented.
 The GitHub clone command targets Himas1211/flybrain-robot-bridge.
-Remote publication and GitHub Actions are not yet verified.
+
+## Publication verification
+
+- The public repository was cloned and all 37 published files matched the prepared copy.
+- GitHub Actions passed on Python 3.11 and 3.12:
+  [verified run](https://github.com/Himas1211/flybrain-robot-bridge/actions/runs/34838611127).
+- The cover, architecture diagram and animated mock demo loaded on the GitHub README.
+
 No real credentials were added; Wi-Fi values remain placeholders; the owner is Himas1211.
