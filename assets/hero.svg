@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="480" viewBox="0 0 1280 480" role="img" aria-labelledby="title desc">
+<title id="title">FlyBrain Robot Bridge</title><desc id="desc">An experimental bridge from visual signals to robot motion, with a working mock backend.</desc>
+<defs><radialGradient id="glow"><stop stop-color="#13554e" stop-opacity=".65"/><stop offset="1" stop-color="#08121d" stop-opacity="0"/></radialGradient><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#8fbcbf" stroke-opacity=".055"/></pattern></defs>
+<rect width="1280" height="480" rx="22" fill="#08121d"/><rect width="1280" height="480" rx="22" fill="url(#grid)"/><circle cx="1030" cy="220" r="310" fill="url(#glow)"/>
+<g font-family="Arial, Helvetica, sans-serif"><rect x="56" y="45" width="250" height="30" rx="15" fill="#10332f" stroke="#216457"/><circle cx="74" cy="60" r="4" fill="#67f2bf"/><text x="88" y="65" font-size="11" letter-spacing="2" fill="#8df3ce">EXPERIMENTAL ROBOTICS</text>
+<text x="56" y="169" fill="#f2f8fc" font-size="66" font-weight="700" letter-spacing="-2">FlyBrain</text><text x="56" y="239" fill="#f2f8fc" font-size="66" font-weight="700" letter-spacing="-2">Robot Bridge</text>
+<text x="58" y="287" fill="#a0b7c6" font-size="22">From visual signals to physical motion.</text>
+<text x="58" y="320" fill="#6b899d" font-size="17">A small, inspectable starting point for embodied neural models.</text>
+<path d="M58 362H720" stroke="#223848"/><text x="58" y="398" fill="#62e7bd" font-size="14" letter-spacing="1">CAMERA</text><text x="149" y="398" fill="#537486" font-size="19">→</text><text x="180" y="398" fill="#62e7bd" font-size="14" letter-spacing="1">NEURAL BACKEND</text><text x="341" y="398" fill="#537486" font-size="19">→</text><text x="374" y="398" fill="#62e7bd" font-size="14" letter-spacing="1">ROBOT</text>
+<text x="58" y="440" fill="#607f90" font-size="12">MOCK DEMO AVAILABLE  /  MALECNS INTEGRATION PLANNED</text></g>
+<g fill="none" stroke="#50dfb4">
+<path d="M1004.7 262.9L1008.0 215.0" stroke-opacity=".25"/>
+<path d="M972.7 249.7L1038.2 253.7" stroke-opacity=".25"/>
+<path d="M965.6 188.3L1008.0 215.0" stroke-opacity=".25"/>
+<path d="M965.6 188.3L1004.7 262.9" stroke-opacity=".25"/>
+<path d="M993.7 168.9L1038.2 253.7" stroke-opacity=".25"/>
+<path d="M993.7 168.9L957.3 220.2" stroke-opacity=".25"/>
+<path d="M1028.5 171.1L1057.5 226.4" stroke-opacity=".25"/>
+<path d="M1028.5 171.1L972.7 249.7" stroke-opacity=".25"/>
+<path d="M1053.7 193.8L1008.0 215.0" stroke-opacity=".25"/>
+<path d="M1053.7 193.8L1004.7 262.9" stroke-opacity=".25"/>
+<path d="M1053.7 193.8L965.6 188.3" stroke-opacity=".25"/>
+<path d="M1098.5 259.3L1038.2 253.7" stroke-opacity=".25"/>
+<path d="M1071.5 290.1L1057.5 226.4" stroke-opacity=".25"/>
+<path d="M1071.5 290.1L1098.5 259.3" stroke-opacity=".25"/>
+<path d="M1033.5 307.9L1008.0 215.0" stroke-opacity=".25"/>
+<path d="M1033.5 307.9L1004.7 262.9" stroke-opacity=".25"/>
+<path d="M991.2 309.7L1038.2 253.7" stroke-opacity=".25"/>
+<path d="M991.2 309.7L957.3 220.2" stroke-opacity=".25"/>
+<path d="M991.2 309.7L1071.5 290.1" stroke-opacity=".25"/>
+<path d="M951.7 295.1L972.7 249.7" stroke-opacity=".25"/>
+<path d="M951.7 295.1L991.2 309.7" stroke-opacity=".25"/>
+<path d="M922.0 266.6L1004.7 262.9" stroke-opacity=".25"/>
+<path d="M922.0 266.6L965.6 188.3" stroke-opacity=".25"/>
+<path d="M907.1 229.2L957.3 220.2" stroke-opacity=".25"/>
+<path d="M907.1 229.2L951.7 295.1" stroke-opacity=".25"/>
+<path d="M909.7 189.3L972.7 249.7" stroke-opacity=".25"/>
+<path d="M909.7 189.3L993.7 168.9" stroke-opacity=".25"/>
+<path d="M909.7 189.3L907.1 229.2" stroke-opacity=".25"/>
+<path d="M929.3 153.9L1008.0 215.0" stroke-opacity=".25"/>
+<path d="M929.3 153.9L965.6 188.3" stroke-opacity=".25"/>
+<path d="M962.5 129.1L957.3 220.2" stroke-opacity=".25"/>
+<path d="M962.5 129.1L1028.5 171.1" stroke-opacity=".25"/>
+<path d="M962.5 129.1L909.7 189.3" stroke-opacity=".25"/>
+<path d="M1003.6 119.1L993.7 168.9" stroke-opacity=".25"/>
+<path d="M1003.6 119.1L962.5 129.1" stroke-opacity=".25"/>
+<path d="M1045.4 125.7L1008.0 215.0" stroke-opacity=".25"/>
+<path d="M1045.4 125.7L1053.7 193.8" stroke-opacity=".25"/>
+<path d="M1080.8 147.7L1028.5 171.1" stroke-opacity=".25"/>
+<path d="M1080.8 147.7L1003.6 119.1" stroke-opacity=".25"/>
+<path d="M1103.5 181.4L1057.5 226.4" stroke-opacity=".25"/>
+<path d="M1103.5 181.4L1098.5 259.3" stroke-opacity=".25"/>
+<path d="M1103.5 181.4L1080.8 147.7" stroke-opacity=".25"/>
+<path d="M1109.8 220.9L1053.7 193.8" stroke-opacity=".25"/>
+<path d="M1123.0 310.0L1071.5 290.1" stroke-opacity=".25"/>
+<path d="M1088.2 337.6L1098.5 259.3" stroke-opacity=".25"/>
+<path d="M1088.2 337.6L1123.0 310.0" stroke-opacity=".25"/>
+<path d="M1046.2 354.4L1033.5 307.9" stroke-opacity=".25"/>
+<path d="M1000.8 358.8L1071.5 290.1" stroke-opacity=".25"/>
+<path d="M1000.8 358.8L951.7 295.1" stroke-opacity=".25"/>
+<path d="M1000.8 358.8L1088.2 337.6" stroke-opacity=".25"/>
+<path d="M956.1 350.5L991.2 309.7" stroke-opacity=".25"/>
+<path d="M956.1 350.5L1000.8 358.8" stroke-opacity=".25"/>
+<path d="M916.0 330.1L922.0 266.6" stroke-opacity=".25"/>
+<path d="M884.0 299.4L951.7 295.1" stroke-opacity=".25"/>
+<path d="M884.0 299.4L956.1 350.5" stroke-opacity=".25"/>
+<path d="M863.1 261.3L907.1 229.2" stroke-opacity=".25"/>
+<path d="M863.1 261.3L884.0 299.4" stroke-opacity=".25"/>
+<path d="M855.1 219.0L922.0 266.6" stroke-opacity=".25"/>
+<path d="M855.1 219.0L929.3 153.9" stroke-opacity=".25"/>
+<path d="M860.6 176.4L909.7 189.3" stroke-opacity=".25"/>
+<path d="M860.6 176.4L863.1 261.3" stroke-opacity=".25"/>
+<path d="M879.2 137.2L907.1 229.2" stroke-opacity=".25"/>
+<path d="M879.2 137.2L962.5 129.1" stroke-opacity=".25"/>
+<path d="M879.2 137.2L860.6 176.4" stroke-opacity=".25"/>
+<path d="M909.3 105.0L929.3 153.9" stroke-opacity=".25"/>
+<path d="M948.1 82.5L1003.6 119.1" stroke-opacity=".25"/>
+<path d="M948.1 82.5L879.2 137.2" stroke-opacity=".25"/>
+<path d="M992.3 71.8L993.7 168.9" stroke-opacity=".25"/>
+<path d="M992.3 71.8L962.5 129.1" stroke-opacity=".25"/>
+<path d="M992.3 71.8L948.1 82.5" stroke-opacity=".25"/>
+<path d="M1037.9 73.8L1045.4 125.7" stroke-opacity=".25"/>
+<path d="M1080.8 88.3L1028.5 171.1" stroke-opacity=".25"/>
+<path d="M1080.8 88.3L1003.6 119.1" stroke-opacity=".25"/>
+<path d="M1080.8 88.3L1103.5 181.4" stroke-opacity=".25"/>
+<path d="M1080.8 88.3L992.3 71.8" stroke-opacity=".25"/>
+<path d="M1117.2 114.1L1080.8 147.7" stroke-opacity=".25"/>
+<path d="M1117.2 114.1L1080.8 88.3" stroke-opacity=".25"/>
+<path d="M1143.9 148.9L1109.8 220.9" stroke-opacity=".25"/>
+<path d="M1158.6 189.6L1103.5 181.4" stroke-opacity=".25"/>
+<path d="M1158.6 189.6L1117.2 114.1" stroke-opacity=".25"/>
+<path d="M1159.9 232.5L1098.5 259.3" stroke-opacity=".25"/>
+<path d="M1159.9 232.5L1123.0 310.0" stroke-opacity=".25"/>
+<path d="M1159.9 232.5L1158.6 189.6" stroke-opacity=".25"/>
+<path d="M1147.7 273.8L1109.8 220.9" stroke-opacity=".25"/>
+</g>
+<circle cx="1008.0" cy="215.0" r="6" fill="#67cce7" opacity="0.7"/>
+<circle cx="1057.5" cy="226.4" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1038.2" cy="253.7" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1004.7" cy="262.9" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="972.7" cy="249.7" r="6" fill="#73f3c9" opacity="0.95"/>
+<circle cx="957.3" cy="220.2" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="965.6" cy="188.3" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="993.7" cy="168.9" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1028.5" cy="171.1" r="6" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1053.7" cy="193.8" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="1098.5" cy="259.3" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1071.5" cy="290.1" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1033.5" cy="307.9" r="6" fill="#67cce7" opacity="0.7"/>
+<circle cx="991.2" cy="309.7" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="951.7" cy="295.1" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="922.0" cy="266.6" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="907.1" cy="229.2" r="6" fill="#73f3c9" opacity="0.95"/>
+<circle cx="909.7" cy="189.3" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="929.3" cy="153.9" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="962.5" cy="129.1" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1003.6" cy="119.1" r="6" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1045.4" cy="125.7" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="1080.8" cy="147.7" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1103.5" cy="181.4" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1109.8" cy="220.9" r="6" fill="#67cce7" opacity="0.7"/>
+<circle cx="1123.0" cy="310.0" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1088.2" cy="337.6" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1046.2" cy="354.4" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="1000.8" cy="358.8" r="6" fill="#73f3c9" opacity="0.95"/>
+<circle cx="956.1" cy="350.5" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="916.0" cy="330.1" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="884.0" cy="299.4" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="863.1" cy="261.3" r="6" fill="#73f3c9" opacity="0.95"/>
+<circle cx="855.1" cy="219.0" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="860.6" cy="176.4" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="879.2" cy="137.2" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="909.3" cy="105.0" r="6" fill="#67cce7" opacity="0.7"/>
+<circle cx="948.1" cy="82.5" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="992.3" cy="71.8" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1037.9" cy="73.8" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="1080.8" cy="88.3" r="6" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1117.2" cy="114.1" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1143.9" cy="148.9" r="4" fill="#67cce7" opacity="0.7"/>
+<circle cx="1158.6" cy="189.6" r="4" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1159.9" cy="232.5" r="6" fill="#73f3c9" opacity="0.95"/>
+<circle cx="1147.7" cy="273.8" r="4" fill="#67cce7" opacity="0.7"/>
+<g fill="none" stroke="#4bbfa9" stroke-width="2"><path d="M1008 362V392H1127"/><path d="M1147 392H1182V236"/><circle cx="1137" cy="392" r="10"/></g><text x="926" y="434" fill="#6e9e9d" font-family="Arial, sans-serif" font-size="11" letter-spacing="2">SENSE · COMPUTE · ACT</text></svg>

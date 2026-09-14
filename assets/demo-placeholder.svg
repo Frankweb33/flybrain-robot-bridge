@@ -1,0 +1,3 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260" role="img" aria-labelledby="title">
+<title id="title">Demo recording placeholder, no physical robot result</title><rect width="1200" height="260" rx="20" fill="#0b1420"/>
+<g font-family="Arial, sans-serif"><text x="55" y="57" fill="#58e4bd" font-size="14" letter-spacing="3">LOCAL DEMONSTRATOR</text><text x="55" y="109" fill="#f0f6fc" font-size="32">The signal path is ready to explore.</text><text x="55" y="152" fill="#94a8ba" font-size="19">Run the synthetic CLI demo. A physical robot recording will be added later.</text><text x="55" y="208" fill="#7ad5ed" font-size="18" font-family="monospace">python -m flybrain_robot.main --synthetic --dry-run</text></g></svg>
