@@ -1,0 +1,16 @@
+backend: mock
+camera: 0
+video: null
+pc_host: 0.0.0.0
+pc_port: 9001
+robot_ip: 192.168.1.50
+robot_port: 9000
+max_speed: 35
+smoothing: 0.25
+dead_zone: 5
+looming_threshold: 0.3
+watchdog_timeout: 0.5
+invert_left: false
+invert_right: false
+dataset_path: null
+logging_level: INFO
