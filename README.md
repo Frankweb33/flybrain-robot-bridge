@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/hero.svg" alt="FlyBrain Robot Bridge — from visual signals to physical motion" width="100%">
+<img src="assets/hNXbI.png" alt="FlyBrain Robot Bridge — from visual signals to physical motion" width="100%">
 
 # FlyBrain Robot Bridge
 
