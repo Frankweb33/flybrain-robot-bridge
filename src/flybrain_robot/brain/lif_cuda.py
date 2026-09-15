@@ -40,17 +40,19 @@ _neuron_block = cuda.jit(device=True, inline=True)(
 @cuda.jit
 def _advance_all(
     n, s0, s1, block_start, seed, v, g, refractory_until, refractory_steps, dg, pending, bits,
-    counts, prob, v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len, clear,
+    counts, prob, v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len, clear,
 ):  # fmt: skip
     i = cuda.grid(1)
     if i < n:
         if s0 == 0:
             bits[i] = 0  # the previous block's spikes have been delivered
         # A neuron at rest without Poisson drive or synaptic input in this block would
-        # stay exactly at rest, so skipping it changes nothing.
-        if pending[i] != 0 or v[i] != v_0 or g[i] != 0.0 or prob[i] > 0.0:
+        # stay exactly at rest, so skipping it changes nothing. A neuron whose resting
+        # potential is above threshold never rests and is always advanced.
+        if (pending[i] != 0 or v[i] != v_rest[i] or g[i] != 0.0 or prob[i] > 0.0
+                or v_rest[i] > v_th):  # fmt: skip
             _neuron_block(i, s0, s1, block_start, seed, v, g, refractory_until,
-                          refractory_steps, dg, bits, counts, prob, v_0, v_rst, v_th, a_v,
+                          refractory_steps, dg, bits, counts, prob, v_rest, v_rst, v_th, a_v,
                           b_g, c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
         if clear and pending[i] != 0:  # the block is finished: its input row is used up
             row = i * block_len
@@ -101,13 +103,19 @@ class CudaLIFSimulator:
 
     device = "cuda"
 
-    def __init__(self, connectome, params=None, seed=0):
+    def __init__(self, connectome, params=None, seed=0, v_rest=None):
         if not cuda_available():
             raise ValueError("No CUDA GPU available")
         self.connectome = connectome
         self.params = params or LIFParams.matched_to(connectome.manifest)
         self.seed = seed
         self.n = n = connectome.size
+        self.host_v_rest = _kernel_array(
+            np.full(n, self.params.v_0) if v_rest is None else np.asarray(v_rest), np.float64
+        )
+        if self.host_v_rest.shape != (n,):
+            raise ValueError("v_rest needs one resting potential per neuron")
+        self.v_rest = cuda.to_device(self.host_v_rest)
         self.constants = k = KernelConstants(self.params, connectome)
         self.default_refractory = k.refractory
         self.launch = (math.ceil(n / THREADS_PER_BLOCK), THREADS_PER_BLOCK)
@@ -141,7 +149,7 @@ class CudaLIFSimulator:
         for array in (self._g, self.refractory_until, self.dg_cur, self.dg_next, self.bits,
                       self._counts, self.pending_cur, self.pending_next):  # fmt: skip
             array[:] = 0
-        self._v[:] = self.params.v_0
+        self._v.copy_to_device(self.host_v_rest)
         self.step_index = 0
 
     @property
@@ -185,7 +193,7 @@ class CudaLIFSimulator:
             _advance_all[self.launch](
                 self.n, s0, s1, block_start, self.seed, self._v, self._g,
                 self.refractory_until, self.refractory_steps, self.dg_cur, self.pending_cur,
-                self.bits, self._counts, self.prob, *k.scalars, k.block, finished,
+                self.bits, self._counts, self.prob, self.v_rest, *k.scalars, k.block, finished,
             )  # fmt: skip
             if finished:
                 _deliver[self.chunk_launch](self.n_chunks, k.block, self.bits, self.chunk_source,

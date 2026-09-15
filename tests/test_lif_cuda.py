@@ -55,6 +55,22 @@ def test_gpu_state_matches_cpu_exactly():
         assert np.array_equal(a, b)
 
 
+def test_gpu_matches_cpu_with_tonic_resting_potentials():
+    from flybrain_robot.brain.lif import resting_for_rate
+
+    graph = random_connectome(n=400, density=0.03, seed=7)
+    params = LIFParams(w_syn=1.0)
+    rng = np.random.default_rng(7)
+    rest = np.where(rng.random(graph.size) < 0.5, resting_for_rate(params, 40.0), params.v_0)
+    counts = []
+    for cls in (LIFSimulator, lif_cuda.CudaLIFSimulator):
+        sim = cls(graph, params=params, seed=2, v_rest=rest)
+        sim.run(200.0)
+        counts.append(sim.take_counts())
+    assert (counts[0] > 0).sum() > 150  # the tonic half fires without any stimulus
+    assert np.array_equal(counts[0], counts[1])
+
+
 def test_make_simulator_devices():
     graph = random_connectome(n=50, seed=4)
     assert isinstance(make_simulator(graph, device="cpu"), LIFSimulator)

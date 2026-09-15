@@ -110,6 +110,24 @@ def test_single_synapse_psp_is_exact():
     assert sim.g[1] == pytest.approx(g0 * b, rel=1e-9)
 
 
+def test_tonic_resting_potential_is_graded_by_synaptic_input():
+    """A neuron that fires on its own can signal downwards, which disinhibition needs."""
+    from flybrain_robot.brain.lif import make_simulator, resting_for_rate
+
+    params = LIFParams(w_syn=0.4)
+    rest = np.array([resting_for_rate(params, 83.0), resting_for_rate(params, 50.0)])
+    rates = {}
+    for weight in (0, -2, -5, -10, -40, 5):
+        graph = connectome_from_edges(2, [0], [1], [weight])
+        sim = make_simulator(graph, params=params, seed=3, device="cpu", v_rest=rest)
+        sim.run(1000.0)
+        counts = sim.take_counts()
+        assert 82 <= counts[0] <= 85  # the requested tonic rate, free-running
+        rates[weight] = int(counts[1])
+    assert rates[5] > rates[0] > rates[-2] > rates[-5] > rates[-10] > rates[-40]
+    assert 49 <= rates[0] <= 52 and rates[-40] <= 5
+
+
 def test_silent_network_returns_to_rest_and_sleeps():
     graph = random_connectome(n=200, seed=3)
     sim = LIFSimulator(graph, params=LIFParams(w_syn=0.5), seed=4)

@@ -92,7 +92,7 @@ class KernelConstants:
             raise ValueError("w_syn too large for 32-bit fixed-point synaptic weights")
         self.weight_fixed = _kernel_array(scaled, np.int32)
         self.scalars = (
-            float(p.v_0), float(p.v_rst), float(p.v_th), self.a_v, self.b_g, self.c_vg,
+            float(p.v_rst), float(p.v_th), self.a_v, self.b_g, self.c_vg,
             float(p.poisson_kick_mv), self.inv_scale, float(p.rest_tolerance),
         )  # fmt: skip
 
@@ -119,29 +119,29 @@ _neuron_block = njit(inline="always")(lif_kernel.specialize(lif_kernel.neuron_bl
 @njit(cache=True)
 def _advance(
     active, n_active, s0, s1, block_start, seed, v, g, refractory_until, refractory_steps, dg,
-    bits, counts, prob, v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
+    bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
 ):  # fmt: skip
     for a in range(n_active):
         _neuron_block(active[a], s0, s1, block_start, seed, v, g, refractory_until,
-                      refractory_steps, dg, bits, counts, prob, v_0, v_rst, v_th, a_v, b_g,
+                      refractory_steps, dg, bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g,
                       c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
 
 
 @njit(cache=True, parallel=True)
 def _advance_parallel(
     active, n_active, s0, s1, block_start, seed, v, g, refractory_until, refractory_steps, dg,
-    bits, counts, prob, v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
+    bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
 ):  # fmt: skip
     for a in prange(n_active):
         _neuron_block(active[a], s0, s1, block_start, seed, v, g, refractory_until,
-                      refractory_steps, dg, bits, counts, prob, v_0, v_rst, v_th, a_v, b_g,
+                      refractory_steps, dg, bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g,
                       c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
 
 
 @njit(cache=True)
 def _finish_block(
     active, n_active, active_flag, entrants, indptr, indices, weight_fixed, dg_cur, dg_next,
-    pending_cur, pending_next, bits, prob, v, g, v_0, block_len,
+    pending_cur, pending_next, bits, prob, v, g, v_rest, v_th, block_len,
 ):  # fmt: skip
     """Deliver this block's spikes into the next block, clear used input, retire at rest."""
     n_entrants = 0
@@ -169,7 +169,8 @@ def _finish_block(
     kept = 0
     for a in range(n_active):
         i = active[a]
-        if pending_next[i] or prob[i] > 0.0 or v[i] != v_0 or g[i] != 0.0:
+        if (pending_next[i] or prob[i] > 0.0 or v[i] != v_rest[i] or g[i] != 0.0
+                or v_rest[i] > v_th):  # a tonically firing neuron never rests
             active[kept] = i
             kept += 1
         else:
@@ -192,7 +193,7 @@ def _run(
     steps, t0, block_len, seed, indptr, indices, weight_fixed, v, g, refractory_until,
     refractory_steps, dg_cur, dg_next, pending_cur, pending_next, bits, counts, prob,
     active_flag, active, n_active, entrants,
-    v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol,
+    v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol,
 ):  # fmt: skip
     step = t0
     end = t0 + steps
@@ -204,17 +205,17 @@ def _run(
         if n_active >= PARALLEL_MIN_ACTIVE:
             _advance_parallel(active, n_active, s0, s1, block_start, seed, v, g,
                               refractory_until, refractory_steps, dg_cur, bits, counts, prob,
-                              v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol,
+                              v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol,
                               block_len)  # fmt: skip
         else:
             _advance(active, n_active, s0, s1, block_start, seed, v, g, refractory_until,
-                     refractory_steps, dg_cur, bits, counts, prob, v_0, v_rst, v_th, a_v,
+                     refractory_steps, dg_cur, bits, counts, prob, v_rest, v_rst, v_th, a_v,
                      b_g, c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
         step = block_start + s1
         if s1 == block_len:
             n_active = _finish_block(active, n_active, active_flag, entrants, indptr, indices,
                                      weight_fixed, dg_cur, dg_next, pending_cur, pending_next,
-                                     bits, prob, v, g, v_0, block_len)  # fmt: skip
+                                     bits, prob, v, g, v_rest, v_th, block_len)  # fmt: skip
             dg_cur, dg_next = dg_next, dg_cur
             pending_cur, pending_next = pending_next, pending_cur
             swaps += 1
@@ -239,12 +240,30 @@ def stimulus_arrays(drive, dt_ms, size):
     return index, np.minimum(prob, 1.0, out=prob)
 
 
+def resting_for_rate(params, rate_hz):
+    """Resting potential at which a neuron with no input fires at about ``rate_hz``.
+
+    Most neurons of the fly's optic lobe do not spike: they release transmitter
+    continuously, and a signal is as often a drop below that baseline as a rise above
+    it. A spiking neuron can only stand in for one if it fires on its own, which is what
+    a resting potential above threshold does. The rate is approximate because the model
+    advances in 0.1 ms steps; the achieved rate is measured, not assumed.
+    """
+    if rate_hz <= 0:
+        return params.v_0
+    charge_ms = 1000.0 / rate_hz - params.t_rfc_ms
+    if charge_ms <= 0:
+        raise ValueError("rate_hz above the refractory limit")
+    rise = 1.0 - math.exp(-charge_ms / params.t_mbr_ms)
+    return params.v_rst + (params.v_th - params.v_rst) / rise
+
+
 def _kernel_array(values, dtype):
     flags = ["C_CONTIGUOUS", "WRITEABLE", "OWNDATA"]
     return np.require(np.asarray(values, dtype=dtype), dtype, flags)
 
 
-def make_simulator(connectome, params=None, seed=0, device="auto"):
+def make_simulator(connectome, params=None, seed=0, device="auto", v_rest=None):
     """CPU or GPU simulator. Both give bit-identical spikes, so "auto" is safe."""
     if device not in ("auto", "cpu", "cuda"):
         raise ValueError("device must be 'auto', 'cpu' or 'cuda'")
@@ -256,20 +275,25 @@ def make_simulator(connectome, params=None, seed=0, device="auto"):
                 raise ValueError(f"device 'cuda' needs the gpu extra: {exc}") from exc
         else:
             if cuda_available():
-                return CudaLIFSimulator(connectome, params=params, seed=seed)
+                return CudaLIFSimulator(connectome, params=params, seed=seed, v_rest=v_rest)
             if device == "cuda":
                 raise ValueError("device 'cuda' requested but no CUDA GPU is available")
-    return LIFSimulator(connectome, params=params, seed=seed)
+    return LIFSimulator(connectome, params=params, seed=seed, v_rest=v_rest)
 
 
 class LIFSimulator:
     device = "cpu"
 
-    def __init__(self, connectome, params=None, seed=0):
+    def __init__(self, connectome, params=None, seed=0, v_rest=None):
         self.connectome = connectome
         self.params = params or LIFParams.matched_to(connectome.manifest)
         self.seed = seed
         n = connectome.size
+        self.v_rest = _kernel_array(
+            np.full(n, self.params.v_0) if v_rest is None else np.asarray(v_rest), np.float64
+        )
+        if self.v_rest.shape != (n,):
+            raise ValueError("v_rest needs one resting potential per neuron")
         # One array type per argument keeps numba to a single compiled specialization.
         # Several cached specializations of a kernel that calls a parallel function
         # crashed on load (read-only memmaps and writable arrays type differently).
@@ -299,11 +323,11 @@ class LIFSimulator:
         for array in (self.g, self.refractory_until, self.dg_cur, self.dg_next, self.bits,
                       self.counts, self.pending_cur, self.pending_next):  # fmt: skip
             array.fill(0)
-        self.v.fill(self.params.v_0)
+        self.v[:] = self.v_rest
         self.active_flag.fill(False)
         self.n_active = 0
         self.step_index = 0
-        self._activate(np.flatnonzero(self.prob > 0))
+        self._activate(np.flatnonzero((self.prob > 0) | (self.v_rest > self.params.v_th)))
 
     @property
     def time_ms(self):
@@ -341,7 +365,7 @@ class LIFSimulator:
             self.indices, self.weight_fixed, self.v, self.g, self.refractory_until,
             self.refractory_steps, self.dg_cur, self.dg_next, self.pending_cur,
             self.pending_next, self.bits, self.counts, self.prob, self.active_flag,
-            self.active, int(self.n_active), self.entrants, *k.scalars,
+            self.active, int(self.n_active), self.entrants, self.v_rest, *k.scalars,
         )  # fmt: skip
         self.n_active = int(n_active)
         if swaps % 2:

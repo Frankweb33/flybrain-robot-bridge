@@ -44,13 +44,16 @@ def specialize(function, **names):
 
 def neuron_block(
     i, s0, s1, block_start, seed, v, g, refractory_until, refractory_steps, dg, bits, counts,
-    prob, v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
+    prob, v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
 ):  # fmt: skip
     """Advance neuron ``i`` through block steps [s0, s1).
 
     Operation order per step matches Brian2's schedule: state update, threshold,
-    synaptic and Poisson input (dropped while refractory), reset.
+    synaptic and Poisson input (dropped while refractory), reset. ``v_rest`` holds the
+    resting potential of each neuron: above threshold it fires tonically on its own,
+    which is how a graded, tonically releasing cell is represented here.
     """
+    v_0 = v_rest[i]
     vi = v[i]
     gi = g[i]
     ru = refractory_until[i]
