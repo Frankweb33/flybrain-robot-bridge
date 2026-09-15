@@ -160,6 +160,23 @@ def test_no_camera_or_socket_in_synthetic(monkeypatch, capsys):
     assert "UDP=off (dry-run)" in capsys.readouterr().out
 
 
+def test_cli_reads_a_video_file(tmp_path, capsys):
+    import cv2
+
+    from flybrain_robot.main import main
+
+    path = tmp_path / "approach.avi"
+    writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"MJPG"), 25, (320, 240))
+    assert writer.isOpened()
+    for i in range(30):
+        writer.write(scene_frame("approach_left", 60 + i))
+    writer.release()
+    main(["--backend", "mock", "--video", str(path), "--dry-run", "--steps", "40"])
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert lines[0].startswith(f"source={path}") and len(lines) == 4  # header + frames 0/10/20
+    assert "looming=0.00/0.00" not in lines[-1]  # the approaching object is seen in the file
+
+
 def test_cli_subprocess():
     result = subprocess.run(
         [sys.executable, "-m", "flybrain_robot.main", "--synthetic", "--dry-run", "--steps", "2"],

@@ -100,7 +100,7 @@ pip install -e ".[gpu]"   # optional, NVIDIA GPU with a CUDA 13 driver
 python -m flybrain_robot.main --backend mock --synthetic --dry-run --steps 90
 ```
 
-**The connectome** (1.1 GB download, about 40 s compile, 16 GB RAM is enough):
+**The connectome** (1.1 GB download, about 30 s compile, peak memory 4.3 GB measured):
 
 ```bash
 python -m flybrain_robot.connectome.build download --data data/malecns-v1.0
@@ -115,12 +115,20 @@ simulator; both give identical results. Other sources: `--camera 0`,
 `--video path.mp4`, or `--scene` with `static`, `pan`, `pass_left`, `approach_center`,
 `approach_right`, `tour`.
 
-**Reproduce every number in the validation report** (adds Brian2; about 5 minutes):
+**In the browser, without installing anything:** open
+[examples/colab_quickstart.ipynb](https://colab.research.google.com/github/Frankweb33/flybrain-robot-bridge/blob/main/examples/colab_quickstart.ipynb)
+in Google Colab. It downloads and compiles the connectome and compares the real and the
+shuffled wiring on two scenes.
+
+**Reproduce every number in the validation report** (adds Brian2; 6–10 minutes with a GPU):
 
 ```bash
 pip install -e ".[reference]"
 python -m flybrain_robot.validation --data data/malecns-v1.0
 ```
+
+The `Dockerfile` builds a CPU image for the same commands (see the comments at its top), and
+the `validate` workflow re-runs the validation on a GitHub runner every week.
 
 ## Connecting a robot
 

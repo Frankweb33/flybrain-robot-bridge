@@ -177,8 +177,8 @@ python -m flybrain_robot.main --backend malecns --data data/malecns-v1.0 --synth
 python -m flybrain_robot.main --backend malecns --data data/malecns-v1.0 --synthetic --wiring shuffled --dry-run
 ```
 
-Download is about 1.1 GB, compilation about 40 s and 16 GB RAM is enough. The
-compiled graph takes 263 MB on disk. Each camera frame advances the brain by one
+Download is about 1.1 GB; compilation takes about 30 s with a measured peak of 4.3 GB
+working set (6.1 GB committed). The compiled graph takes 263 MB on disk. Each camera frame advances the brain by one
 frame period (33 ms); with strong visual input that takes longer than 33 ms on a
 desktop CPU, and the status line prints the ratio as `brain_x_realtime`.
 

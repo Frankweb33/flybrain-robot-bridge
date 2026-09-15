@@ -1,0 +1,37 @@
+name: validate
+# Re-runs the whole-connectome validation on a GitHub runner, so the numbers in
+# docs/VALIDATION.md are not only produced on one developer machine. CPU only; one
+# shuffled control and no exploratory screen to fit the runner time budget.
+on:
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e ".[connectome,reference]"
+      - name: Cache MaleCNS tables
+        uses: actions/cache@v4
+        with:
+          path: data/malecns-v1.0/*.feather
+          # The pinned SHA-256 values live in build.py; a new pin means new files.
+          key: malecns-v1.0-${{ hashFiles('src/flybrain_robot/connectome/build.py') }}
+      - run: python -m flybrain_robot.connectome.build download --data data/malecns-v1.0
+      - run: python -m flybrain_robot.connectome.build compile --data data/malecns-v1.0
+      - name: Validate
+        # Exit status 1 means a check failed; the report is uploaded either way.
+        run: python -m flybrain_robot.validation --data data/malecns-v1.0 --device cpu --controls 1 --skip-screen --json runner/results.json --markdown runner/VALIDATION.md || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: runner/
