@@ -9,7 +9,7 @@ import cv2
 import yaml
 
 from .brain.mock import MockBrain
-from .config import load_config
+from .config import VISION_MODES, load_config
 from .controller import UDPBridge
 from .motor_decoder import MotorDecoder
 from .protocol import command
@@ -85,8 +85,9 @@ def main(argv=None):
     parser.add_argument("--steps", type=int, default=300, help="Finite frame count (default: 300)")
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"],
                         help="Simulator device for --backend malecns (default: auto)")  # fmt: skip
-    parser.add_argument("--vision", choices=["flow", "retina"],
-                        help="Camera interface for --backend malecns (retina is experimental)")  # fmt: skip
+    parser.add_argument("--vision", choices=list(VISION_MODES),
+                        help="Camera interface for --backend malecns (retina and eye are "
+                             "experimental: see VALIDATION.md)")  # fmt: skip
     parser.add_argument("--body-feedback", action="store_true",
                         help="Experimental: robot tilt drives Johnston's organ neurons")  # fmt: skip
     parser.add_argument("--tilt", type=parse_tilt, metavar="ROLL,PITCH",

@@ -308,6 +308,66 @@ def _closed_loop(section):
     return "\n\n".join(out)
 
 
+def _eye(r):
+    c, crit = r["configuration"], r["criterion"]
+    directions = ["grating_left", "grating_right", "grating_up", "grating_down"]
+    header = ["group", "preferred", "left", "right", "up", "down", "DSI"]
+    rows = [
+        (row["group"], row["preferred_direction"].replace("grating_", ""),
+         *(f"{row['hz'][d]:.1f}" for d in directions), f"{row['dsi']:+.3f}")
+        for row in r["rows"]
+    ]  # fmt: skip
+    control_rows = [
+        (f"shuffled seed {c_['seed']}",
+         f"{sum(abs(x['dsi']) for x in c_['rows']) / len(c_['rows']):.3f}",
+         f"{max(x['dsi'] for x in c_['rows']):+.3f}",
+         f"{max(x['max_hz'] for x in c_['rows']):.1f}")
+        for c_ in r["controls"]
+    ]  # fmt: skip
+    step = r["brightness_step"]
+    step_rows = [(t, f"{step['bright'][t]:.1f}", f"{step['dark'][t]:.1f}",
+                  f"{step['dark'][t] - step['bright'][t]:+.1f}") for t in step["bright"]]  # fmt: skip
+    mirrored = ", ".join(f"{m['subtype']} {'yes' if m['as_predicted'] else 'NO'}"
+                         for m in r["mirrored"])  # fmt: skip
+    hs = _table(["group", "left", "right", "up", "down"],
+                [(x["group"], *(f"{x['hz'][d]:.1f}" for d in directions)) for x in r["hs"]])
+    return (
+        f"**Pre-registered** (criteria committed before the first grating was simulated in this "
+        f"mode). In `vision: eye` the camera drives the {c['photoreceptors']:,} photoreceptors "
+        f"themselves, at a rate proportional to the brightness of their pixel. Two declared "
+        f"changes make that possible: {c['tonic_cells']:,} columnar optic-lobe neurons fire "
+        f"tonically at {c['tonic_hz']:.0f} Hz without input (most of these cells do not spike in "
+        "the fly; they release transmitter continuously, and since the photoreceptors are "
+        "histaminergic the signal is a *release* from inhibition, which a model without a "
+        "baseline cannot carry at all), and CT1 is split into one neuron per column, as its "
+        "compartments are electrically isolated in the fly (Meier & Borst 2019). Columns the "
+        "release does not assign — T4, T5, Tm3, L4, the photoreceptors — are recovered from the "
+        "wiring: on the neurons that do have one the rule is exact for "
+        f"{c['imputed_columns']['accuracy']['exact']:.1%} and within one column for "
+        f"{c['imputed_columns']['accuracy']['within_one']:.1%} "
+        f"({c['imputed_columns']['neurons_with_column']:,} neurons end up with a column).\n\n"
+        f"Pass condition: every T4 and T5 subtype reaches {crit['min_hz']:.0f} Hz on some "
+        f"direction; at least {crit['pairs_required']} of the 8 subtype-eye pairs of T4 and of T5 "
+        f"have DSI ≥ {crit['min_dsi']}, with positive mean DSI; the two eyes prefer mirrored "
+        f"directions; and shuffled wiring stays below {crit['control_max_mean_abs_dsi']} mean "
+        f"|DSI| with no pair at {crit['min_dsi']}.\n\n"
+        f"**{_mark(r['passed'])}.** Mean DSI: T4 {r['mean_dsi']['T4']:+.3f}, T5 "
+        f"{r['mean_dsi']['T5']:+.3f}; pairs above the threshold: T4 {r['selective']['T4']}/8, "
+        f"T5 {r['selective']['T5']}/8; mirrored as predicted: {mirrored}"
+        + (f"; groups below {crit['min_hz']:.0f} Hz: " + ", ".join(r["quiet_groups"])
+           if r["quiet_groups"] else "")
+        + ".\n\nMean firing rate over 2 s of drifting grating (Hz), after 0.5 s of settling:\n\n"
+        + _table(header, rows)
+        + "\n\nShuffled-wiring controls (same neurons, permuted synaptic targets):\n\n"
+        + _table(["control", "mean |DSI|", "largest DSI", "largest rate"], control_rows)
+        + "\n\nHorizontal system cells, which integrate T4/T5 output (reported, not part of the "
+        "pass condition):\n\n" + hs
+        + "\n\n*Exploratory, measured before this pre-registration:* a full-field brightness "
+        "step of 200 ms, mean rate per type (Hz):\n\n"
+        + _table(["type", "bright", "dark", "change"], step_rows)
+    )
+
+
 def failures(results):
     failed = [r["name"] for r in results["pathways"]["rows"] if not r["passed"]]
     if "feeding" in results and not results["feeding"]["passed"]:
@@ -326,6 +386,8 @@ def failures(results):
     failed += [f"Brian2 seed {r['seed']}" for r in reference.get("runs", []) if not r["identical"]]
     if results.get("devices", {}).get("passed") is False:
         failed.append("CPU and GPU kernels agree")
+    if "eye" in results and not results["eye"]["passed"]:
+        failed.append("Motion detectors from pixels (vision: eye)")
     return failed
 
 
@@ -428,6 +490,9 @@ def render_markdown(results):
     if "retina" in results:
         parts += ["## 5b. Retinotopic vision through the lamina (exploratory)",
                   _retina(results["retina"])]  # fmt: skip
+    if "eye" in results:
+        parts += ["## 5c. Motion detectors from pixels (pre-registered)",
+                  _eye(results["eye"])]  # fmt: skip
     parts += [
         "## 6. Speed",
         _table(["device", "condition", "simulated s", "wall s", "× real time", "spikes"],

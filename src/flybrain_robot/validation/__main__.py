@@ -20,7 +20,13 @@ from pathlib import Path
 import numpy as np
 
 from flybrain_robot.brain.lif import LIFParams, LIFSimulator, make_simulator
-from flybrain_robot.brain.malecns import MODULATORS, READOUT, SENSORY_MAP, MaleCNSBackend
+from flybrain_robot.brain.malecns import (
+    EYE_TONIC_HZ,
+    MODULATORS,
+    READOUT,
+    SENSORY_MAP,
+    MaleCNSBackend,
+)
 from flybrain_robot.connectome.graph import load_connectome
 from flybrain_robot.motor_decoder import MotorDecoder
 from flybrain_robot.telemetry import Telemetry, tilted_telemetry
@@ -153,6 +159,48 @@ TILT_SEEDS = (1, 2, 3, 4, 5)
 RETINA_TYPES = ("L2", "Tm1", "Tm2", "Tm4", "Tm9", "CT1", "T5a", "T5b", "T5c", "T5d",
                 "T4a", "T4b", "HSE", "HSN", "HSS", "LPLC2", "LC4")  # fmt: skip
 RETINA_SCENES = ("grating_left", "grating_right", "flicker", "approach_center", "pan")
+
+# Motion detectors from pixels, vision "eye" (PRE-REGISTERED: written and committed on
+# 2026-09-16 before any grating was simulated in this mode). The configuration is frozen
+# here: photoreceptors driven by the brightness of their pixel, tonic resting potentials
+# in the optic lobe, CT1 split into columns, columns imputed from the wiring, seed 0,
+# matched w_syn, four drifting gratings, 0.5 s to settle and then 2 s measured.
+#
+# Which direction each subtype should prefer is fixed by the literature and by the eye
+# axes that come out of the wiring, with no choice left for afterwards: T4a/T5a prefer
+# front-to-back motion, T4b/T5b back-to-front, T4c/T5c upward, T4d/T5d downward (Maisak
+# et al. 2013). Front-to-back is leftward image motion for the left eye and rightward for
+# the right eye, because each eye's anterior columns look at the image midline.
+#
+# Pass conditions, all four required:
+#   1. Every T4 and T5 subtype fires at >= 2 Hz on at least one direction.
+#   2. For at least half of the 8 T4 subtype-eye pairs and half of the 8 T5 pairs, the
+#      direction selectivity index DSI = (preferred - null) / (preferred + null) over the
+#      two directions of that subtype's own axis is >= 0.05, and the mean DSI is positive
+#      for T4 and for T5.
+#   3. Mirror symmetry: for the horizontal subtypes (a, b) the two eyes prefer opposite
+#      image directions; for the vertical subtypes (c, d) they prefer the same one.
+#   4. Shuffled-wiring controls: mean |DSI| < 0.02 and no pair reaches DSI >= 0.05.
+EYE_DIRECTIONS = ("grating_left", "grating_right", "grating_up", "grating_down")
+EYE_SETTLE_FRAMES = 15
+EYE_MEASURE_FRAMES = 60
+EYE_PREFERRED = {  # subtype letter -> preferred image direction per eye
+    "a": {"L": "grating_left", "R": "grating_right"},
+    "b": {"L": "grating_right", "R": "grating_left"},
+    "c": {"L": "grating_up", "R": "grating_up"},
+    "d": {"L": "grating_down", "R": "grating_down"},
+}
+EYE_OPPOSITE = {"grating_left": "grating_right", "grating_right": "grating_left",
+                "grating_up": "grating_down", "grating_down": "grating_up"}  # fmt: skip
+EYE_MIN_HZ = 2.0
+EYE_MIN_DSI = 0.05
+EYE_CONTROL_MAX_DSI = 0.02
+# Reported, not part of the pass condition: the horizontal system cells that integrate
+# T4/T5 output, and the full-field brightness step. The step was already run on
+# 2026-09-16 before this pre-registration and showed T5 rising and T4 falling in the
+# dark, so it is exploratory and is reported as such.
+EYE_HS_TYPES = ("HSE", "HSN", "HSS")
+EYE_STEP_MS = 200.0
 
 SCENE_EXPECTATIONS = {
     "static": dict(escape=False, turn=0),
@@ -691,6 +739,109 @@ def screen_section(graph):
     return {"duration_ms": 400, "stimulus_hz": STIM_HZ, "rows": rows}
 
 
+def eye_rates(backend, direction, groups):
+    """Mean rate (Hz) per group while a grating drifts, after the settling frames."""
+    backend.reset()
+    encoder = backend.make_encoder()
+    counts = np.zeros(backend.graph.size)
+    for i in range(EYE_SETTLE_FRAMES + EYE_MEASURE_FRAMES):
+        backend.step(encoder.encode(scene_frame(direction, i)), Telemetry(), 1 / 30)
+        if i >= EYE_SETTLE_FRAMES:
+            counts += backend.last_counts
+    hz = counts / (EYE_MEASURE_FRAMES / 30)
+    return {name: float(hz[cells].mean()) for name, cells in groups.items()}
+
+
+def eye_direction_rows(backend):
+    """One row per motion-detector subtype and eye, with its direction selectivity."""
+    graph = backend.graph
+    groups = {f"{t}{letter}:{side}": graph.select(f"{t}{letter}:{side}")
+              for t in ("T4", "T5") for letter in "abcd" for side in "LR"}  # fmt: skip
+    groups.update({f"{t}:{side}": graph.select(f"{t}:{side}")
+                   for t in EYE_HS_TYPES for side in "LR"})  # fmt: skip
+    rates = {d: eye_rates(backend, d, groups) for d in EYE_DIRECTIONS}
+    rows = []
+    for cell_type in ("T4", "T5"):
+        for letter in "abcd":
+            for side in "LR":
+                name = f"{cell_type}{letter}:{side}"
+                preferred = EYE_PREFERRED[letter][side]
+                null = EYE_OPPOSITE[preferred]
+                pref_hz, null_hz = rates[preferred][name], rates[null][name]
+                total = pref_hz + null_hz
+                rows.append(dict(
+                    group=name, preferred_direction=preferred,
+                    hz={d: round(rates[d][name], 2) for d in EYE_DIRECTIONS},
+                    max_hz=round(max(rates[d][name] for d in EYE_DIRECTIONS), 2),
+                    dsi=round((pref_hz - null_hz) / total, 4) if total > 0 else 0.0,
+                ))  # fmt: skip
+    hs = [dict(group=f"{t}:{side}", hz={d: round(rates[d][f"{t}:{side}"], 2)
+                                        for d in EYE_DIRECTIONS})
+          for t in EYE_HS_TYPES for side in "LR"]  # fmt: skip
+    return rows, hs
+
+
+def eye_section(data, seeds):
+    backend = MaleCNSBackend(data, seed=0, vision="eye", device=DEVICE)
+    graph = backend.graph
+    rows, hs = eye_direction_rows(backend)
+    step = {}
+    for phase, luminance in (("bright", 1.0), ("dark", 0.0)):
+        backend.sim.set_stimulus([(backend.retina_cells, luminance * 150.0)])
+        backend.sim.run(EYE_STEP_MS)
+        hz = backend.sim.take_counts() / (EYE_STEP_MS / 1000)
+        step[phase] = {t: round(float(hz[graph.select(t)].mean()), 2)
+                       for t in ("L1", "L2", "L3", "Mi1", "Tm3", "Tm1", "Tm2", "Tm9",
+                                 "T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d")}  # fmt: skip
+    controls = []
+    for seed in seeds:
+        control = MaleCNSBackend(data, seed=seed, vision="eye", wiring="shuffled", device=DEVICE)
+        control_rows, _ = eye_direction_rows(control)
+        controls.append(dict(seed=seed, rows=control_rows))
+        del control
+    by_type = {t: [r for r in rows if r["group"].startswith(t)] for t in ("T4", "T5")}
+    quiet = [r["group"] for r in rows if r["max_hz"] < EYE_MIN_HZ]
+    selective = {t: [r for r in group if r["dsi"] >= EYE_MIN_DSI] for t, group in by_type.items()}
+    mean_dsi = {t: float(np.mean([r["dsi"] for r in group])) for t, group in by_type.items()}
+    mirrored = []
+    for cell_type in ("T4", "T5"):
+        for letter in "abcd":
+            left, right = (next(r for r in rows if r["group"] == f"{cell_type}{letter}:{side}")
+                           for side in "LR")  # fmt: skip
+            horizontal = letter in "ab"
+            pair = ("grating_left", "grating_right") if horizontal else ("grating_up", "grating_down")
+            diff = [row["hz"][pair[0]] - row["hz"][pair[1]] for row in (left, right)]
+            agree = (diff[0] * diff[1] < 0) if horizontal else (diff[0] * diff[1] > 0)
+            mirrored.append(dict(subtype=f"{cell_type}{letter}", difference_hz=[round(d, 2) for d in diff],
+                                 as_predicted=bool(agree)))  # fmt: skip
+    control_dsi = [abs(r["dsi"]) for c in controls for r in c["rows"]]
+    passed = bool(
+        not quiet
+        and all(len(selective[t]) >= 4 and mean_dsi[t] > 0 for t in ("T4", "T5"))
+        and all(m["as_predicted"] for m in mirrored)
+        and control_dsi and float(np.mean(control_dsi)) < EYE_CONTROL_MAX_DSI
+        and max(r["dsi"] for c in controls for r in c["rows"]) < EYE_MIN_DSI
+    )
+    return dict(
+        configuration=dict(
+            tonic_hz=EYE_TONIC_HZ,
+            tonic_cells=backend.tonic_cells, photoreceptors=int(len(backend.retina_cells)),
+            neurons=int(graph.size), settle_frames=EYE_SETTLE_FRAMES,
+            measured_frames=EYE_MEASURE_FRAMES,
+            imputed_columns=graph.manifest.get("imputed_columns"),
+            compartments=graph.manifest.get("compartments"),
+        ),
+        criterion=dict(min_hz=EYE_MIN_HZ, min_dsi=EYE_MIN_DSI, pairs_required=4,
+                       control_max_mean_abs_dsi=EYE_CONTROL_MAX_DSI),
+        rows=rows, hs=hs, mirrored=mirrored, controls=controls,
+        mean_dsi={t: round(v, 4) for t, v in mean_dsi.items()},
+        selective={t: len(v) for t, v in selective.items()},
+        quiet_groups=quiet,
+        control_mean_abs_dsi=round(float(np.mean(control_dsi)), 4) if control_dsi else None,
+        brightness_step=step, passed=passed,
+    )  # fmt: skip
+
+
 def machine():
     import numba
 
@@ -762,6 +913,7 @@ def main(argv=None):
         ("body_loop", lambda: body_loop_section(args.data, seeds)),
         ("closed_loop", lambda: closed_loop_section(args.data, seeds)),
         ("retina", lambda: retina_section(args.data, graph)),
+        ("eye", lambda: eye_section(args.data, seeds)),
         ("performance", lambda: performance_section(graph)),
     ]
     if not args.skip_screen:

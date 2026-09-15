@@ -81,8 +81,16 @@ def eye_axes(graph, side):
 
 
 def column_image_positions(graph, cell_type, axes):
-    """(neuron indices, x, y) in VisionEncoder pixels for the cells of one eye."""
-    cells = np.flatnonzero((graph.type == cell_type) & (graph.side == axes.side) & (graph.hex1 >= 0))
+    """(neuron indices, x, y) in VisionEncoder pixels for the cells of one eye.
+
+    ``cell_type`` is a type name, a prefix ending in ``*``, or a tuple of either.
+    """
+    names = (cell_type,) if isinstance(cell_type, str) else tuple(cell_type)
+    match = np.zeros(graph.size, bool)
+    for name in names:
+        match |= (np.char.startswith(graph.type.astype(str), name[:-1]) if name.endswith("*")
+                  else graph.type == name)  # fmt: skip
+    cells = np.flatnonzero(match & (graph.side == axes.side) & (graph.hex1 >= 0))
     if len(cells) < 10:
         raise ValueError(f"{cell_type} has no column coordinates in the {axes.side} eye")
     hexes = np.stack([graph.hex1[cells], graph.hex2[cells]], axis=1).astype(np.float64)

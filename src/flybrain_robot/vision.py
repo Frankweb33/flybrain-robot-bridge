@@ -66,6 +66,26 @@ class RetinaEncoder:
         return SensoryInput(retina=darkening)
 
 
+class LuminanceEncoder:
+    """Per-photoreceptor brightness, 0 (black) to 1 (white), at the pixels ``x``, ``y``.
+
+    Photoreceptors depolarise to light, so this needs no temporal difference: the
+    connectome's own circuits compute change and motion from it.
+    """
+
+    def __init__(self, x, y):
+        self.xi = np.clip(np.round(np.asarray(x)).astype(int), 0, WIDTH - 1)
+        self.yi = np.clip(np.round(np.asarray(y)).astype(int), 0, HEIGHT - 1)
+
+    def reset(self):
+        pass
+
+    def encode(self, frame):
+        gray = cv2.cvtColor(cv2.resize(frame, (WIDTH, HEIGHT)), cv2.COLOR_BGR2GRAY)
+        values = cv2.blur(gray, (3, 3)).astype(np.float64)[self.yi, self.xi]
+        return SensoryInput(retina=values / 255.0)
+
+
 def _clip01(value):
     return float(np.clip(value, 0.0, 1.0))
 
@@ -142,7 +162,7 @@ SCENES = ("static", "pan", "pass_left", "approach_center", "approach_left", "app
 # bars drifting left or right, and the same grating reversing contrast in place
 # ("flicker"), which darkens each column as often as the drifting grating but carries
 # no coherent motion.
-PATTERNS = ("grating_left", "grating_right", "flicker")
+PATTERNS = ("grating_left", "grating_right", "grating_up", "grating_down", "flicker")
 GRATING_PERIOD_PX = 40
 GRATING_SPEED_PX = 3
 # Contrast reversal every 4 frames gives the same mean column darkening per frame as the
@@ -152,13 +172,16 @@ FLICKER_FRAMES = 4
 TOUR_SEGMENT = 90
 
 
-def grating(offset, inverted=False):
-    x = np.arange(320)
-    dark = ((x + offset) % GRATING_PERIOD_PX) < GRATING_PERIOD_PX // 2
+def grating(offset, inverted=False, vertical=False):
+    """Square-wave bars; ``vertical`` makes them horizontal bars that move up or down."""
+    length = 240 if vertical else 320
+    axis = np.arange(length)
+    dark = ((axis + offset) % GRATING_PERIOD_PX) < GRATING_PERIOD_PX // 2
     if inverted:
         dark = ~dark
-    row = np.where(dark, 40, 200).astype(np.uint8)
-    return cv2.cvtColor(np.tile(row, (240, 1)), cv2.COLOR_GRAY2BGR)
+    line = np.where(dark, 40, 200).astype(np.uint8)
+    image = np.tile(line[:, None], (1, 320)) if vertical else np.tile(line, (240, 1))
+    return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
 
 def scene_frame(name, index):
@@ -170,6 +193,10 @@ def scene_frame(name, index):
         return grating(GRATING_SPEED_PX * index)
     if name == "grating_right":
         return grating(-GRATING_SPEED_PX * index)
+    if name == "grating_up":  # bars move toward the top of the image
+        return grating(GRATING_SPEED_PX * index, vertical=True)
+    if name == "grating_down":
+        return grating(-GRATING_SPEED_PX * index, vertical=True)
     if name == "flicker":
         return grating(0, inverted=bool((index // FLICKER_FRAMES) % 2))
     t = index % TOUR_SEGMENT

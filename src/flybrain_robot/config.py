@@ -6,6 +6,9 @@ import yaml
 
 from .telemetry import parse_axes
 
+# Camera interfaces of the MaleCNS backend; kept here so the config needs no numba.
+VISION_MODES = ("flow", "retina", "eye")  # mirrored in brain/malecns.py
+
 
 @dataclass
 class Config:
@@ -31,7 +34,7 @@ class Config:
     imu_axes: str = "x,y,z"  # robot axes (x forward, y left, z up) in sensor axes
     body_feedback: bool = False  # experimental: tilt drives Johnston's organ neurons
     device: str = "auto"  # auto, cpu or cuda; both give identical spikes
-    vision: str = "flow"  # flow, or experimental retina (see VALIDATION.md 5b)
+    vision: str = "flow"  # flow, or experimental retina / eye (see VALIDATION.md 5b, 5c)
     logging_level: str = "INFO"
 
     def __post_init__(self):
@@ -66,8 +69,8 @@ class Config:
         parse_axes(self.imu_axes)
         if self.device not in ("auto", "cpu", "cuda"):
             raise ValueError("device must be 'auto', 'cpu' or 'cuda'")
-        if self.vision not in ("flow", "retina"):
-            raise ValueError("vision must be 'flow' or 'retina'")
+        if self.vision not in VISION_MODES:
+            raise ValueError(f"vision must be one of {VISION_MODES}")
 
 
 def load_config(path=None):
