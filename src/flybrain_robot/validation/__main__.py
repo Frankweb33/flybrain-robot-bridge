@@ -140,6 +140,11 @@ TILTS = {
 # triggered the Giant Fiber, others turned through DNa02): the same tilts at smaller
 # angles, real wiring only, to find where motor commands start to change. Reported only.
 TILT_SWEEP_SCALES = (0.25, 0.5, 0.75)
+# Post hoc, added on 2026-09-16 after the Poisson generator changed (hash instead of a
+# random stream) and the same check went from three failing tilts to one: the motor
+# effect of a 20 degree tilt sits at the thresholds. Five brain seeds show how often
+# each tilt changes motor commands. Reported only; the verdict above stays with seed 0.
+TILT_SEEDS = (1, 2, 3, 4, 5)
 
 SCENE_EXPECTATIONS = {
     "static": dict(escape=False, turn=0),
@@ -461,8 +466,20 @@ def body_loop_section(data, control_seeds):
                 peak_hz={k: g[k] for k in ("DNp01:L", "DNp01:R", "DNa02:L", "DNa02:R",
                                            "DNa01:L", "DNa01:R")},
             ))  # fmt: skip
+    by_seed = []
+    for seed in TILT_SEEDS:
+        backend = MaleCNSBackend(data, seed=seed, body_feedback=True, device=DEVICE)
+        for label, (roll, pitch) in TILTS.items():
+            _, motor = run_tilt(backend, roll, pitch, cells)
+            by_seed.append(dict(
+                tilt=label, seed=seed, mean_turn=motor["mean_turn"], max_escape=motor["max_escape"],
+                reverse_frames=motor["reverse_frames"],
+                motor_changed=bool(motor["max_escape"] >= 0.3 or motor["reverse_frames"] > 0
+                                   or abs(motor["mean_turn"]) >= 0.1),
+            ))  # fmt: skip
     return dict(duration_s=TOUR_SEGMENT / 30, control_seeds=control_seeds, rows=rows,
-                passed=all(r["passed"] for r in rows), post_hoc_sweep=sweep)  # fmt: skip
+                passed=all(r["passed"] for r in rows), post_hoc_sweep=sweep,
+                post_hoc_seeds=by_seed)  # fmt: skip
 
 
 def run_scene(backend, name):

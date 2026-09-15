@@ -206,6 +206,31 @@ def _body_loop(b):
         "wiring only.\n\n"
         + _table(["tilt", "degrees", "mean turn", "max escape", "reversing frames",
                   "peak GF L/R Hz", "peak DNa02 L/R Hz"], sweep)
+        + _tilt_seeds(b.get("post_hoc_seeds"))
+    )  # fmt: skip
+
+
+def _tilt_seeds(rows):
+    if not rows:
+        return ""
+    tilts = list(dict.fromkeys(r["tilt"] for r in rows))
+    table = []
+    for tilt in tilts:
+        mine = [r for r in rows if r["tilt"] == tilt]
+        table.append((
+            tilt, f"{sum(r['motor_changed'] for r in mine)} of {len(mine)}",
+            " / ".join(f"{r['mean_turn']:+.3f}" for r in mine),
+            " / ".join(f"{r['max_escape']:.2f}" for r in mine),
+        ))  # fmt: skip
+    seeds = ", ".join(str(s) for s in dict.fromkeys(r["seed"] for r in rows))
+    return (
+        "\n\n**Post hoc, added when a change of the Poisson generator moved the verdict** "
+        "(the previous kernel failed three of four tilts, this one fails fewer): the 20° tilts "
+        f"with brain seeds {seeds}. A seed counts as a motor change if escape ≥ 0.3, the "
+        "robot reverses, or |mean turn| ≥ 0.1. The effect of a 20° tilt on motor commands sits "
+        "at these thresholds.\n\n"
+        + _table(["tilt", "seeds with a motor change", "mean turn per seed", "max escape per seed"],
+                 table)
     )  # fmt: skip
 
 
