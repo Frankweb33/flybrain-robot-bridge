@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from flybrain_robot.brain.lif import LIFParams, LIFSimulator
+from flybrain_robot.brain.lif import LIFParams, LIFSimulator, make_simulator
 from flybrain_robot.brain.malecns import MODULATORS, READOUT, SENSORY_MAP, MaleCNSBackend
 from flybrain_robot.connectome.graph import load_connectome
 from flybrain_robot.motor_decoder import MotorDecoder
@@ -159,8 +159,13 @@ def indices(graph, specs):
     return np.concatenate([graph.select(spec) for spec in specs])
 
 
-def trial(graph, stimulus, duration_ms=TRIAL_MS, seed=1, params=None):
-    sim = LIFSimulator(graph, params=params, seed=seed)
+# Simulator device for every section except "devices", which compares both. CPU and GPU
+# give bit-identical results, and that section checks it on the same run.
+DEVICE = "auto"
+
+
+def trial(graph, stimulus, duration_ms=TRIAL_MS, seed=1, params=None, device=None):
+    sim = make_simulator(graph, params=params, seed=seed, device=device or DEVICE)
     sim.set_stimulus([(indices(graph, stimulus), STIM_HZ)] if stimulus else [])
     started = time.perf_counter()
     sim.run(duration_ms)
@@ -416,11 +421,11 @@ def run_tilt(backend, roll_left, pitch_down, cells):
 
 
 def body_loop_section(data, control_seeds):
-    real = MaleCNSBackend(data, seed=0, body_feedback=True)
+    real = MaleCNSBackend(data, seed=0, body_feedback=True, device=DEVICE)
     graph = real.graph
     cells = np.flatnonzero(graph.superclass == "descending_neuron")
     controls = [
-        MaleCNSBackend(data, seed=seed, wiring="shuffled", body_feedback=True)
+        MaleCNSBackend(data, seed=seed, wiring="shuffled", body_feedback=True, device=DEVICE)
         for seed in control_seeds
     ]
     rows = []
@@ -450,7 +455,8 @@ def body_loop_section(data, control_seeds):
             _, motor = run_tilt(real, roll * scale, pitch * scale, cells)
             g = motor["peak_group_hz"]
             sweep.append(dict(
-                tilt=label, degrees=round(20 * scale, 1), mean_turn=motor["mean_turn"],
+                tilt=label.rsplit(" ", 1)[0], degrees=round(20 * scale, 1),
+                mean_turn=motor["mean_turn"],
                 max_escape=motor["max_escape"], reverse_frames=motor["reverse_frames"],
                 peak_hz={k: g[k] for k in ("DNp01:L", "DNp01:R", "DNa02:L", "DNa02:R",
                                            "DNa01:L", "DNa01:R")},
@@ -498,7 +504,7 @@ def closed_loop_section(data, control_seeds):
     for wiring, seeds in [("connectome", [0]), ("shuffled", control_seeds)]:
         rows = []
         for seed in seeds:
-            backend = MaleCNSBackend(data, seed=seed, wiring=wiring)
+            backend = MaleCNSBackend(data, seed=seed, wiring=wiring, device=DEVICE)
             for name in SCENES:
                 row = run_scene(backend, name)
                 row["seed"] = seed
@@ -513,20 +519,74 @@ def closed_loop_section(data, control_seeds):
     return sections
 
 
+SPEED_CONDITIONS = [
+    ("no input (silent brain)", []),
+    ("LPLC2:L at 150 Hz", ["LPLC2:L"]),
+    ("LPLC2 + LC4, both sides, 150 Hz", ["LPLC2:L", "LPLC2:R", "LC4:L", "LC4:R"]),
+]
+
+
+def gpu_available():
+    try:
+        from flybrain_robot.brain.lif_cuda import cuda_available
+    except ImportError:
+        return False
+    return cuda_available()
+
+
 def performance_section(graph):
-    sim = LIFSimulator(graph, seed=1)
-    sim.run(1)
+    devices = ["cpu"] + (["cuda"] if gpu_available() else [])
     rows = []
-    for label, stimulus in [
-        ("no input (silent brain)", []),
-        ("LPLC2:L at 150 Hz", ["LPLC2:L"]),
-        ("LPLC2 + LC4, both sides, 150 Hz", ["LPLC2:L", "LPLC2:R", "LC4:L", "LC4:R"]),
-    ]:
-        _, rates, wall = trial(graph, stimulus)
-        rows.append(dict(condition=label, simulated_s=TRIAL_MS / 1000, wall_s=round(wall, 3),
-                         realtime_factor=round(TRIAL_MS / 1000 / wall, 2),
-                         spikes=int(rates.sum())))  # fmt: skip
+    for device in devices:
+        trial(graph, [], duration_ms=10, device=device)  # compile before timing
+        for label, stimulus in SPEED_CONDITIONS:
+            _, rates, wall = trial(graph, stimulus, device=device)
+            rows.append(dict(device=device, condition=label, simulated_s=TRIAL_MS / 1000,
+                             wall_s=round(wall, 3), realtime_factor=round(TRIAL_MS / 1000 / wall, 2),
+                             spikes=int(rates.sum())))  # fmt: skip
     return rows
+
+
+def devices_section(data, graph):
+    """CPU and GPU kernels must agree exactly: spikes, and motor commands frame by frame."""
+    if not gpu_available():
+        return {"skipped": "no CUDA GPU or numba-cuda-mlir"}
+    from flybrain_robot.brain.lif_cuda import CudaLIFSimulator
+    from flybrain_robot.connectome.synthetic import random_connectome
+
+    networks = []
+    for seed in (1, 2, 3):
+        net = random_connectome(n=500, density=0.03, seed=seed)
+        traces = []
+        for cls in (LIFSimulator, CudaLIFSimulator):
+            sim = cls(net, params=LIFParams(w_syn=1.5), seed=seed)
+            chunks = []
+            for chunk in range(30):
+                sim.set_stimulus([(np.arange(40), 90.0 + 7 * chunk), (np.arange(40, 60), 0.0)])
+                sim.run(33.3 if chunk % 3 else 7.5)
+                chunks.append(sim.take_counts())
+            traces.append(np.array(chunks))
+        networks.append(dict(seed=seed, neurons=net.size, spikes=int(traces[0].sum()),
+                             identical=bool(np.array_equal(*traces))))  # fmt: skip
+    connectome = []
+    for label, stimulus in SPEED_CONDITIONS[1:] + [("LC10a:L at 150 Hz", ["LC10a:L"])]:
+        counts = [trial(graph, stimulus, device=d)[1] for d in ("cpu", "cuda")]
+        connectome.append(dict(condition=label, spikes_per_s=int(counts[0].sum()),
+                               identical=bool(np.array_equal(*counts))))  # fmt: skip
+    commands = []
+    for device in ("cpu", "cuda"):
+        backend = MaleCNSBackend(data, seed=0, device=device)
+        encoder, frames = VisionEncoder(), []
+        for i in range(TOUR_SEGMENT * len(SCENES)):
+            if i % TOUR_SEGMENT == 0:
+                backend.reset()
+                encoder.reset()
+            a = backend.step(encoder.encode(scene_frame("tour", i)), Telemetry(), 1 / 30)
+            frames.append((a.left, a.right, a.escape))
+        commands.append(frames)
+    loop = dict(frames=len(commands[0]), identical=commands[0] == commands[1])
+    passed = all(r["identical"] for r in networks + connectome) and loop["identical"]
+    return dict(networks=networks, connectome=connectome, closed_loop=loop, passed=passed)
 
 
 def screen_section(graph):
@@ -570,10 +630,20 @@ def machine():
             cpu = winreg.QueryValueEx(key, "ProcessorNameString")[0].strip()
         except OSError:
             pass
+    gpu = None
+    if gpu_available():
+        from importlib.metadata import version
+
+        from numba_cuda_mlir import cuda
+
+        name = cuda.get_current_device().name
+        gpu = dict(name=name.decode() if isinstance(name, bytes) else str(name),
+                   numba_cuda_mlir=version("numba-cuda-mlir"))  # fmt: skip
     return dict(timestamp=datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 commit=commit, source_modified_since_commit=dirty, python=platform.python_version(),
                 numpy=np.__version__, numba=numba.__version__, os=platform.platform(), cpu=cpu,
-                logical_cpus=os.cpu_count(), numba_threads=numba.get_num_threads())  # fmt: skip
+                logical_cpus=os.cpu_count(), numba_threads=numba.get_num_threads(), gpu=gpu,
+                device=DEVICE)  # fmt: skip
 
 
 def main(argv=None):
@@ -585,7 +655,11 @@ def main(argv=None):
     parser.add_argument("--skip-screen", action="store_true")
     parser.add_argument("--only", nargs="+", metavar="SECTION",
                         help="Run only these sections and print them; writes no report")  # fmt: skip
+    parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto",
+                        help="Simulator for all sections except 'devices' (identical results)")  # fmt: skip
     args = parser.parse_args(argv)
+    global DEVICE
+    DEVICE = args.device
     seeds = list(range(1, args.controls + 1))
     started = time.perf_counter()
     full = load_connectome(args.data)
@@ -599,6 +673,7 @@ def main(argv=None):
                              readout={k: list(v) for k, v in READOUT.items()})}  # fmt: skip
     steps = [
         ("reference", lambda: reference_section([1, 2, 3])),
+        ("devices", lambda: devices_section(args.data, graph)),
         ("stability", lambda: stability_section(full)),
         ("pathways", lambda: pathway_section(graph, seeds)),
         ("feeding", lambda: feeding_section(graph, full, seeds)),

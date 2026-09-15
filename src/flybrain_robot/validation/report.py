@@ -33,6 +33,29 @@ def _reference(section):
     )
 
 
+def _devices(section):
+    if "skipped" in section:
+        return f"Skipped: {section['skipped']}."
+    networks = [(r["seed"], r["neurons"], f"{r['spikes']:,}", _mark(r["identical"]))
+                for r in section["networks"]]  # fmt: skip
+    connectome = [(r["condition"], f"{r['spikes_per_s']:,}", _mark(r["identical"]))
+                  for r in section["connectome"]]  # fmt: skip
+    loop = section["closed_loop"]
+    return (
+        "The CPU kernel (numba) and the GPU kernel (numba-cuda-mlir) compile the same Python "
+        "source for the per-neuron update, sum synaptic input in fixed point, draw Poisson "
+        "input from a counter-based hash and compute the membrane update with an explicit "
+        "fused multiply-add, so their results can be compared exactly. A row passes only if "
+        "every spike count, per neuron and per interval, is identical.\n\n"
+        + _table(["random network seed", "neurons", "spikes", "CPU = GPU"], networks)
+        + "\n\n"
+        + _table(["whole MaleCNS, 1 s", "spikes", "CPU = GPU"], connectome)
+        + f"\n\nClosed loop over the synthetic tour: left, right and escape commands of all "
+        f"{loop['frames']} frames {'are identical' if loop['identical'] else 'differ'} "
+        f"between devices ({_mark(loop['identical'])})."
+    )  # fmt: skip
+
+
 def _pathways(section):
     rows = []
     for r in section["rows"]:
@@ -222,6 +245,8 @@ def failures(results):
     ]
     reference = results["reference"]
     failed += [f"Brian2 seed {r['seed']}" for r in reference.get("runs", []) if not r["identical"]]
+    if results.get("devices", {}).get("passed") is False:
+        failed.append("CPU and GPU kernels agree")
     return failed
 
 
@@ -267,8 +292,11 @@ def render_markdown(results):
         + (" (with uncommitted source changes)" if m["source_modified_since_commit"] else "")
         + f" in {m['total_seconds']} s on {m['cpu']} ({m['logical_cpus']} logical CPUs, "
         f"{m['numba_threads']} numba threads), {m['os']}, Python {m['python']}, "
-        f"NumPy {m['numpy']}, numba {m['numba']}. Raw numbers: "
-        "[validation/results.json](validation/results.json).",
+        f"NumPy {m['numpy']}, numba {m['numba']}"
+        + (f", GPU {m['gpu']['name']} with numba-cuda-mlir {m['gpu']['numba_cuda_mlir']}"
+           if m.get("gpu") else "")
+        + (f"; simulations on device `{m['device']}`" if m.get("device") else "")
+        + ". Raw numbers: [validation/results.json](validation/results.json).",
         f"**{summary}**",
         "Reproduce:\n\n```bash\npip install -e \".[connectome,reference]\"\n"
         "python -m flybrain_robot.connectome.build download --data data/malecns-v1.0\n"
@@ -278,6 +306,10 @@ def render_markdown(results):
         _table(["", ""], dataset_rows),
         "## 2. The simulation kernel matches the reference simulator",
         _reference(results["reference"]),
+    ]
+    if "devices" in results:
+        parts += ["## 2b. CPU and GPU kernels agree exactly", _devices(results["devices"])]
+    parts += [
         "## 3. Calibration and stability",
         "Shiu et al. fitted one free parameter, w_syn = 0.275 mV per synapse, on FlyWire "
         "(54,492,922 synapses among 138,639 neurons, 393 per neuron). MaleCNS has "
@@ -314,12 +346,15 @@ def render_markdown(results):
         "reverse.",
         _closed_loop(results["closed_loop"]),
         "## 6. Speed",
-        _table(["condition", "simulated s", "wall s", "× real time", "spikes"],
-               [(r["condition"], r["simulated_s"], r["wall_s"], r["realtime_factor"],
-                 f"{r['spikes']:,}") for r in perf]),  # fmt: skip
-        "The simulation is event-driven: cost grows with the number of neurons away from rest. "
-        "With strong visual input it runs slower than real time on this CPU, so the robot loop "
-        "advances brain time by one frame period per camera frame and reports the ratio.",
+        _table(["device", "condition", "simulated s", "wall s", "× real time", "spikes"],
+               [(r.get("device", "cpu"), r["condition"], r["simulated_s"], r["wall_s"],
+                 r["realtime_factor"], f"{r['spikes']:,}") for r in perf]),  # fmt: skip
+        "Both kernels advance in blocks of 1.8 ms, the synaptic delay, inside which neurons do "
+        "not interact. The CPU kernel processes only neurons away from rest; the GPU kernel "
+        "runs two launches per block over all neurons. Timings on a desktop GPU vary by tens of "
+        "percent between runs because it also drives the display. When a device is slower than "
+        "real time, the robot loop still advances brain time by one frame period per camera "
+        "frame and reports the ratio.",
     ]
     if "screen" in results:
         rows = [

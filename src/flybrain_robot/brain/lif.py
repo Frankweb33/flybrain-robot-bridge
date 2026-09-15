@@ -1,4 +1,4 @@
-"""Event-driven leaky integrate-and-fire simulation of a whole connectome.
+"""Event-driven leaky integrate-and-fire simulation of a whole connectome (CPU).
 
 Model and parameters follow Shiu et al. 2024, "A Drosophila computational brain
 model reveals sensorimotor processing" (Nature 634, 210-219), which ran the same
@@ -13,9 +13,13 @@ equations on the FlyWire connectome in Brian2 (github.com/philshiu/Drosophila_br
 ``weight`` is the signed synapse count from the connectome. The linear system is
 integrated exactly, like Brian2's ``method='linear'``. Sensory drive is a Poisson
 train whose events add ``poisson_kick_mv`` to v; driven neurons have no refractory
-period, as in the reference. Only neurons away from rest are integrated, so a
-silent brain costs almost nothing; a neuron within ``rest_tolerance`` mV of rest
-in both v and g is set back to rest exactly.
+period, as in the reference. A neuron within ``rest_tolerance`` mV of rest in both v
+and g is set back to rest exactly.
+
+The simulation advances in blocks of ``t_dly`` steps, inside which neurons do not
+interact (see ``lif_kernel.py``). Only neurons away from rest, with pending input or
+with Poisson drive are processed, in parallel when there are many, so a silent brain
+costs almost nothing. ``lif_cuda.py`` runs the same arithmetic on a GPU.
 
 This is a connectome-constrained dynamics approximation, not a biophysically
 validated model of a fly.
@@ -26,8 +30,13 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 
+from . import lif_kernel
+
 try:
+    from llvmlite import ir
     from numba import njit, prange
+    from numba import types as nbtypes
+    from numba.extending import intrinsic
 except ImportError as exc:  # pragma: no cover - exercised only without the extra
     raise ImportError('The LIF backend needs numba: pip install -e ".[connectome]"') from exc
 
@@ -64,116 +73,152 @@ class LIFParams:
         return replace(cls(w_syn=w_syn), **overrides)
 
 
-PARALLEL_MIN_ACTIVE = 20_000
-REORDER_EVERY_STEPS = 20
+class KernelConstants:
+    """Derived per-step constants, identical for the CPU and GPU simulators."""
+
+    def __init__(self, params, connectome):
+        p = params
+        self.block = max(1, round(p.t_dly_ms / p.dt_ms))  # synaptic delay in steps
+        if self.block > lif_kernel.MAX_BLOCK_STEPS:
+            raise ValueError("t_dly_ms / dt_ms must be at most 32 steps")
+        # Brian2 keeps a neuron refractory while t < t_spike + t_rfc.
+        self.refractory = max(0, math.ceil(p.t_rfc_ms / p.dt_ms - 1e-9) - 1)
+        self.a_v = math.exp(-p.dt_ms / p.t_mbr_ms)
+        self.b_g = math.exp(-p.dt_ms / p.tau_ms)
+        self.c_vg = p.tau_ms / (p.tau_ms - p.t_mbr_ms) * (self.b_g - self.a_v)
+        self.inv_scale = 2.0**-lif_kernel.FIXED_SHIFT
+        scaled = np.rint(np.asarray(connectome.weight, np.float64) * p.w_syn * 2**lif_kernel.FIXED_SHIFT)
+        if scaled.size and np.abs(scaled).max() >= 2**31:
+            raise ValueError("w_syn too large for 32-bit fixed-point synaptic weights")
+        self.weight_fixed = _kernel_array(scaled, np.int32)
+        self.scalars = (
+            float(p.v_0), float(p.v_rst), float(p.v_th), self.a_v, self.b_g, self.c_vg,
+            float(p.poisson_kick_mv), self.inv_scale, float(p.rest_tolerance),
+        )  # fmt: skip
+
+
+PARALLEL_MIN_ACTIVE = 2_000
+RESORT_MIN_ENTRANTS = 1_024
+
+@intrinsic
+def _fma(typingctx, a, b, c):
+    """LLVM's fma: the FMA3 instruction where available, else libm, both correctly rounded."""
+    signature = nbtypes.float64(nbtypes.float64, nbtypes.float64, nbtypes.float64)
+
+    def codegen(context, builder, sig, args):
+        double = ir.DoubleType()
+        function_type = ir.FunctionType(double, [double] * 3)
+        return builder.call(builder.module.declare_intrinsic("llvm.fma", [double], function_type), args)
+
+    return signature, codegen
+
+
+_neuron_block = njit(inline="always")(lif_kernel.specialize(lif_kernel.neuron_block, fma=_fma))
 
 
 @njit(cache=True)
-def _seed(seed):
-    np.random.seed(seed)
-
-
-@njit(cache=True, inline="always")
-def _update(i, a, v, g, refractory_until, step, v_0, v_th, a_v, b_g, c_vg, fired):
-    fired[a] = False
-    if step >= refractory_until[i]:
-        v[i] = v_0 + (v[i] - v_0) * a_v + g[i] * c_vg
-        g[i] *= b_g
-        fired[a] = v[i] > v_th
-
-
-@njit(cache=True)
-def _integrate(active, n_active, v, g, refractory_until, step, v_0, v_th, a_v, b_g, c_vg, fired):
+def _advance(
+    active, n_active, s0, s1, block_start, seed, v, g, refractory_until, refractory_steps, dg,
+    bits, counts, prob, v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
+):  # fmt: skip
     for a in range(n_active):
-        _update(active[a], a, v, g, refractory_until, step, v_0, v_th, a_v, b_g, c_vg, fired)
+        _neuron_block(active[a], s0, s1, block_start, seed, v, g, refractory_until,
+                      refractory_steps, dg, bits, counts, prob, v_0, v_rst, v_th, a_v, b_g,
+                      c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
 
 
 @njit(cache=True, parallel=True)
-def _integrate_parallel(
-    active, n_active, v, g, refractory_until, step, v_0, v_th, a_v, b_g, c_vg, fired
-):
+def _advance_parallel(
+    active, n_active, s0, s1, block_start, seed, v, g, refractory_until, refractory_steps, dg,
+    bits, counts, prob, v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
+):  # fmt: skip
     for a in prange(n_active):
-        _update(active[a], a, v, g, refractory_until, step, v_0, v_th, a_v, b_g, c_vg, fired)
+        _neuron_block(active[a], s0, s1, block_start, seed, v, g, refractory_until,
+                      refractory_steps, dg, bits, counts, prob, v_0, v_rst, v_th, a_v, b_g,
+                      c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
+
+
+@njit(cache=True)
+def _finish_block(
+    active, n_active, active_flag, entrants, indptr, indices, weight_fixed, dg_cur, dg_next,
+    pending_cur, pending_next, bits, prob, v, g, v_0, block_len,
+):  # fmt: skip
+    """Deliver this block's spikes into the next block, clear used input, retire at rest."""
+    n_entrants = 0
+    for a in range(n_active):
+        i = active[a]
+        if pending_cur[i]:
+            row = i * block_len
+            for s in range(block_len):
+                dg_cur[row + s] = 0
+            pending_cur[i] = False
+        b = bits[i]
+        if b != 0:
+            for s in range(block_len):
+                if (b >> s) & 1:
+                    for e in range(indptr[i], indptr[i + 1]):
+                        target = indices[e]
+                        dg_next[target * block_len + s] += weight_fixed[e]
+                        if not pending_next[target]:
+                            pending_next[target] = True
+                            if not active_flag[target]:
+                                active_flag[target] = True
+                                entrants[n_entrants] = target
+                                n_entrants += 1
+            bits[i] = 0
+    kept = 0
+    for a in range(n_active):
+        i = active[a]
+        if pending_next[i] or prob[i] > 0.0 or v[i] != v_0 or g[i] != 0.0:
+            active[kept] = i
+            kept += 1
+        else:
+            active_flag[i] = False
+    if n_entrants >= RESORT_MIN_ENTRANTS:
+        # Index order keeps memory access sequential; worth a scan when many joined.
+        kept = 0
+        for i in range(active_flag.shape[0]):
+            if active_flag[i]:
+                active[kept] = i
+                kept += 1
+        return kept
+    for k in range(n_entrants):
+        active[kept + k] = entrants[k]
+    return kept + n_entrants
 
 
 @njit(cache=True)
 def _run(
-    steps, t0, indptr, indices, weight, v, g, refractory_until, refractory_steps,
-    active_flag, active, n_active, spike_ring, ring_count, stim_index, stim_prob, counts,
-    fired, v_0, v_rst, v_th, a_v, b_g, c_vg, delay, w_syn, kick, tol,
+    steps, t0, block_len, seed, indptr, indices, weight_fixed, v, g, refractory_until,
+    refractory_steps, dg_cur, dg_next, pending_cur, pending_next, bits, counts, prob,
+    active_flag, active, n_active, entrants,
+    v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol,
 ):  # fmt: skip
-    # Operation order within a step matches Brian2's default schedule:
-    # refractoriness, state update, thresholds, synaptic and Poisson effects, resets.
-    ring = spike_ring.shape[0]
-    for step in range(t0, t0 + steps):
-        # 1. Integrate non-refractory active neurons exactly and test the threshold.
+    step = t0
+    end = t0 + steps
+    swaps = 0
+    while step < end:
+        block_start = (step // block_len) * block_len
+        s0 = step - block_start
+        s1 = min(block_len, end - block_start)
         if n_active >= PARALLEL_MIN_ACTIVE:
-            _integrate_parallel(active, n_active, v, g, refractory_until, step, v_0, v_th,
-                                a_v, b_g, c_vg, fired)  # fmt: skip
+            _advance_parallel(active, n_active, s0, s1, block_start, seed, v, g,
+                              refractory_until, refractory_steps, dg_cur, bits, counts, prob,
+                              v_0, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol,
+                              block_len)  # fmt: skip
         else:
-            _integrate(active, n_active, v, g, refractory_until, step, v_0, v_th,
-                       a_v, b_g, c_vg, fired)  # fmt: skip
-        # 2. Spiking neurons become refractory now: like Brian2's conditional writes on
-        #    `(unless refractory)` variables, inputs to refractory neurons are dropped.
-        out_slot = (step + delay) % ring
-        for a in range(n_active):
-            if fired[a]:
-                i = active[a]
-                refractory_until[i] = step + 1 + refractory_steps[i]
-                counts[i] += 1
-                spike_ring[out_slot, ring_count[out_slot]] = i
-                ring_count[out_slot] += 1
-        integrated = n_active
-        # 3. Deliver spikes emitted `delay` steps ago.
-        slot = step % ring
-        for s in range(ring_count[slot]):
-            source = spike_ring[slot, s]
-            for e in range(indptr[source], indptr[source + 1]):
-                target = indices[e]
-                if step >= refractory_until[target]:
-                    g[target] += weight[e] * w_syn
-                    if not active_flag[target]:
-                        active_flag[target] = True
-                        active[n_active] = target
-                        n_active += 1
-        ring_count[slot] = 0
-        # 4. Poisson sensory drive.
-        for k in range(stim_index.shape[0]):
-            target = stim_index[k]
-            if (
-                stim_prob[k] > 0.0
-                and np.random.random() < stim_prob[k]
-                and step >= refractory_until[target]
-            ):
-                v[target] += kick
-                if not active_flag[target]:
-                    active_flag[target] = True
-                    active[n_active] = target
-                    n_active += 1
-        # 5. Reset neurons that fired and retire neurons back at rest.
-        kept = 0
-        for a in range(n_active):
-            i = active[a]
-            if a < integrated and fired[a]:
-                v[i] = v_rst
-                g[i] = 0.0
-            if step + 1 >= refractory_until[i] and abs(v[i] - v_0) < tol and abs(g[i]) < tol:
-                v[i] = v_0
-                g[i] = 0.0
-                active_flag[i] = False
-            else:
-                active[kept] = i
-                kept += 1
-        n_active = kept
-        # Keep the active list in index order: sequential memory access is several
-        # times faster than the arbitrary order in which neurons were woken up.
-        if step % REORDER_EVERY_STEPS == 0 and n_active > 1024:
-            n_active = 0
-            for i in range(active_flag.shape[0]):
-                if active_flag[i]:
-                    active[n_active] = i
-                    n_active += 1
-    return n_active
+            _advance(active, n_active, s0, s1, block_start, seed, v, g, refractory_until,
+                     refractory_steps, dg_cur, bits, counts, prob, v_0, v_rst, v_th, a_v,
+                     b_g, c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
+        step = block_start + s1
+        if s1 == block_len:
+            n_active = _finish_block(active, n_active, active_flag, entrants, indptr, indices,
+                                     weight_fixed, dg_cur, dg_next, pending_cur, pending_next,
+                                     bits, prob, v, g, v_0, block_len)  # fmt: skip
+            dg_cur, dg_next = dg_next, dg_cur
+            pending_cur, pending_next = pending_next, pending_cur
+            swaps += 1
+    return n_active, swaps
 
 
 def _kernel_array(values, dtype):
@@ -181,84 +226,120 @@ def _kernel_array(values, dtype):
     return np.require(np.asarray(values, dtype=dtype), dtype, flags)
 
 
+def make_simulator(connectome, params=None, seed=0, device="auto"):
+    """CPU or GPU simulator. Both give bit-identical spikes, so "auto" is safe."""
+    if device not in ("auto", "cpu", "cuda"):
+        raise ValueError("device must be 'auto', 'cpu' or 'cuda'")
+    if device != "cpu":
+        try:
+            from .lif_cuda import CudaLIFSimulator, cuda_available
+        except ImportError as exc:
+            if device == "cuda":
+                raise ValueError(f"device 'cuda' needs the gpu extra: {exc}") from exc
+        else:
+            if cuda_available():
+                return CudaLIFSimulator(connectome, params=params, seed=seed)
+            if device == "cuda":
+                raise ValueError("device 'cuda' requested but no CUDA GPU is available")
+    return LIFSimulator(connectome, params=params, seed=seed)
+
+
 class LIFSimulator:
+    device = "cpu"
+
     def __init__(self, connectome, params=None, seed=0):
         self.connectome = connectome
         self.params = params or LIFParams.matched_to(connectome.manifest)
         self.seed = seed
-        p, n = self.params, connectome.size
+        n = connectome.size
         # One array type per argument keeps numba to a single compiled specialization.
         # Several cached specializations of a kernel that calls a parallel function
         # crashed on load (read-only memmaps and writable arrays type differently).
+        self.constants = k = KernelConstants(self.params, connectome)
         self.indptr = _kernel_array(connectome.indptr, np.int64)
         self.indices = _kernel_array(connectome.indices, np.int32)
-        self.weight = _kernel_array(connectome.weight, np.float32)
-        self.delay = max(1, round(p.t_dly_ms / p.dt_ms))
-        # Brian2 keeps a neuron refractory while t < t_spike + t_rfc.
-        self.default_refractory = max(0, math.ceil(p.t_rfc_ms / p.dt_ms - 1e-9) - 1)
-        self.a_v = math.exp(-p.dt_ms / p.t_mbr_ms)
-        self.b_g = math.exp(-p.dt_ms / p.tau_ms)
-        self.c_vg = p.tau_ms / (p.tau_ms - p.t_mbr_ms) * (self.b_g - self.a_v)
+        self.weight_fixed = k.weight_fixed
+        self.default_refractory = k.refractory
         self.v = np.empty(n, np.float64)
         self.g = np.empty(n, np.float64)
         self.refractory_until = np.empty(n, np.int64)
-        self.refractory_steps = np.full(n, self.default_refractory, np.int64)
-        self.active_flag = np.empty(n, np.bool_)
-        self.active = np.empty(n, np.int32)
-        self.fired = np.zeros(n, np.bool_)
-        self.spike_ring = np.empty((self.delay + 1, n), np.int32)
-        self.ring_count = np.empty(self.delay + 1, np.int64)
+        self.refractory_steps = np.full(n, k.refractory, np.int64)
+        self.dg_cur = np.zeros(n * k.block, np.int64)
+        self.dg_next = np.zeros(n * k.block, np.int64)
+        self.pending_cur = np.zeros(n, np.bool_)
+        self.pending_next = np.zeros(n, np.bool_)
+        self.bits = np.zeros(n, np.uint32)
         self.counts = np.zeros(n, np.int32)
+        self.prob = np.zeros(n, np.float64)
+        self.active_flag = np.zeros(n, np.bool_)
+        self.active = np.empty(n, np.int32)
+        self.entrants = np.empty(n, np.int32)
         self.stim_index = np.zeros(0, np.int32)
-        self.stim_prob = np.zeros(0, np.float64)
         self.reset()
 
     def reset(self):
+        for array in (self.g, self.refractory_until, self.dg_cur, self.dg_next, self.bits,
+                      self.counts, self.pending_cur, self.pending_next):  # fmt: skip
+            array.fill(0)
         self.v.fill(self.params.v_0)
-        self.g.fill(0)
-        self.refractory_until.fill(0)
         self.active_flag.fill(False)
-        self.ring_count.fill(0)
-        self.counts.fill(0)
         self.n_active = 0
         self.step_index = 0
-        _seed(self.seed)
+        self._activate(np.flatnonzero(self.prob > 0))
 
     @property
     def time_ms(self):
         return self.step_index * self.params.dt_ms
 
+    def _activate(self, neurons):
+        new = np.asarray(neurons, np.int32)
+        new = new[~self.active_flag[new]]
+        self.active_flag[new] = True
+        self.active[self.n_active : self.n_active + len(new)] = new
+        self.n_active += len(new)
+
     def set_stimulus(self, drive):
         """``drive`` is an iterable of ``(neuron_indices, poisson_rate_hz)`` pairs.
 
-        Driven neurons get no refractory period (as in the reference model) until
-        they are left out of a later stimulus.
+        Each neuron has one Poisson rate; a neuron listed twice gets the sum of its
+        rates (a probability of at most 1 per step). Driven neurons have no refractory
+        period, as in the reference model, until they are left out of a later stimulus.
         """
-        index, prob = [], []
+        index, rates = [], []
         for neurons, rate in drive:
             if not math.isfinite(rate) or rate < 0:
                 raise ValueError("Stimulus rates must be finite and non-negative")
             neurons = np.asarray(neurons, np.int32).ravel()
             index.append(neurons)
-            prob.append(np.full(len(neurons), min(rate * self.params.dt_ms / 1000, 1.0)))
+            rates.append(np.full(len(neurons), float(rate)))
         self.refractory_steps[self.stim_index] = self.default_refractory
-        self.stim_index = _kernel_array(np.concatenate(index) if index else [], np.int32)
-        self.stim_prob = _kernel_array(np.concatenate(prob) if prob else [], np.float64)
+        self.prob.fill(0)
+        if index:
+            self.stim_index = _kernel_array(np.concatenate(index), np.int32)
+            per_step = np.concatenate(rates) * self.params.dt_ms / 1000
+            np.add.at(self.prob, self.stim_index, per_step)
+            np.minimum(self.prob, 1.0, out=self.prob)
+        else:
+            self.stim_index = np.zeros(0, np.int32)
         self.refractory_steps[self.stim_index] = 0
+        self._activate(np.flatnonzero(self.prob > 0))
 
     def run(self, duration_ms):
         steps = round(duration_ms / self.params.dt_ms)
         if steps < 0:
             raise ValueError("duration must be non-negative")
-        p = self.params
-        self.n_active = int(_run(
-            int(steps), int(self.step_index), self.indptr, self.indices, self.weight, self.v,
-            self.g, self.refractory_until, self.refractory_steps, self.active_flag, self.active,
-            int(self.n_active), self.spike_ring, self.ring_count, self.stim_index, self.stim_prob,
-            self.counts, self.fired, float(p.v_0), float(p.v_rst), float(p.v_th), float(self.a_v),
-            float(self.b_g), float(self.c_vg), int(self.delay), float(p.w_syn),
-            float(p.poisson_kick_mv), float(p.rest_tolerance),
-        ))  # fmt: skip
+        k = self.constants
+        n_active, swaps = _run(
+            int(steps), int(self.step_index), int(k.block), int(self.seed), self.indptr,
+            self.indices, self.weight_fixed, self.v, self.g, self.refractory_until,
+            self.refractory_steps, self.dg_cur, self.dg_next, self.pending_cur,
+            self.pending_next, self.bits, self.counts, self.prob, self.active_flag,
+            self.active, int(self.n_active), self.entrants, *k.scalars,
+        )  # fmt: skip
+        self.n_active = int(n_active)
+        if swaps % 2:
+            self.dg_cur, self.dg_next = self.dg_next, self.dg_cur
+            self.pending_cur, self.pending_next = self.pending_next, self.pending_cur
         self.step_index += steps
         return steps
 

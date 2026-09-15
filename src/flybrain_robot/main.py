@@ -30,6 +30,7 @@ def build_brain(backend, cfg, args):
         fast_modulators=cfg.fast_modulators,
         wiring=args.wiring or cfg.wiring,
         body_feedback=args.body_feedback or cfg.body_feedback,
+        device=args.device or cfg.device,
     )
 
 
@@ -78,6 +79,8 @@ def main(argv=None):
     parser.add_argument("--wiring", choices=["connectome", "shuffled"],
                         help="shuffled = control with permuted synapse targets")  # fmt: skip
     parser.add_argument("--steps", type=int, default=300, help="Finite frame count (default: 300)")
+    parser.add_argument("--device", choices=["auto", "cpu", "cuda"],
+                        help="Simulator device for --backend malecns (default: auto)")  # fmt: skip
     parser.add_argument("--body-feedback", action="store_true",
                         help="Experimental: robot tilt drives Johnston's organ neurons")  # fmt: skip
     parser.add_argument("--tilt", type=parse_tilt, metavar="ROLL,PITCH",
@@ -127,7 +130,11 @@ def main(argv=None):
             period = 1 / capture.get(cv2.CAP_PROP_FPS)
         if args.send:
             bridge = UDPBridge(cfg)
-        neurons = f" neurons={brain.neuron_count}" if hasattr(brain, "neuron_count") else ""
+        neurons = (
+            f" neurons={brain.neuron_count} device={brain.device}"
+            if hasattr(brain, "neuron_count")
+            else ""
+        )
         print(
             f"source={origin} backend={backend}{neurons} "
             f"UDP={'enabled' if bridge else 'off (dry-run)'}"

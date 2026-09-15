@@ -16,6 +16,8 @@ dev = ["pytest>=8", "ruff>=0.6"]
 demo = ["Pillow>=10"]
 connectome = ["numba>=0.60", "pandas>=2", "pyarrow>=15"]
 reference = ["brian2>=2.7"]
+# CUDA 13 drivers; use numba-cuda-mlir[cu12] with CUDA 12 drivers.
+gpu = ["numba-cuda-mlir[cu13]>=0.5.2"]
 
 [project.scripts]
 flybrain-robot = "flybrain_robot.main:main"
@@ -28,7 +30,12 @@ line-length = 100
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["ignore::DeprecationWarning:brian2.*", "ignore:.*parseAll.*"]
+filterwarnings = [
+    "ignore::DeprecationWarning:brian2.*",
+    "ignore:.*parseAll.*",
+    "ignore:Grid size .* under-utilization",
+    "ignore:Host array used in CUDA kernel",
+]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]

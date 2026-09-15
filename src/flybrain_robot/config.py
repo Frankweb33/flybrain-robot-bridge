@@ -30,6 +30,7 @@ class Config:
     wiring: str = "connectome"
     imu_axes: str = "x,y,z"  # robot axes (x forward, y left, z up) in sensor axes
     body_feedback: bool = False  # experimental: tilt drives Johnston's organ neurons
+    device: str = "auto"  # auto, cpu or cuda; both give identical spikes
     logging_level: str = "INFO"
 
     def __post_init__(self):
@@ -62,6 +63,8 @@ class Config:
         if self.wiring not in ("connectome", "shuffled"):
             raise ValueError("wiring must be 'connectome' or 'shuffled'")
         parse_axes(self.imu_axes)
+        if self.device not in ("auto", "cpu", "cuda"):
+            raise ValueError("device must be 'auto', 'cpu' or 'cuda'")
 
 
 def load_config(path=None):

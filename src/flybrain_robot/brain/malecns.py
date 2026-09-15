@@ -86,10 +86,11 @@ class MaleCNSBackend(BrainBackend):
         wiring="connectome",
         params=None,
         body_feedback=False,
+        device="auto",
     ):
         from flybrain_robot.connectome.graph import load_connectome
 
-        from .lif import LIFSimulator
+        from .lif import make_simulator
 
         if not dataset_path:
             raise ValueError(f"MaleCNS dataset path is missing. Obtain data from {SOURCE}")
@@ -107,7 +108,7 @@ class MaleCNSBackend(BrainBackend):
         # Off by default: in VALIDATION.md a 20 degree roll reaches the Giant Fiber and
         # DNa02 through the connectome and changes motor commands.
         self.body_feedback = body_feedback
-        self.sim = LIFSimulator(graph, params=params, seed=seed)
+        self.sim = make_simulator(graph, params=params, seed=seed, device=device)
         # Visual populations first, in map order: the Poisson generator draws in this order.
         self.populations = {
             p: graph.select(p) for d in SENSORY_MAP + BODY_MAP for p in d.populations
@@ -120,7 +121,9 @@ class MaleCNSBackend(BrainBackend):
         self.groups.update(
             {f"{name}:{side}": graph.select(f"{name}:{side}") for name in MONITOR for side in "LR"}
         )
-        self.sim.run(0.1)  # compile the simulation kernel before the control loop starts
+        self.device = self.sim.device
+        # One full block compiles every kernel before the control loop starts.
+        self.sim.run(self.sim.params.t_dly_ms)
         self.reset()
 
     def reset(self):
