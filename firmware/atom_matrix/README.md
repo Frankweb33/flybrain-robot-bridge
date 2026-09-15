@@ -1,18 +1,38 @@
-# ESP32 / Atom Matrix scaffold — incomplete
+# M5Stack Atom Matrix receiver
 
-This Arduino sketch demonstrates the UDP receive/validate/watchdog structure.
-It has NOT been compiled or tested. Wi-Fi and ArduinoJson (version 6 API) are
-assumed. Servo and IMU library integration is intentionally left in three
-hardware hooks; no claim of a working Atom Matrix driver is made.
+`atom_matrix.ino` receives motor commands over UDP, drives two continuous-rotation
+servos with 50 Hz LEDC pulses, and sends IMU telemetry from the onboard MPU6886
+every 50 ms. It compiles in CI and locally; it has not been run on a robot yet
+(see [docs/HARDWARE.md](../../docs/HARDWARE.md)).
 
-1. Supply placeholder Wi-Fi credentials and the PC telemetry IP.
-2. Implement `setupHardware`, `applyMotors` and `readIMU` for your board, using
-   its vendor documentation and suitable servo/IMU libraries.
-3. Calibrate neutral and direction, then set `HARDWARE_READY` to true.
-4. Verify the 500 ms watchdog and emergency stop with the robot raised.
+## Build
 
-The scaffold never sends invented IMU readings. Until `readIMU` succeeds, it
-emits no telemetry and the PC refuses motion. Speed telemetry reflects the last
-command; it is not an encoder measurement. Sequence state resets on reboot;
-restart the PC and board together. The receiver accepts only the configured PC
-IP, but this is not authentication. Use a trusted local network.
+```bash
+arduino-cli core install esp32:esp32@3.3.11 \
+  --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+arduino-cli lib install "M5Unified@0.2.22" "ArduinoJson@7.4.3"
+arduino-cli compile --fqbn esp32:esp32:m5stack_atom firmware/atom_matrix
+arduino-cli upload  --fqbn esp32:esp32:m5stack_atom -p <port> firmware/atom_matrix
+```
+
+On Windows, keep the Arduino data directory on a short path (for example
+`ARDUINO_DIRECTORIES_DATA=C:\ard`); the ESP32 toolchain fails with
+`cannot execute 'cc1plus'` when paths get too long.
+
+## Configure
+
+Edit the block at the top of the sketch: Wi-Fi credentials, the PC's IP address,
+servo pins, neutral pulse widths, direction and `MOTORS_CALIBRATED`. Do not commit
+real credentials.
+
+## Safety behaviour
+
+- Servos hold neutral pulses unless `MOTORS_CALIBRATED` is true **and** the robot
+  is armed with the front button. LED: blue = no Wi-Fi, red = disarmed, green = armed.
+- Neutral immediately on: emergency stop, 500 ms without a valid command, Wi-Fi
+  loss, IMU read failure or non-finite IMU values, disarm.
+- Packets are accepted only from the configured PC IP, must be under 512 bytes,
+  must pass the same field checks as the Python protocol, and must carry an
+  increasing sequence number. This is filtering, not authentication.
+- Sequence state resets on reboot; restart PC and robot together.
+- Telemetry `left_speed`/`right_speed` echo the last command, not measured speed.

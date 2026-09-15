@@ -15,7 +15,22 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: pyproject.toml
-      - run: pip install -e ".[dev]"
+      - run: pip install -e ".[dev,connectome,reference]"
       - run: ruff check .
+      # Includes the spike-for-spike comparison with Brian2 and the connectome
+      # backend on synthetic graphs. Whole-MaleCNS results: docs/VALIDATION.md.
       - run: pytest -q
       - run: python -m flybrain_robot.main --backend mock --synthetic --dry-run --steps 20
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Install ESP32 core and libraries
+        run: |
+          arduino-cli core update-index --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core install esp32:esp32@3.3.11 --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli lib install "M5Unified@0.2.22" "ArduinoJson@7.4.3"
+      - name: Compile for M5Stack Atom
+        run: arduino-cli compile --fqbn esp32:esp32:m5stack_atom firmware/atom_matrix
