@@ -31,14 +31,15 @@ Every ✅ row can be checked on your own machine with the command or file listed
 | ✅ | Loads the full MaleCNS v1.0 connectome: 166,700 neurons, 25,582,938 connections, 124,177,617 synapses, from SHA-256-pinned public files | `python -m flybrain_robot.connectome.build compile` |
 | ✅ | Simulates every neuron with the leaky integrate-and-fire model of [Shiu et al. 2024](https://www.nature.com/articles/s41586-024-07763-9) | `src/flybrain_robot/brain/lif.py` |
 | ✅ | Simulation kernel reproduces Brian2, the reference simulator, **spike for spike** | `pytest tests/test_lif_reference.py` |
+| ✅ | The GPU kernel reproduces the CPU kernel **bit for bit**, including 540 frames of motor commands in the closed loop | [VALIDATION.md §2b](docs/VALIDATION.md#2b-cpu-and-gpu-kernels-agree-exactly), `pytest tests/test_lif_cuda.py` |
+| ✅ | Faster than real time on a desktop GPU: closed loop 2.2–3.3×, strongest looming stimulus 2.7× (RTX 3050); on the CPU 0.3–0.5× under strong input | [VALIDATION.md §5, §6](docs/VALIDATION.md#6-speed) |
 | ✅ | Looming on one side drives the Giant Fiber; a moving object drives same-side DNa02 steering; shuffled wiring does not | [VALIDATION.md §4](docs/VALIDATION.md#4-visual-pathways-in-the-whole-brain-model) |
 | ✅ | Closed loop on synthetic camera scenes: turns toward a passing object, escapes from approaching ones, ignores camera pans; all behaviour disappears with shuffled wiring | [VALIDATION.md §5](docs/VALIDATION.md#5-closed-loop-synthetic-camera-scenes--connectome--motor-commands) |
 | ✅ | ESP32 receiver firmware (servos, IMU telemetry, arming, watchdog) compiles | CI `firmware` job, [firmware/](firmware/atom_matrix/README.md) |
-| ✅ | Johnston's organ, the fly's gravity sensor, drives mirror-image descending responses that vanish on shuffled wiring (22 pairs, pre-registered) | [VALIDATION.md §4c](docs/VALIDATION.md#4c-body-sense-johnstons-organ-pre-registered) |
-| ⬜ | Body feedback in the loop: robot tilt reaches hundreds of descending cells; up to 15° motor commands stay unchanged, but at 20° three of four tilts reach the Giant Fiber or DNa02 and change them, so `body_feedback` is experimental and off by default | [VALIDATION.md §4d](docs/VALIDATION.md#4d-tilted-robot-in-the-closed-loop-pre-registered) |
-| ⬜ | Reproduce the published sugar → MN9 feeding circuit ([Shiu et al.](https://www.nature.com/articles/s41586-024-07763-9)): sugar neurons engage G2N-1, Zorro, Phantom, Roundup and Fudog and drive MN9 to 29 Hz (0 Hz with shuffled wiring), but taste-peg neurons also reach MN9 through Roundup, so the pre-registered specificity check fails | [VALIDATION.md §4b](docs/VALIDATION.md#4b-published-feeding-circuit-pre-registered) |
+| ✅ | Johnston's organ, the fly's gravity sensor, drives mirror-image descending responses that vanish on shuffled wiring (21 pairs, pre-registered) | [VALIDATION.md §4c](docs/VALIDATION.md#4c-body-sense-johnstons-organ-pre-registered) |
+| ⬜ | Body feedback in the loop: robot tilt reaches hundreds of descending cells and pitch leaves motor commands unchanged, but a 20° roll onto the left side reaches the escape threshold in 3 of 5 brain seeds (a right roll turns the robot in 1 of 5), so `body_feedback` is experimental and off by default | [VALIDATION.md §4d](docs/VALIDATION.md#4d-tilted-robot-in-the-closed-loop-pre-registered) |
+| ⬜ | Reproduce the published sugar → MN9 feeding circuit ([Shiu et al.](https://www.nature.com/articles/s41586-024-07763-9)): sugar neurons engage G2N-1, Zorro, Phantom, Roundup and Fudog and drive MN9 to 30 Hz (0 Hz with shuffled wiring), but taste-peg neurons also reach MN9 through Roundup, so the pre-registered specificity check fails | [VALIDATION.md §4b](docs/VALIDATION.md#4b-published-feeding-circuit-pre-registered) |
 | ⬜ | Run on a physical Strandbeest robot | [HARDWARE.md](docs/HARDWARE.md): not done yet, no recording in this repository |
-| ⬜ | Real-time speed under strong visual input | 0.24–0.58× real time on a desktop CPU ([§6](docs/VALIDATION.md#6-speed)) |
 | ⬜ | Biologically accurate fly behaviour | out of scope for an LIF approximation, see [Limits](#limits) |
 
 ## Demo
@@ -53,7 +54,7 @@ robot recording.*
 
 The control keeps every neuron, its transmitter, its synapse counts and its number of
 inputs and outputs, and randomly permutes which neuron each synapse reaches. With the same
-camera input, the Giant Fiber peaks at 194–253 Hz on the real wiring and at most 15 Hz on
+camera input, the Giant Fiber peaks at 190–260 Hz on the real wiring and at most 17 Hz on
 shuffled wiring, and steering disappears.
 
 ## How it works
@@ -64,9 +65,11 @@ shuffled wiring, and steering disappears.
    moving region) and *object* (motion relative to the background). Pans and sideways
    motion do not register as looming.
 2. **Sensory interface**: looming drives LPLC2 and LC4 neurons, object motion drives LC10a
-   neurons of the matching optic lobe, with Poisson spikes at up to 150 Hz.
-3. **Connectome** (`brain/lif.py`, `brain/malecns.py`): all 166,700 neurons at 0.1 ms
-   steps. Nothing between the driven neurons and the read-out is hand-wired.
+   neurons of the matching optic lobe, with Poisson spikes at up to 150 Hz. Optionally,
+   robot tilt drives Johnston's organ neurons (experimental, off by default).
+3. **Connectome** (`brain/lif.py`, `brain/lif_cuda.py`, `brain/malecns.py`): all 166,700
+   neurons at 0.1 ms steps, on the GPU when one is available. Nothing between the driven
+   neurons and the read-out is hand-wired.
 4. **Motor read-out**: smoothed Giant Fiber (DNp01) rate → escape (reverse); DNa01 + DNa02
    left minus right → turn; a constant forward cruise.
 5. **Robot link**: validated JSON over UDP to an ESP32 receiver with its own watchdog.
@@ -87,6 +90,7 @@ git clone https://github.com/Frankweb33/flybrain-robot-bridge.git
 cd flybrain-robot-bridge
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,connectome]"
+pip install -e ".[gpu]"   # optional, NVIDIA GPU with a CUDA 13 driver
 ```
 
 **30-second demo, no download** (the small hand-made mock backend, not a connectome):
@@ -105,7 +109,8 @@ python -m flybrain_robot.main --backend malecns --synthetic --scene approach_lef
 ```
 
 Each status line shows camera features, Giant Fiber and DNa02 rates, the motor command and
-how fast the brain runs relative to real time. Other sources: `--camera 0`,
+how fast the brain runs relative to real time. `--device cpu` or `--device cuda` picks the
+simulator; both give identical results. Other sources: `--camera 0`,
 `--video path.mp4`, or `--scene` with `static`, `pan`, `pass_left`, `approach_center`,
 `approach_right`, `tour`.
 
@@ -140,8 +145,9 @@ unauthenticated: use an isolated network.
 - **Hand-made interfaces.** Camera features are optical-flow heuristics injected into whole
   neuron populations with hemifield resolution; the fly's own photoreceptors and motion
   circuits are bypassed. Forward cruise is a controller constant.
-- **Speed.** The brain advances one camera frame (33 ms) per step; with strong visual input
-  a desktop CPU needs longer than that, so a live robot gets fewer commands per second.
+- **Speed.** The brain advances one camera frame (33 ms) per step. A desktop GPU keeps up
+  with every synthetic scene; on a CPU alone, strong visual input takes 2–4 times longer than
+  real time, so a live robot gets fewer commands per second.
 - **Synthetic scenes only.** Real webcams, lighting and motion blur are untested.
 
 ## Roadmap
@@ -149,10 +155,12 @@ unauthenticated: use an isolated network.
 - [x] Whole-MaleCNS LIF backend with Brian2-verified kernel
 - [x] Looming, object and steering pathways validated against shuffled controls
 - [x] Receiver firmware that compiles for M5Stack Atom Matrix
+- [x] GPU kernel, bit-identical to the CPU kernel, faster than real time
+- [x] Body sense through Johnston's organ (experimental)
+- [ ] Reproduce a published circuit result with a pre-registered check (sugar → MN9 attempted, fails specificity)
 - [ ] Bench test of firmware: calibration, watchdog, Wi-Fi loss
 - [ ] Recorded closed-loop run of the physical robot
 - [ ] Real-camera evaluation of the looming and object encoders
-- [ ] GPU kernel for real-time whole-brain simulation under strong input
 - [ ] Retinotopic input instead of whole-population drive
 
 ## Sources and attribution

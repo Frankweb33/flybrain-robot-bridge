@@ -44,11 +44,42 @@ potential −52 mV, threshold −45 mV, membrane time constant 20 ms, synaptic t
 constant 5 ms, refractory period 2.2 ms, synaptic delay 1.8 ms, time step 0.1 ms,
 Poisson input at up to 150 Hz.
 
-The kernel (`brain/lif.py`, numba) is event-driven: only neurons away from rest
-are integrated. `tests/test_lif_reference.py` runs the same networks in Brian2,
-the simulator of the reference model, and requires every spike to match.
+`tests/test_lif_reference.py` runs the same networks in Brian2, the simulator of the
+reference model, and requires every spike to match.
 
-Two deliberate differences from the reference, both switchable:
+### Kernels
+
+There is a CPU kernel (`brain/lif.py`, numba) and a GPU kernel
+(`brain/lif_cuda.py`, numba-cuda-mlir). `device: auto` uses the GPU when one is
+available. Both compile the same per-neuron update (`brain/lif_kernel.py`) and are
+built so that they give the same result to the last bit:
+
+- **Blocks.** A spike reaches its targets 1.8 ms (18 steps) later, so within an
+  18-step block every input is already known and neurons do not interact. Each block
+  is one parallel pass over neurons, then one delivery of the block's spikes.
+- **Fixed-point input.** The synaptic input of a step is summed as integers
+  (weights × w_syn × 2²⁰, rounded) and added to g once, so the order of spikes, and
+  of GPU threads, does not matter. The rounding changes a weight by at most
+  5 × 10⁻⁷ mV.
+- **Counter-based random numbers.** The Poisson draw of neuron i at step t is a
+  splitmix64 hash of (seed, t, i), identical on every device.
+- **Explicit fused multiply-add.** NVIDIA's code generator fuses `a * b + c` by
+  default, which rounds differently in about a quarter of cases. The membrane update
+  calls a correctly rounded `fma` on both devices instead.
+
+The CPU kernel skips neurons at rest; the GPU kernel skips resting neurons without
+input in the block. Neither changes a result, because such a neuron stays exactly at
+rest. Section 2b of VALIDATION.md compares the devices on random networks, on the
+whole connectome and frame by frame in the closed loop.
+
+GPU setup: `pip install -e ".[gpu]"` (CUDA 13 driver; use `numba-cuda-mlir[cu12]`
+with CUDA 12). numba-cuda-mlir replaces numba-cuda, which NVIDIA has put into
+maintenance mode and which does not import with NumPy 2.5. Version 0.5.2 zero-extends
+an int32 value in `cuda.atomic.add` into an int64 array; the kernel casts to int64.
+
+### Differences from the reference model
+
+Two deliberate differences in the model, both switchable:
 
 1. **Synaptic weight rescaled.** The reference's only free parameter,
    w_syn = 0.275 mV per synapse, was fitted on FlyWire, which has about 393
@@ -99,8 +130,8 @@ literature**; the table is a hypothesis about the mechanics of a fly's antenna
 under gravity. A screen of ten JO types finds 22 JO-type → descending-type pairs
 with mirror-image responses that vanish on shuffled wiring (VALIDATION.md §4c),
 none of them in the motor read-out. It is off by default because in the closed loop (§4d) a 20° roll
-still reaches the Giant Fiber and DNa02 through the connectome and changes motor
-commands. On a robot, check `imu_axes` first (HARDWARE.md).
+still reaches the Giant Fiber or DNa02 through the connectome and changes motor
+commands in some brain seeds (left roll: escape threshold in 3 of 5). On a robot, check `imu_axes` first (HARDWARE.md).
 
 **Motor read-out.** Firing rates are smoothed with a 100 ms time constant.
 

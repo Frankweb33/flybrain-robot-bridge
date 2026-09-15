@@ -52,11 +52,16 @@ graph for `dt`, and reads smoothed rates of descending neurons: Giant Fiber for
 escape, DNa01 + DNa02 left minus right for steering, plus a constant forward
 `cruise`. See [MALECNS_INTEGRATION.md](MALECNS_INTEGRATION.md).
 
-The LIF kernel (`brain/lif.py`) keeps a list of neurons away from rest and
-integrates only those, delivering each spike along its CSR row after the synaptic
-delay. The operation order within a 0.1 ms step (state update, threshold,
-synaptic and Poisson input, reset, with inputs to refractory neurons dropped)
-matches Brian2, and `tests/test_lif_reference.py` compares both spike for spike.
+The LIF kernels advance in blocks of 18 steps (the 1.8 ms synaptic delay), inside
+which neurons do not interact: one parallel pass over the neurons of the block, then
+one delivery of its spikes along the CSR rows into the next block. The CPU kernel
+(`brain/lif.py`) processes only neurons away from rest or with input; the GPU kernel
+(`brain/lif_cuda.py`) runs the same per-neuron code (`brain/lif_kernel.py`) with two
+launches per block. The operation order within a 0.1 ms step (state update,
+threshold, synaptic and Poisson input, reset, with inputs to refractory neurons
+dropped) matches Brian2: `tests/test_lif_reference.py` compares the CPU kernel with
+Brian2 spike for spike and `tests/test_lif_cuda.py` the GPU kernel with the CPU
+kernel bit for bit.
 
 **MockBrain** moves eight bounded values toward sensory targets with a 120 ms leak.
 Contralateral motion excites the motor signals, looming drives escape, and gyro

@@ -1,7 +1,7 @@
 {
   "machine": {
-    "timestamp": "2026-09-15T21:15:12+00:00",
-    "commit": "3f65ed9",
+    "timestamp": "2026-09-15T22:04:17+00:00",
+    "commit": "7e926fa",
     "source_modified_since_commit": false,
     "python": "3.13.5",
     "numpy": "2.5.3",
@@ -10,7 +10,12 @@
     "cpu": "12th Gen Intel(R) Core(TM) i5-12400",
     "logical_cpus": 12,
     "numba_threads": 12,
-    "total_seconds": 618
+    "gpu": {
+      "name": "NVIDIA GeForce RTX 3050",
+      "numba_cuda_mlir": "0.5.2"
+    },
+    "device": "auto",
+    "total_seconds": 329
   },
   "dataset": {
     "dataset": "MaleCNS v1.0 (minconf 0.5)",
@@ -145,79 +150,123 @@
       }
     ]
   },
+  "devices": {
+    "networks": [
+      {
+        "seed": 1,
+        "neurons": 500,
+        "spikes": 8496,
+        "identical": true
+      },
+      {
+        "seed": 2,
+        "neurons": 500,
+        "spikes": 8443,
+        "identical": true
+      },
+      {
+        "seed": 3,
+        "neurons": 500,
+        "spikes": 9829,
+        "identical": true
+      }
+    ],
+    "connectome": [
+      {
+        "condition": "LPLC2:L at 150 Hz",
+        "spikes_per_s": 54690,
+        "identical": true
+      },
+      {
+        "condition": "LPLC2 + LC4, both sides, 150 Hz",
+        "spikes_per_s": 154158,
+        "identical": true
+      },
+      {
+        "condition": "LC10a:L at 150 Hz",
+        "spikes_per_s": 45608,
+        "identical": true
+      }
+    ],
+    "closed_loop": {
+      "frames": 540,
+      "identical": true
+    },
+    "passed": true
+  },
   "stability": {
     "stimulus": "LPLC2:L at 150 Hz for 1 s, then 1 s without input",
     "rows": [
       {
         "condition": "Shiu w_syn, modulators excitatory",
         "w_syn_mv": 0.275,
-        "spikes_during_1s": 299439,
-        "spiking_neurons": 9941,
-        "spikes_in_1s_after_stimulus": 1037760,
-        "neurons_active_after": 18387,
+        "spikes_during_1s": 1145818,
+        "spiking_neurons": 19170,
+        "spikes_in_1s_after_stimulus": 1194237,
+        "neurons_active_after": 17098,
         "after_top_types": {
-          "KCg-m": 160517,
-          "KCab-s": 64675,
-          "KCab-m": 50530,
-          "KCab-c": 40817,
-          "KCa'b'-ap2": 28217,
-          "KCa'b'-m": 20552,
-          "KCa'b'-ap1": 20316,
-          "KCg-d": 18768
+          "KCg-m": 189003,
+          "KCab-s": 77028,
+          "KCab-m": 59789,
+          "KCab-c": 48496,
+          "KCa'b'-ap2": 34482,
+          "KCa'b'-m": 24916,
+          "KCa'b'-ap1": 24324,
+          "KCg-d": 22529
         }
       },
       {
         "condition": "Shiu w_syn, modulators silent",
         "w_syn_mv": 0.275,
-        "spikes_during_1s": 183184,
-        "spiking_neurons": 5974,
-        "spikes_in_1s_after_stimulus": 80163,
-        "neurons_active_after": 5853,
+        "spikes_during_1s": 182751,
+        "spiking_neurons": 5871,
+        "spikes_in_1s_after_stimulus": 80761,
+        "neurons_active_after": 6000,
         "after_top_types": {
-          "PEN_a(PEN1)": 3592,
-          "PEN_b(PEN2)": 3432,
-          "FR1": 2846,
-          "EPG": 2835,
-          "Delta7": 1526,
-          "AN09A005": 1395,
-          "EL": 1137,
-          "DLMn c-f": 1043
+          "PEN_a(PEN1)": 3587,
+          "PEN_b(PEN2)": 3456,
+          "EPG": 2838,
+          "FR1": 2769,
+          "Delta7": 1515,
+          "AN09A005": 1390,
+          "EL": 1149,
+          "DLMn c-f": 1034
         }
       },
       {
         "condition": "matched w_syn, modulators excitatory",
         "w_syn_mv": 0.1451,
-        "spikes_during_1s": 72706,
-        "spiking_neurons": 2231,
-        "spikes_in_1s_after_stimulus": 26808,
-        "neurons_active_after": 1725,
+        "spikes_during_1s": 70556,
+        "spiking_neurons": 2172,
+        "spikes_in_1s_after_stimulus": 26501,
+        "neurons_active_after": 1642,
         "after_top_types": {
-          "PEN_a(PEN1)": 2344,
-          "PEN_b(PEN2)": 2105,
-          "EPG": 1753,
-          "AN09A005": 927,
-          "Delta7": 854,
-          "EL": 625,
-          "GLNO": 568,
-          "IN09A005": 459
+          "PEN_a(PEN1)": 2394,
+          "PEN_b(PEN2)": 2171,
+          "EPG": 1813,
+          "AN09A005": 926,
+          "Delta7": 881,
+          "EL": 628,
+          "GLNO": 576,
+          "IN09A005": 464
         }
       },
       {
         "condition": "matched w_syn, modulators silent (default)",
         "w_syn_mv": 0.1451,
-        "spikes_during_1s": 54236,
-        "spiking_neurons": 1295,
-        "spikes_in_1s_after_stimulus": 2737,
-        "neurons_active_after": 430,
+        "spikes_during_1s": 54690,
+        "spiking_neurons": 1326,
+        "spikes_in_1s_after_stimulus": 2660,
+        "neurons_active_after": 379,
         "after_top_types": {
           "AN09A005": 854,
-          "IN09A005": 393,
-          "AN27X013": 385,
+          "IN09A005": 391,
+          "AN27X013": 387,
           "DNg33": 289,
-          "EA27X006": 144,
-          "AN09B037": 102,
+          "EA27X006": 145,
+          "AN09B037": 101,
           "MNad03": 56,
-          "untyped": 36
+          "untyped": 35
         }
       }
     ]
@@ -241,7 +290,7 @@
         "role": "escape (either side)",
         "lateral": false,
         "target_hz": 229.0,
-        "counterpart_hz": 105.0,
+        "counterpart_hz": 103.0,
         "shuffled_hz": [
           0.0,
           0.0,
@@ -265,7 +314,7 @@
             "synapses_out": 154
           }
         ],
-        "lateral_ratio": 2.16,
+        "lateral_ratio": 2.2,
         "passed": true
       },
       {
@@ -277,8 +326,8 @@
         "counterpart": "DNp01:L",
         "role": "escape (either side)",
         "lateral": false,
-        "target_hz": 213.0,
-        "counterpart_hz": 118.0,
+        "target_hz": 214.0,
+        "counterpart_hz": 120.0,
         "shuffled_hz": [
           0.0,
           0.0,
@@ -302,7 +351,7 @@
             "synapses_out": 142
           }
         ],
-        "lateral_ratio": 1.79,
+        "lateral_ratio": 1.77,
         "passed": true
       },
       {
@@ -314,7 +363,7 @@
         "counterpart": "DNp04:R",
         "role": "monitored",
         "lateral": true,
-        "target_hz": 273.0,
+        "target_hz": 272.0,
         "counterpart_hz": 0.0,
         "shuffled_hz": [
           0.0,
@@ -339,7 +388,7 @@
             "synapses_out": 158
           }
         ],
-        "lateral_ratio": 273.0,
+        "lateral_ratio": 272.0,
         "passed": true
       },
       {
@@ -351,7 +400,7 @@
         "counterpart": "DNp11:R",
         "role": "monitored",
         "lateral": true,
-        "target_hz": 204.0,
+        "target_hz": 200.0,
         "counterpart_hz": 0.0,
         "shuffled_hz": [
           0.0,
@@ -376,7 +425,7 @@
             "synapses_out": 99
           }
         ],
-        "lateral_ratio": 204.0,
+        "lateral_ratio": 200.0,
         "passed": true
       },
       {
@@ -388,7 +437,7 @@
         "counterpart": "DNa02:R",
         "role": "turn left",
         "lateral": true,
-        "target_hz": 132.0,
+        "target_hz": 133.0,
         "counterpart_hz": 0.0,
         "shuffled_hz": [
           0.0,
@@ -413,7 +462,7 @@
             "synapses_out": 103
           }
         ],
-        "lateral_ratio": 132.0,
+        "lateral_ratio": 133.0,
         "passed": true
       },
       {
@@ -462,7 +511,7 @@
         "counterpart": "DNp09:R",
         "role": "not used",
         "lateral": true,
-        "target_hz": 142.0,
+        "target_hz": 143.0,
         "counterpart_hz": 0.0,
         "shuffled_hz": [
           0.0,
@@ -487,7 +536,7 @@
             "synapses_out": 45
           }
         ],
-        "lateral_ratio": 142.0,
+        "lateral_ratio": 143.0,
         "passed": true
       },
       {
@@ -501,7 +550,7 @@
         "counterpart": "DNp15:R",
         "role": "not used",
         "lateral": true,
-        "target_hz": 65.0,
+        "target_hz": 62.0,
         "counterpart_hz": 0.0,
         "shuffled_hz": [
           0.0,
@@ -526,7 +575,7 @@
             "synapses_out": 54
           }
         ],
-        "lateral_ratio": 65.0,
+        "lateral_ratio": 62.0,
         "passed": true
       },
       {
@@ -538,7 +587,7 @@
         "counterpart": "DNp20:R",
         "role": "not used",
         "lateral": true,
-        "target_hz": 110.0,
+        "target_hz": 109.0,
         "counterpart_hz": 0.0,
         "shuffled_hz": [
           0.0,
@@ -563,7 +612,7 @@
             "synapses_out": 24
           }
         ],
-        "lateral_ratio": 110.0,
+        "lateral_ratio": 109.0,
         "passed": true
       }
     ]
@@ -585,9 +634,9 @@
       2,
       3
     ],
-    "mn9_hz": 29.0,
+    "mn9_hz": 30.0,
     "mn9_by_side": {
-      "L": 58.0,
+      "L": 60.0,
       "R": 0.0
     },
     "mn9_shuffled_hz": [
@@ -595,19 +644,19 @@
       0.0,
       0.0
     ],
-    "mn9_other_gustatory_hz": 21.5,
+    "mn9_other_gustatory_hz": 22.0,
     "mn9_after_lesion_hz": {
       "Roundup": 16.5,
-      "Bract 1 and 2": 32.0
+      "Bract 1 and 2": 31.0
     },
     "circuit_hz": {
-      "G2N-1": 89.5,
-      "Zorro": 78.0,
-      "Phantom": 84.0,
-      "Roundup": 38.0,
-      "Fudog": 51.5,
+      "G2N-1": 92.0,
+      "Zorro": 79.5,
+      "Phantom": 86.0,
+      "Roundup": 47.5,
+      "Fudog": 54.5,
       "Bract 1": 0.0,
-      "Bract 2": 3.5,
+      "Bract 2": 3.0,
       "Sugar SEL PN": 0.0,
       "Sugar SEL LN": 0.0
     },
@@ -628,17 +677,17 @@
         "stimulus": "sugar GRNs, left only",
         "cells": 23,
         "mn9_by_side": {
-          "L": 17.0,
+          "L": 18.0,
           "R": 0.0
         },
         "circuit_hz": {
-          "G2N-1": 38.0,
-          "Zorro": 38.5,
-          "Phantom": 39.0,
-          "Roundup": 3.5,
-          "Fudog": 8.5,
+          "G2N-1": 40.0,
+          "Zorro": 39.0,
+          "Phantom": 38.5,
+          "Roundup": 5.0,
+          "Fudog": 9.0,
           "Bract 1": 0.0,
-          "Bract 2": 6.0,
+          "Bract 2": 5.5,
           "Sugar SEL PN": 0.0,
           "Sugar SEL LN": 0.0
         },
@@ -658,17 +707,17 @@
         "stimulus": "sugar GRNs, right only",
         "cells": 26,
         "mn9_by_side": {
-          "L": 50.0,
+          "L": 47.0,
           "R": 0.0
         },
         "circuit_hz": {
-          "G2N-1": 43.5,
-          "Zorro": 38.0,
-          "Phantom": 41.5,
-          "Roundup": 34.5,
-          "Fudog": 25.5,
-          "Bract 1": 5.0,
-          "Bract 2": 19.0,
+          "G2N-1": 43.0,
+          "Zorro": 37.5,
+          "Phantom": 42.0,
+          "Roundup": 30.5,
+          "Fudog": 28.0,
+          "Bract 1": 3.5,
+          "Bract 2": 14.5,
           "Sugar SEL PN": 0.0,
           "Sugar SEL LN": 0.0
         },
@@ -688,19 +737,19 @@
         "stimulus": "claw_tpGRN (taste peg)",
         "cells": 50,
         "mn9_by_side": {
-          "L": 43.0,
+          "L": 44.0,
           "R": 0.0
         },
         "circuit_hz": {
           "G2N-1": 0.0,
           "Zorro": 0.0,
           "Phantom": 0.0,
-          "Roundup": 40.0,
+          "Roundup": 45.0,
           "Fudog": 0.0,
           "Bract 1": 0.0,
-          "Bract 2": 2.0,
+          "Bract 2": 2.5,
           "Sugar SEL PN": 0.0,
-          "Sugar SEL LN": 2.5
+          "Sugar SEL LN": 1.5
         },
         "synapses_onto": {
           "G2N-1": 2,
@@ -837,11 +886,11 @@
     ],
     "mn9_reference_settings_by_side": {
       "sugar GRNs": {
-        "L": 154.0,
-        "R": 39.0
+        "L": 153.0,
+        "R": 34.0
       },
       "claw_tpGRN": {
-        "L": 148.0,
+        "L": 137.0,
         "R": 30.0
       }
     }
@@ -864,7 +913,7 @@
         "strongest_descending_left_stimulus": [
           {
             "type": "DNp73",
-            "left_hz": 170,
+            "left_hz": 162,
             "right_hz": 0
           },
           {
@@ -873,13 +922,13 @@
             "right_hz": 0
           },
           {
-            "type": "DNge111",
+            "type": "DNg29",
             "left_hz": 40,
             "right_hz": 0
           },
           {
-            "type": "DNg29",
-            "left_hz": 38,
+            "type": "DNge111",
+            "left_hz": 35,
             "right_hz": 0
           }
         ]
@@ -892,24 +941,24 @@
         },
         "strongest_descending_left_stimulus": [
           {
-            "type": "pIP1",
-            "left_hz": 140,
-            "right_hz": 12
-          },
-          {
             "type": "DNp18",
-            "left_hz": 125,
+            "left_hz": 115,
             "right_hz": 0
           },
           {
+            "type": "pIP1",
+            "left_hz": 132,
+            "right_hz": 18
+          },
+          {
             "type": "DNge054",
-            "left_hz": 70,
+            "left_hz": 65,
             "right_hz": 0
           },
           {
             "type": "DNge031",
             "left_hz": 70,
-            "right_hz": 12
+            "right_hz": 18
           }
         ]
       },
@@ -921,8 +970,13 @@
         },
         "strongest_descending_left_stimulus": [
           {
+            "type": "DNp20",
+            "left_hz": 90,
+            "right_hz": 0
+          },
+          {
             "type": "DNg05_a",
-            "left_hz": 80,
+            "left_hz": 78,
             "right_hz": 0
           },
           {
@@ -931,13 +985,8 @@
             "right_hz": 0
           },
           {
-            "type": "DNp20",
-            "left_hz": 75,
-            "right_hz": 0
-          },
-          {
             "type": "DNpe017",
-            "left_hz": 62,
+            "left_hz": 70,
             "right_hz": 0
           }
         ]
@@ -951,7 +1000,7 @@
         "strongest_descending_left_stimulus": [
           {
             "type": "DNp18",
-            "left_hz": 92,
+            "left_hz": 102,
             "right_hz": 0
           },
           {
@@ -961,13 +1010,13 @@
           },
           {
             "type": "DNp20",
-            "left_hz": 35,
+            "left_hz": 38,
             "right_hz": 0
           },
           {
             "type": "DNbe001",
-            "left_hz": 100,
-            "right_hz": 78
+            "left_hz": 108,
+            "right_hz": 80
           }
         ]
       },
@@ -980,12 +1029,12 @@
         "strongest_descending_left_stimulus": [
           {
             "type": "DNge091",
-            "left_hz": 34,
+            "left_hz": 33,
             "right_hz": 0
           },
           {
             "type": "DNp12",
-            "left_hz": 25,
+            "left_hz": 22,
             "right_hz": 0
           }
         ]
@@ -996,13 +1045,7 @@
           "L": 13,
           "R": 5
         },
-        "strongest_descending_left_stimulus": [
-          {
-            "type": "DNge107",
-            "left_hz": 0,
-            "right_hz": 20
-          }
-        ]
+        "strongest_descending_left_stimulus": []
       },
       {
         "jo_type": "JO-ED2_a",
@@ -1013,22 +1056,22 @@
         "strongest_descending_left_stimulus": [
           {
             "type": "DNp19",
-            "left_hz": 90,
+            "left_hz": 95,
             "right_hz": 0
           },
           {
             "type": "DNp20",
-            "left_hz": 80,
+            "left_hz": 78,
             "right_hz": 0
           },
           {
             "type": "DNp18",
-            "left_hz": 48,
+            "left_hz": 42,
             "right_hz": 0
           },
           {
             "type": "DNb06",
-            "left_hz": 45,
+            "left_hz": 42,
             "right_hz": 0
           }
         ]
@@ -1042,23 +1085,23 @@
         "strongest_descending_left_stimulus": [
           {
             "type": "DNge016",
-            "left_hz": 48,
+            "left_hz": 50,
             "right_hz": 0
           },
           {
             "type": "DNp18",
-            "left_hz": 28,
-            "right_hz": 0
-          },
-          {
-            "type": "DNp10",
-            "left_hz": 25,
+            "left_hz": 35,
             "right_hz": 0
           },
           {
             "type": "DNge084",
-            "left_hz": 60,
-            "right_hz": 38
+            "left_hz": 58,
+            "right_hz": 35
+          },
+          {
+            "type": "DNpe017",
+            "left_hz": 20,
+            "right_hz": 0
           }
         ]
       },
@@ -1071,7 +1114,7 @@
         "strongest_descending_left_stimulus": [
           {
             "type": "DNg29",
-            "left_hz": 90,
+            "left_hz": 88,
             "right_hz": 0
           },
           {
@@ -1081,13 +1124,13 @@
           },
           {
             "type": "DNg99",
-            "left_hz": 60,
+            "left_hz": 55,
             "right_hz": 0
           },
           {
             "type": "DNg15",
             "left_hz": 0,
-            "right_hz": 52
+            "right_hz": 48
           }
         ]
       },
@@ -1100,7 +1143,7 @@
         "strongest_descending_left_stimulus": [
           {
             "type": "DNp73",
-            "left_hz": 68,
+            "left_hz": 65,
             "right_hz": 0
           },
           {
@@ -1115,7 +1158,7 @@
           },
           {
             "type": "DNge107",
-            "left_hz": 30,
+            "left_hz": 25,
             "right_hz": 0
           }
         ]
@@ -1131,7 +1174,7 @@
           "other": 0.0
         },
         "right_stimulus_hz": {
-          "target": 32.5,
+          "target": 30.0,
           "other": 0.0
         },
         "shuffled_target_hz": {
@@ -1179,11 +1222,11 @@
         "descending_type": "DNp73",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 170.0,
+          "target": 162.5,
           "other": 0.0
         },
         "right_stimulus_hz": {
-          "target": 102.5,
+          "target": 105.0,
           "other": 0.0
         },
         "shuffled_target_hz": {
@@ -1205,11 +1248,11 @@
         "descending_type": "DNp18",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 125.0,
+          "target": 115.0,
           "other": 0.0
         },
         "right_stimulus_hz": {
-          "target": 82.5,
+          "target": 75.0,
           "other": 0.0
         },
         "shuffled_target_hz": {
@@ -1231,11 +1274,11 @@
         "descending_type": "pIP1",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 140.0,
-          "other": 12.5
+          "target": 132.5,
+          "other": 17.5
         },
         "right_stimulus_hz": {
-          "target": 117.5,
+          "target": 112.5,
           "other": 0.0
         },
         "shuffled_target_hz": {
@@ -1257,11 +1300,11 @@
         "descending_type": "DNg35",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 35.0,
+          "target": 32.5,
           "other": 0.0
         },
         "right_stimulus_hz": {
-          "target": 27.5,
+          "target": 20.0,
           "other": 0.0
         },
         "shuffled_target_hz": {
@@ -1283,7 +1326,7 @@
         "descending_type": "DNge054",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 70.0,
+          "target": 65.0,
           "other": 0.0
         },
         "right_stimulus_hz": {
@@ -1305,41 +1348,15 @@
         "passed": true
       },
       {
-        "jo_type": "JO-EV2",
-        "descending_type": "DNge042",
-        "relation": "ipsilateral",
-        "left_stimulus_hz": {
-          "target": 22.5,
-          "other": 0.0
-        },
-        "right_stimulus_hz": {
-          "target": 22.5,
-          "other": 0.0
-        },
-        "shuffled_target_hz": {
-          "L": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "R": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        "passed": true
-      },
-      {
         "jo_type": "JO-EV3",
         "descending_type": "DNp18",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 60.0,
+          "target": 67.5,
           "other": 0.0
         },
         "right_stimulus_hz": {
-          "target": 37.5,
+          "target": 40.0,
           "other": 0.0
         },
         "shuffled_target_hz": {
@@ -1361,11 +1378,11 @@
         "descending_type": "DNp20",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 75.0,
+          "target": 90.0,
           "other": 0.0
         },
         "right_stimulus_hz": {
-          "target": 37.5,
+          "target": 40.0,
           "other": 0.0
         },
         "shuffled_target_hz": {
@@ -1387,7 +1404,7 @@
         "descending_type": "DNpe017",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 62.5,
+          "target": 70.0,
           "other": 0.0
         },
         "right_stimulus_hz": {
@@ -1413,11 +1430,11 @@
         "descending_type": "DNg29",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 60.0,
+          "target": 57.5,
           "other": 0.0
         },
         "right_stimulus_hz": {
-          "target": 57.5,
+          "target": 62.5,
           "other": 0.0
         },
         "shuffled_target_hz": {
@@ -1439,7 +1456,7 @@
         "descending_type": "DNg84",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 22.5,
+          "target": 20.0,
           "other": 0.0
         },
         "right_stimulus_hz": {
@@ -1465,7 +1482,7 @@
         "descending_type": "DNg05_a",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 80.0,
+          "target": 77.5,
           "other": 0.0
         },
         "right_stimulus_hz": {
@@ -1517,7 +1534,7 @@
         "descending_type": "DNge175",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 52.5,
+          "target": 55.0,
           "other": 0.0
         },
         "right_stimulus_hz": {
@@ -1543,85 +1560,7 @@
         "descending_type": "DNp18",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 47.5,
-          "other": 0.0
-        },
-        "right_stimulus_hz": {
-          "target": 27.5,
-          "other": 0.0
-        },
-        "shuffled_target_hz": {
-          "L": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "R": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        "passed": true
-      },
-      {
-        "jo_type": "JO-ED2_a",
-        "descending_type": "DNp20",
-        "relation": "ipsilateral",
-        "left_stimulus_hz": {
-          "target": 80.0,
-          "other": 0.0
-        },
-        "right_stimulus_hz": {
-          "target": 27.5,
-          "other": 0.0
-        },
-        "shuffled_target_hz": {
-          "L": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "R": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        "passed": true
-      },
-      {
-        "jo_type": "JO-ED2_a",
-        "descending_type": "DNp19",
-        "relation": "ipsilateral",
-        "left_stimulus_hz": {
-          "target": 90.0,
-          "other": 0.0
-        },
-        "right_stimulus_hz": {
-          "target": 52.5,
-          "other": 0.0
-        },
-        "shuffled_target_hz": {
-          "L": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "R": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        "passed": true
-      },
-      {
-        "jo_type": "JO-ED2_a",
-        "descending_type": "DNpe017",
-        "relation": "ipsilateral",
-        "left_stimulus_hz": {
-          "target": 37.5,
+          "target": 42.5,
           "other": 0.0
         },
         "right_stimulus_hz": {
@@ -1643,15 +1582,93 @@
         "passed": true
       },
       {
+        "jo_type": "JO-ED2_a",
+        "descending_type": "DNp20",
+        "relation": "ipsilateral",
+        "left_stimulus_hz": {
+          "target": 77.5,
+          "other": 0.0
+        },
+        "right_stimulus_hz": {
+          "target": 25.0,
+          "other": 0.0
+        },
+        "shuffled_target_hz": {
+          "L": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "R": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "passed": true
+      },
+      {
+        "jo_type": "JO-ED2_a",
+        "descending_type": "DNp19",
+        "relation": "ipsilateral",
+        "left_stimulus_hz": {
+          "target": 95.0,
+          "other": 0.0
+        },
+        "right_stimulus_hz": {
+          "target": 47.5,
+          "other": 0.0
+        },
+        "shuffled_target_hz": {
+          "L": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "R": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "passed": true
+      },
+      {
+        "jo_type": "JO-ED2_a",
+        "descending_type": "DNpe017",
+        "relation": "ipsilateral",
+        "left_stimulus_hz": {
+          "target": 32.5,
+          "other": 0.0
+        },
+        "right_stimulus_hz": {
+          "target": 22.5,
+          "other": 0.0
+        },
+        "shuffled_target_hz": {
+          "L": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "R": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "passed": true
+      },
+      {
         "jo_type": "JO-ED2_b",
         "descending_type": "DNp18",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 27.5,
+          "target": 35.0,
           "other": 0.0
         },
         "right_stimulus_hz": {
-          "target": 40.0,
+          "target": 32.5,
           "other": 0.0
         },
         "shuffled_target_hz": {
@@ -1673,7 +1690,7 @@
         "descending_type": "DNp73",
         "relation": "ipsilateral",
         "left_stimulus_hz": {
-          "target": 67.5,
+          "target": 65.0,
           "other": 0.0
         },
         "right_stimulus_hz": {
@@ -1709,7 +1726,7 @@
         "tilt": "nose down 20\u00b0",
         "roll_left_deg": 0.0,
         "pitch_down_deg": 20.0,
-        "mean_turn": 0.104,
+        "mean_turn": 0.075,
         "max_escape": 0.0,
         "reverse_frames": 0,
         "peak_group_hz": {
@@ -1721,12 +1738,12 @@
           "LC10a:R": 0.0,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
-          "JO-E*:L": 153.0,
-          "JO-E*:R": 152.7,
+          "JO-E*:L": 151.3,
+          "JO-E*:R": 151.8,
           "DNp01:L": 0.0,
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
-          "DNa02:L": 29.5,
+          "DNa02:L": 14.6,
           "DNa01:R": 0.0,
           "DNa02:R": 0.0,
           "DNp02:L": 0.0,
@@ -1737,17 +1754,17 @@
           "DNp11:R": 0.0,
           "DNp09:L": 0.0,
           "DNp09:R": 0.0,
-          "MDN:L": 13.3,
-          "MDN:R": 12.9,
-          "DNp18:L": 160.1,
-          "DNp18:R": 130.1,
-          "DNp20:L": 81.3,
-          "DNp20:R": 55.1
+          "MDN:L": 14.6,
+          "MDN:R": 10.0,
+          "DNp18:L": 165.4,
+          "DNp18:R": 131.1,
+          "DNp20:L": 81.7,
+          "DNp20:R": 57.8
         },
         "strongest_descending": [
           {
             "neuron": "DNb05_R (10065)",
-            "peak_hz": 247.5,
+            "peak_hz": 239.3,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1756,16 +1773,7 @@
           },
           {
             "neuron": "DNb05_L (10118)",
-            "peak_hz": 230.6,
-            "shuffled_peak_hz": [
-              0.0,
-              0.0,
-              0.0
-            ]
-          },
-          {
-            "neuron": "DNbe001(PS103)_R (524470)",
-            "peak_hz": 170.0,
+            "peak_hz": 228.8,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1774,7 +1782,7 @@
           },
           {
             "neuron": "DNp18_L (10048)",
-            "peak_hz": 160.1,
+            "peak_hz": 165.4,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1782,8 +1790,8 @@
             ]
           },
           {
-            "neuron": "DNbe001(PS103)_L (10469)",
-            "peak_hz": 150.6,
+            "neuron": "DNbe001(PS103)_R (524470)",
+            "peak_hz": 165.3,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1791,8 +1799,17 @@
             ]
           },
           {
-            "neuron": "DNge027_R (12092)",
-            "peak_hz": 142.5,
+            "neuron": "DNg33_L (13317)",
+            "peak_hz": 149.6,
+            "shuffled_peak_hz": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "neuron": "DNg33_R (13442)",
+            "peak_hz": 149.5,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1800,15 +1817,15 @@
             ]
           }
         ],
-        "descending_cells_passing": 231,
-        "passed": false
+        "descending_cells_passing": 235,
+        "passed": true
       },
       {
         "tilt": "nose up 20\u00b0",
         "roll_left_deg": 0.0,
         "pitch_down_deg": -20.0,
         "mean_turn": 0.0,
-        "max_escape": 0.145,
+        "max_escape": 0.142,
         "reverse_frames": 0,
         "peak_group_hz": {
           "LPLC2:L": 0.0,
@@ -1817,35 +1834,35 @@
           "LC4:R": 0.0,
           "LC10a:L": 0.0,
           "LC10a:R": 0.0,
-          "JO-C*:L": 158.9,
-          "JO-C*:R": 158.7,
+          "JO-C*:L": 153.4,
+          "JO-C*:R": 165.6,
           "JO-E*:L": 0.0,
           "JO-E*:R": 0.0,
-          "DNp01:L": 8.7,
+          "DNp01:L": 8.5,
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
           "DNa01:R": 0.0,
           "DNa02:R": 0.0,
-          "DNp02:L": 14.6,
+          "DNp02:L": 12.9,
           "DNp02:R": 0.0,
           "DNp04:L": 0.0,
           "DNp04:R": 0.0,
-          "DNp11:L": 29.4,
+          "DNp11:L": 28.8,
           "DNp11:R": 0.0,
           "DNp09:L": 0.0,
           "DNp09:R": 0.0,
           "MDN:L": 0.0,
           "MDN:R": 0.0,
           "DNp18:L": 0.0,
-          "DNp18:R": 29.8,
+          "DNp18:R": 28.9,
           "DNp20:L": 0.0,
           "DNp20:R": 0.0
         },
         "strongest_descending": [
           {
             "neuron": "DNp33(SAD095)_L (11438)",
-            "peak_hz": 115.6,
+            "peak_hz": 110.3,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1854,7 +1871,7 @@
           },
           {
             "neuron": "DNg29_L (10536)",
-            "peak_hz": 101.6,
+            "peak_hz": 101.2,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1863,7 +1880,7 @@
           },
           {
             "neuron": "DNg99_L (11075)",
-            "peak_hz": 99.7,
+            "peak_hz": 97.7,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1872,7 +1889,7 @@
           },
           {
             "neuron": "DNp73_L (10446)",
-            "peak_hz": 79.8,
+            "peak_hz": 80.0,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1881,7 +1898,7 @@
           },
           {
             "neuron": "DNg15_R (513052)",
-            "peak_hz": 58.1,
+            "peak_hz": 59.8,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1889,8 +1906,8 @@
             ]
           },
           {
-            "neuron": "DNge031_R (10313)",
-            "peak_hz": 45.5,
+            "neuron": "DNge054_L (10377)",
+            "peak_hz": 50.5,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1898,7 +1915,7 @@
             ]
           }
         ],
-        "descending_cells_passing": 26,
+        "descending_cells_passing": 25,
         "passed": true
       },
       {
@@ -1906,8 +1923,8 @@
         "roll_left_deg": 20.0,
         "pitch_down_deg": 0.0,
         "mean_turn": 0.0,
-        "max_escape": 0.361,
-        "reverse_frames": 2,
+        "max_escape": 0.264,
+        "reverse_frames": 0,
         "peak_group_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -1915,35 +1932,35 @@
           "LC4:R": 0.0,
           "LC10a:L": 0.0,
           "LC10a:R": 0.0,
-          "JO-C*:L": 154.8,
+          "JO-C*:L": 153.4,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
-          "JO-E*:R": 154.3,
-          "DNp01:L": 21.6,
+          "JO-E*:R": 151.8,
+          "DNp01:L": 15.9,
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
           "DNa01:R": 0.0,
           "DNa02:R": 0.0,
-          "DNp02:L": 13.2,
+          "DNp02:L": 10.7,
           "DNp02:R": 0.0,
           "DNp04:L": 0.0,
           "DNp04:R": 0.0,
-          "DNp11:L": 25.7,
+          "DNp11:L": 26.2,
           "DNp11:R": 0.0,
           "DNp09:L": 0.0,
           "DNp09:R": 0.0,
-          "MDN:L": 22.5,
-          "MDN:R": 23.1,
+          "MDN:L": 19.0,
+          "MDN:R": 20.9,
           "DNp18:L": 0.0,
-          "DNp18:R": 118.7,
+          "DNp18:R": 126.4,
           "DNp20:L": 0.0,
-          "DNp20:R": 51.6
+          "DNp20:R": 53.7
         },
         "strongest_descending": [
           {
             "neuron": "DNge027_R (12092)",
-            "peak_hz": 149.9,
+            "peak_hz": 146.2,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1952,7 +1969,7 @@
           },
           {
             "neuron": "DNge027_L (11352)",
-            "peak_hz": 143.6,
+            "peak_hz": 142.4,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1960,7 +1977,7 @@
             ]
           },
           {
-            "neuron": "DNg62_L (13624)",
+            "neuron": "DNp18_R (10026)",
             "peak_hz": 126.4,
             "shuffled_peak_hz": [
               0.0,
@@ -1970,7 +1987,7 @@
           },
           {
             "neuron": "DNge143_L (10740)",
-            "peak_hz": 125.6,
+            "peak_hz": 125.9,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1978,8 +1995,8 @@
             ]
           },
           {
-            "neuron": "DNge039_R (10499)",
-            "peak_hz": 122.6,
+            "neuron": "DNg62_L (13624)",
+            "peak_hz": 124.4,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -1987,7 +2004,7 @@
             ]
           },
           {
-            "neuron": "DNge044_L (14098)",
+            "neuron": "DNp33(SAD095)_L (11438)",
             "peak_hz": 119.4,
             "shuffled_peak_hz": [
               0.0,
@@ -1996,14 +2013,14 @@
             ]
           }
         ],
-        "descending_cells_passing": 148,
-        "passed": false
+        "descending_cells_passing": 145,
+        "passed": true
       },
       {
         "tilt": "right side down 20\u00b0",
         "roll_left_deg": -20.0,
         "pitch_down_deg": 0.0,
-        "mean_turn": 0.115,
+        "mean_turn": 0.101,
         "max_escape": 0.0,
         "reverse_frames": 0,
         "peak_group_hz": {
@@ -2014,15 +2031,15 @@
           "LC10a:L": 0.0,
           "LC10a:R": 0.0,
           "JO-C*:L": 0.0,
-          "JO-C*:R": 161.9,
-          "JO-E*:L": 151.9,
+          "JO-C*:R": 165.6,
+          "JO-E*:L": 151.3,
           "JO-E*:R": 0.0,
           "DNp01:L": 0.0,
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
-          "DNa02:L": 28.0,
+          "DNa02:L": 25.7,
           "DNa01:R": 0.0,
-          "DNa02:R": 8.7,
+          "DNa02:R": 11.2,
           "DNp02:L": 0.0,
           "DNp02:R": 8.5,
           "DNp04:L": 0.0,
@@ -2031,17 +2048,17 @@
           "DNp11:R": 0.0,
           "DNp09:L": 0.0,
           "DNp09:R": 0.0,
-          "MDN:L": 24.3,
-          "MDN:R": 20.2,
-          "DNp18:L": 158.3,
-          "DNp18:R": 51.9,
-          "DNp20:L": 83.3,
+          "MDN:L": 8.0,
+          "MDN:R": 7.3,
+          "DNp18:L": 162.4,
+          "DNp18:R": 54.7,
+          "DNp20:L": 84.7,
           "DNp20:R": 0.0
         },
         "strongest_descending": [
           {
             "neuron": "DNb05_R (10065)",
-            "peak_hz": 239.6,
+            "peak_hz": 244.7,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -2050,7 +2067,7 @@
           },
           {
             "neuron": "DNb05_L (10118)",
-            "peak_hz": 228.0,
+            "peak_hz": 226.5,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -2059,7 +2076,7 @@
           },
           {
             "neuron": "DNp18_L (10048)",
-            "peak_hz": 158.3,
+            "peak_hz": 162.4,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -2068,7 +2085,7 @@
           },
           {
             "neuron": "DNg33_R (13442)",
-            "peak_hz": 149.3,
+            "peak_hz": 149.7,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -2077,7 +2094,7 @@
           },
           {
             "neuron": "DNg33_L (13317)",
-            "peak_hz": 149.1,
+            "peak_hz": 149.7,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -2086,7 +2103,7 @@
           },
           {
             "neuron": "DNbe001(PS103)_R (524470)",
-            "peak_hz": 145.3,
+            "peak_hz": 149.0,
             "shuffled_peak_hz": [
               0.0,
               0.0,
@@ -2094,14 +2111,14 @@
             ]
           }
         ],
-        "descending_cells_passing": 232,
+        "descending_cells_passing": 221,
         "passed": false
       }
     ],
     "passed": false,
     "post_hoc_sweep": [
       {
-        "tilt": "nose down 20\u00b0",
+        "tilt": "nose down",
         "degrees": 5.0,
         "mean_turn": 0.0,
         "max_escape": 0.0,
@@ -2116,9 +2133,24 @@
         }
       },
       {
-        "tilt": "nose down 20\u00b0",
+        "tilt": "nose down",
         "degrees": 10.0,
-        "mean_turn": 0.006,
+        "mean_turn": 0.0,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "peak_hz": {
+          "DNp01:L": 0.0,
+          "DNp01:R": 0.0,
+          "DNa02:L": 0.0,
+          "DNa02:R": 0.0,
+          "DNa01:L": 0.0,
+          "DNa01:R": 0.0
+        }
+      },
+      {
+        "tilt": "nose down",
+        "degrees": 15.0,
+        "mean_turn": 0.014,
         "max_escape": 0.0,
         "reverse_frames": 0,
         "peak_hz": {
@@ -2131,22 +2163,7 @@
         }
       },
       {
-        "tilt": "nose down 20\u00b0",
-        "degrees": 15.0,
-        "mean_turn": 0.021,
-        "max_escape": 0.0,
-        "reverse_frames": 0,
-        "peak_hz": {
-          "DNp01:L": 0.0,
-          "DNp01:R": 0.0,
-          "DNa02:L": 10.7,
-          "DNa02:R": 0.0,
-          "DNa01:L": 0.0,
-          "DNa01:R": 0.0
-        }
-      },
-      {
-        "tilt": "nose up 20\u00b0",
+        "tilt": "nose up",
         "degrees": 5.0,
         "mean_turn": 0.0,
         "max_escape": 0.0,
@@ -2161,7 +2178,52 @@
         }
       },
       {
-        "tilt": "nose up 20\u00b0",
+        "tilt": "nose up",
+        "degrees": 10.0,
+        "mean_turn": 0.0,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "peak_hz": {
+          "DNp01:L": 0.0,
+          "DNp01:R": 0.0,
+          "DNa02:L": 0.0,
+          "DNa02:R": 0.0,
+          "DNa01:L": 0.0,
+          "DNa01:R": 0.0
+        }
+      },
+      {
+        "tilt": "nose up",
+        "degrees": 15.0,
+        "mean_turn": 0.0,
+        "max_escape": 0.194,
+        "reverse_frames": 0,
+        "peak_hz": {
+          "DNp01:L": 11.6,
+          "DNp01:R": 0.0,
+          "DNa02:L": 0.0,
+          "DNa02:R": 0.0,
+          "DNa01:L": 0.0,
+          "DNa01:R": 0.0
+        }
+      },
+      {
+        "tilt": "left side down",
+        "degrees": 5.0,
+        "mean_turn": 0.0,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "peak_hz": {
+          "DNp01:L": 0.0,
+          "DNp01:R": 0.0,
+          "DNa02:L": 0.0,
+          "DNa02:R": 0.0,
+          "DNa01:L": 0.0,
+          "DNa01:R": 0.0
+        }
+      },
+      {
+        "tilt": "left side down",
         "degrees": 10.0,
         "mean_turn": 0.0,
         "max_escape": 0.142,
@@ -2176,13 +2238,13 @@
         }
       },
       {
-        "tilt": "nose up 20\u00b0",
+        "tilt": "left side down",
         "degrees": 15.0,
         "mean_turn": 0.0,
-        "max_escape": 0.215,
+        "max_escape": 0.249,
         "reverse_frames": 0,
         "peak_hz": {
-          "DNp01:L": 12.9,
+          "DNp01:L": 14.9,
           "DNp01:R": 0.0,
           "DNa02:L": 0.0,
           "DNa02:R": 0.0,
@@ -2191,7 +2253,7 @@
         }
       },
       {
-        "tilt": "left side down 20\u00b0",
+        "tilt": "right side down",
         "degrees": 5.0,
         "mean_turn": 0.0,
         "max_escape": 0.0,
@@ -2206,52 +2268,7 @@
         }
       },
       {
-        "tilt": "left side down 20\u00b0",
-        "degrees": 10.0,
-        "mean_turn": 0.0,
-        "max_escape": 0.215,
-        "reverse_frames": 0,
-        "peak_hz": {
-          "DNp01:L": 12.9,
-          "DNp01:R": 0.0,
-          "DNa02:L": 0.0,
-          "DNa02:R": 0.0,
-          "DNa01:L": 0.0,
-          "DNa01:R": 0.0
-        }
-      },
-      {
-        "tilt": "left side down 20\u00b0",
-        "degrees": 15.0,
-        "mean_turn": 0.0,
-        "max_escape": 0.245,
-        "reverse_frames": 0,
-        "peak_hz": {
-          "DNp01:L": 14.7,
-          "DNp01:R": 0.0,
-          "DNa02:L": 0.0,
-          "DNa02:R": 0.0,
-          "DNa01:L": 0.0,
-          "DNa01:R": 0.0
-        }
-      },
-      {
-        "tilt": "right side down 20\u00b0",
-        "degrees": 5.0,
-        "mean_turn": 0.0,
-        "max_escape": 0.0,
-        "reverse_frames": 0,
-        "peak_hz": {
-          "DNp01:L": 0.0,
-          "DNp01:R": 0.0,
-          "DNa02:L": 0.0,
-          "DNa02:R": 0.0,
-          "DNa01:L": 0.0,
-          "DNa01:R": 0.0
-        }
-      },
-      {
-        "tilt": "right side down 20\u00b0",
+        "tilt": "right side down",
         "degrees": 10.0,
         "mean_turn": 0.0,
         "max_escape": 0.0,
@@ -2266,9 +2283,9 @@
         }
       },
       {
-        "tilt": "right side down 20\u00b0",
+        "tilt": "right side down",
         "degrees": 15.0,
-        "mean_turn": 0.006,
+        "mean_turn": 0.011,
         "max_escape": 0.0,
         "reverse_frames": 0,
         "peak_hz": {
@@ -2280,6 +2297,168 @@
           "DNa01:R": 0.0
         }
       }
+    ],
+    "post_hoc_seeds": [
+      {
+        "tilt": "nose down 20\u00b0",
+        "seed": 1,
+        "mean_turn": 0.066,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "nose up 20\u00b0",
+        "seed": 1,
+        "mean_turn": 0.0,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "left side down 20\u00b0",
+        "seed": 1,
+        "mean_turn": 0.0,
+        "max_escape": 0.342,
+        "reverse_frames": 0,
+        "motor_changed": true
+      },
+      {
+        "tilt": "right side down 20\u00b0",
+        "seed": 1,
+        "mean_turn": 0.097,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "nose down 20\u00b0",
+        "seed": 2,
+        "mean_turn": 0.056,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "nose up 20\u00b0",
+        "seed": 2,
+        "mean_turn": 0.0,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "left side down 20\u00b0",
+        "seed": 2,
+        "mean_turn": 0.0,
+        "max_escape": 0.314,
+        "reverse_frames": 0,
+        "motor_changed": true
+      },
+      {
+        "tilt": "right side down 20\u00b0",
+        "seed": 2,
+        "mean_turn": 0.11,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": true
+      },
+      {
+        "tilt": "nose down 20\u00b0",
+        "seed": 3,
+        "mean_turn": 0.075,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "nose up 20\u00b0",
+        "seed": 3,
+        "mean_turn": 0.0,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "left side down 20\u00b0",
+        "seed": 3,
+        "mean_turn": 0.0,
+        "max_escape": 0.262,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "right side down 20\u00b0",
+        "seed": 3,
+        "mean_turn": 0.087,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "nose down 20\u00b0",
+        "seed": 4,
+        "mean_turn": 0.043,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "nose up 20\u00b0",
+        "seed": 4,
+        "mean_turn": 0.0,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "left side down 20\u00b0",
+        "seed": 4,
+        "mean_turn": 0.0,
+        "max_escape": 0.287,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "right side down 20\u00b0",
+        "seed": 4,
+        "mean_turn": 0.064,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "nose down 20\u00b0",
+        "seed": 5,
+        "mean_turn": 0.056,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "nose up 20\u00b0",
+        "seed": 5,
+        "mean_turn": 0.0,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      },
+      {
+        "tilt": "left side down 20\u00b0",
+        "seed": 5,
+        "mean_turn": 0.0,
+        "max_escape": 0.339,
+        "reverse_frames": 0,
+        "motor_changed": true
+      },
+      {
+        "tilt": "right side down 20\u00b0",
+        "seed": 5,
+        "mean_turn": 0.079,
+        "max_escape": 0.0,
+        "reverse_frames": 0,
+        "motor_changed": false
+      }
     ]
   },
   "closed_loop": {
@@ -2290,7 +2469,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 20.56,
+        "brain_realtime_factor": 5.99,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2336,7 +2515,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 23.25,
+        "brain_realtime_factor": 5.38,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2378,17 +2557,17 @@
       },
       {
         "scene": "pass_left",
-        "mean_turn": 0.78,
+        "mean_turn": 0.786,
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.44,
+        "brain_realtime_factor": 2.15,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
           "LPLC2:R": 0.0,
           "LC4:R": 0.0,
-          "LC10a:L": 72.0,
+          "LC10a:L": 72.8,
           "LC10a:R": 0.0,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
@@ -2397,7 +2576,7 @@
           "DNp01:L": 0.0,
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
-          "DNa02:L": 101.2,
+          "DNa02:L": 110.4,
           "DNa01:R": 0.0,
           "DNa02:R": 0.0,
           "DNp02:L": 0.0,
@@ -2424,34 +2603,34 @@
       },
       {
         "scene": "approach_center",
-        "mean_turn": -0.24,
+        "mean_turn": -0.258,
         "max_escape": 1.0,
-        "reverse_frames": 19,
+        "reverse_frames": 20,
         "frames": 90,
-        "brain_realtime_factor": 0.61,
+        "brain_realtime_factor": 3.31,
         "peak_rates_hz": {
-          "LPLC2:L": 47.2,
-          "LC4:L": 46.5,
-          "LPLC2:R": 41.9,
-          "LC4:R": 44.2,
-          "LC10a:L": 150.0,
-          "LC10a:R": 151.5,
+          "LPLC2:L": 43.8,
+          "LC4:L": 45.5,
+          "LPLC2:R": 44.7,
+          "LC4:R": 43.1,
+          "LC10a:L": 149.6,
+          "LC10a:R": 150.6,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
           "JO-E*:R": 0.0,
-          "DNp01:L": 193.5,
-          "DNp01:R": 177.9,
+          "DNp01:L": 190.0,
+          "DNp01:R": 181.6,
           "DNa01:L": 0.0,
-          "DNa02:L": 89.7,
+          "DNa02:L": 80.1,
           "DNa01:R": 0.0,
-          "DNa02:R": 95.7,
-          "DNp02:L": 118.3,
-          "DNp02:R": 112.3,
-          "DNp04:L": 208.1,
-          "DNp04:R": 178.3,
-          "DNp11:L": 108.1,
-          "DNp11:R": 110.7,
+          "DNa02:R": 95.1,
+          "DNp02:L": 110.8,
+          "DNp02:R": 106.5,
+          "DNp04:L": 211.0,
+          "DNp04:R": 182.1,
+          "DNp11:L": 102.4,
+          "DNp11:R": 112.4,
           "DNp09:L": 0.0,
           "DNp09:R": 0.0,
           "MDN:L": 0.0,
@@ -2469,33 +2648,33 @@
       },
       {
         "scene": "approach_left",
-        "mean_turn": 0.464,
+        "mean_turn": 0.478,
         "max_escape": 1.0,
-        "reverse_frames": 28,
+        "reverse_frames": 27,
         "frames": 90,
-        "brain_realtime_factor": 0.56,
+        "brain_realtime_factor": 3.1,
         "peak_rates_hz": {
-          "LPLC2:L": 124.4,
-          "LC4:L": 105.3,
+          "LPLC2:L": 122.3,
+          "LC4:L": 108.8,
           "LPLC2:R": 0.0,
           "LC4:R": 0.0,
-          "LC10a:L": 151.6,
-          "LC10a:R": 106.2,
+          "LC10a:L": 149.6,
+          "LC10a:R": 107.7,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
           "JO-E*:R": 0.0,
-          "DNp01:L": 253.1,
-          "DNp01:R": 80.9,
+          "DNp01:L": 260.4,
+          "DNp01:R": 86.9,
           "DNa01:L": 0.0,
-          "DNa02:L": 137.8,
+          "DNa02:L": 153.0,
           "DNa01:R": 0.0,
-          "DNa02:R": 29.2,
-          "DNp02:L": 179.2,
+          "DNa02:R": 33.6,
+          "DNp02:L": 186.5,
           "DNp02:R": 0.0,
-          "DNp04:L": 262.9,
+          "DNp04:L": 264.6,
           "DNp04:R": 0.0,
-          "DNp11:L": 177.6,
+          "DNp11:L": 181.2,
           "DNp11:R": 0.0,
           "DNp09:L": 0.0,
           "DNp09:R": 0.0,
@@ -2514,34 +2693,34 @@
       },
       {
         "scene": "approach_right",
-        "mean_turn": -0.466,
+        "mean_turn": -0.461,
         "max_escape": 1.0,
-        "reverse_frames": 28,
+        "reverse_frames": 30,
         "frames": 90,
-        "brain_realtime_factor": 0.49,
+        "brain_realtime_factor": 3.1,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
-          "LPLC2:R": 91.0,
-          "LC4:R": 89.5,
-          "LC10a:L": 2.3,
-          "LC10a:R": 151.9,
+          "LPLC2:R": 93.7,
+          "LC4:R": 86.6,
+          "LC10a:L": 2.6,
+          "LC10a:R": 150.6,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
           "JO-E*:R": 0.0,
-          "DNp01:L": 115.6,
-          "DNp01:R": 224.6,
+          "DNp01:L": 108.7,
+          "DNp01:R": 228.9,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
           "DNa01:R": 0.0,
-          "DNa02:R": 144.6,
+          "DNa02:R": 127.7,
           "DNp02:L": 0.0,
-          "DNp02:R": 160.2,
+          "DNp02:R": 161.5,
           "DNp04:L": 0.0,
-          "DNp04:R": 233.4,
+          "DNp04:R": 225.8,
           "DNp11:L": 0.0,
-          "DNp11:R": 157.7,
+          "DNp11:R": 159.2,
           "DNp09:L": 0.0,
           "DNp09:R": 0.0,
           "MDN:L": 0.0,
@@ -2565,7 +2744,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 21.51,
+        "brain_realtime_factor": 5.94,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2607,7 +2786,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 24.16,
+        "brain_realtime_factor": 6.58,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2649,14 +2828,14 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.48,
+        "brain_realtime_factor": 2.22,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
-          "LC4:L": 0.3,
+          "LC4:L": 0.4,
           "LPLC2:R": 0.0,
           "LC4:R": 0.0,
-          "LC10a:L": 72.9,
-          "LC10a:R": 0.1,
+          "LC10a:L": 73.2,
+          "LC10a:R": 0.2,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
@@ -2688,23 +2867,23 @@
       {
         "scene": "approach_center",
         "mean_turn": 0.0,
-        "max_escape": 0.194,
+        "max_escape": 0.281,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.47,
+        "brain_realtime_factor": 2.96,
         "peak_rates_hz": {
-          "LPLC2:L": 45.8,
-          "LC4:L": 45.3,
-          "LPLC2:R": 42.6,
-          "LC4:R": 40.7,
-          "LC10a:L": 148.6,
-          "LC10a:R": 150.6,
-          "JO-C*:L": 0.8,
+          "LPLC2:L": 44.6,
+          "LC4:L": 48.3,
+          "LPLC2:R": 42.9,
+          "LC4:R": 40.9,
+          "LC10a:L": 149.5,
+          "LC10a:R": 151.4,
+          "JO-C*:L": 0.6,
           "JO-C*:R": 0.0,
-          "JO-E*:L": 0.0,
+          "JO-E*:L": 0.1,
           "JO-E*:R": 0.0,
           "DNp01:L": 0.0,
-          "DNp01:R": 11.6,
+          "DNp01:R": 16.8,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
           "DNa01:R": 0.0,
@@ -2730,23 +2909,23 @@
       {
         "scene": "approach_left",
         "mean_turn": 0.0,
-        "max_escape": 0.245,
+        "max_escape": 0.27,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.47,
+        "brain_realtime_factor": 2.99,
         "peak_rates_hz": {
-          "LPLC2:L": 100.4,
-          "LC4:L": 95.2,
-          "LPLC2:R": 0.5,
+          "LPLC2:L": 98.9,
+          "LC4:L": 107.9,
+          "LPLC2:R": 0.4,
           "LC4:R": 0.2,
-          "LC10a:L": 153.2,
-          "LC10a:R": 108.8,
-          "JO-C*:L": 0.6,
+          "LC10a:L": 153.6,
+          "LC10a:R": 109.0,
+          "JO-C*:L": 0.3,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.1,
           "JO-E*:R": 0.0,
           "DNp01:L": 0.0,
-          "DNp01:R": 14.7,
+          "DNp01:R": 16.2,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
           "DNa01:R": 0.0,
@@ -2775,15 +2954,15 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.49,
+        "brain_realtime_factor": 3.03,
         "peak_rates_hz": {
-          "LPLC2:L": 0.8,
+          "LPLC2:L": 0.6,
           "LC4:L": 0.5,
-          "LPLC2:R": 86.8,
-          "LC4:R": 87.9,
-          "LC10a:L": 2.9,
-          "LC10a:R": 150.7,
-          "JO-C*:L": 0.7,
+          "LPLC2:R": 89.0,
+          "LC4:R": 85.1,
+          "LC10a:L": 2.3,
+          "LC10a:R": 151.4,
+          "JO-C*:L": 0.6,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
           "JO-E*:R": 0.0,
@@ -2817,7 +2996,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 22.51,
+        "brain_realtime_factor": 7.0,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2859,7 +3038,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 23.09,
+        "brain_realtime_factor": 6.94,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2901,13 +3080,13 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.46,
+        "brain_realtime_factor": 2.23,
         "peak_rates_hz": {
-          "LPLC2:L": 0.1,
+          "LPLC2:L": 0.0,
           "LC4:L": 0.1,
-          "LPLC2:R": 0.2,
+          "LPLC2:R": 0.3,
           "LC4:R": 0.4,
-          "LC10a:L": 73.2,
+          "LC10a:L": 72.4,
           "LC10a:R": 0.0,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
@@ -2939,18 +3118,18 @@
       },
       {
         "scene": "approach_center",
-        "mean_turn": -0.026,
+        "mean_turn": -0.06,
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.46,
+        "brain_realtime_factor": 3.4,
         "peak_rates_hz": {
-          "LPLC2:L": 46.3,
-          "LC4:L": 44.9,
-          "LPLC2:R": 43.5,
-          "LC4:R": 42.9,
-          "LC10a:L": 149.3,
-          "LC10a:R": 150.6,
+          "LPLC2:L": 47.5,
+          "LC4:L": 45.9,
+          "LPLC2:R": 44.4,
+          "LC4:R": 46.3,
+          "LC10a:L": 151.2,
+          "LC10a:R": 150.9,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
@@ -2959,7 +3138,7 @@
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
-          "DNa01:R": 15.4,
+          "DNa01:R": 29.6,
           "DNa02:R": 0.0,
           "DNp02:L": 0.0,
           "DNp02:R": 0.0,
@@ -2981,18 +3160,18 @@
       },
       {
         "scene": "approach_left",
-        "mean_turn": -0.029,
+        "mean_turn": -0.036,
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.47,
+        "brain_realtime_factor": 3.32,
         "peak_rates_hz": {
-          "LPLC2:L": 98.4,
-          "LC4:L": 101.3,
-          "LPLC2:R": 1.3,
-          "LC4:R": 1.5,
-          "LC10a:L": 148.9,
-          "LC10a:R": 105.6,
+          "LPLC2:L": 97.2,
+          "LC4:L": 97.5,
+          "LPLC2:R": 1.1,
+          "LC4:R": 1.4,
+          "LC10a:L": 151.5,
+          "LC10a:R": 106.3,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
@@ -3001,7 +3180,7 @@
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
-          "DNa01:R": 13.4,
+          "DNa01:R": 19.4,
           "DNa02:R": 0.0,
           "DNp02:L": 0.0,
           "DNp02:R": 0.0,
@@ -3009,7 +3188,7 @@
           "DNp04:R": 0.0,
           "DNp11:L": 0.0,
           "DNp11:R": 0.0,
-          "DNp09:L": 12.6,
+          "DNp09:L": 16.4,
           "DNp09:R": 0.0,
           "MDN:L": 0.0,
           "MDN:R": 0.0,
@@ -3027,14 +3206,14 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.45,
+        "brain_realtime_factor": 3.27,
         "peak_rates_hz": {
-          "LPLC2:L": 0.6,
-          "LC4:L": 1.5,
-          "LPLC2:R": 87.3,
-          "LC4:R": 92.4,
+          "LPLC2:L": 0.7,
+          "LC4:L": 1.3,
+          "LPLC2:R": 88.4,
+          "LC4:R": 90.1,
           "LC10a:L": 2.7,
-          "LC10a:R": 150.3,
+          "LC10a:R": 151.2,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
@@ -3069,7 +3248,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 22.95,
+        "brain_realtime_factor": 6.14,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3111,7 +3290,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 23.19,
+        "brain_realtime_factor": 6.74,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3153,13 +3332,13 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.43,
+        "brain_realtime_factor": 2.3,
         "peak_rates_hz": {
-          "LPLC2:L": 0.1,
+          "LPLC2:L": 0.0,
           "LC4:L": 0.0,
-          "LPLC2:R": 0.3,
+          "LPLC2:R": 0.2,
           "LC4:R": 0.0,
-          "LC10a:L": 71.7,
+          "LC10a:L": 71.6,
           "LC10a:R": 0.0,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
@@ -3192,29 +3371,29 @@
       {
         "scene": "approach_center",
         "mean_turn": 0.0,
-        "max_escape": 0.244,
+        "max_escape": 0.162,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.46,
+        "brain_realtime_factor": 3.32,
         "peak_rates_hz": {
-          "LPLC2:L": 44.9,
-          "LC4:L": 46.7,
-          "LPLC2:R": 44.9,
-          "LC4:R": 42.1,
-          "LC10a:L": 148.6,
-          "LC10a:R": 148.5,
+          "LPLC2:L": 47.6,
+          "LC4:L": 50.4,
+          "LPLC2:R": 43.3,
+          "LC4:R": 40.7,
+          "LC10a:L": 152.2,
+          "LC10a:R": 151.2,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
           "JO-E*:R": 0.0,
-          "DNp01:L": 14.6,
+          "DNp01:L": 9.7,
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
           "DNa01:R": 0.0,
           "DNa02:R": 0.0,
-          "DNp02:L": 8.5,
-          "DNp02:R": 8.5,
+          "DNp02:L": 0.0,
+          "DNp02:R": 8.9,
           "DNp04:L": 0.0,
           "DNp04:R": 0.0,
           "DNp11:L": 0.0,
@@ -3234,22 +3413,22 @@
       {
         "scene": "approach_left",
         "mean_turn": 0.0,
-        "max_escape": 0.142,
+        "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.43,
+        "brain_realtime_factor": 3.31,
         "peak_rates_hz": {
-          "LPLC2:L": 101.4,
-          "LC4:L": 96.5,
-          "LPLC2:R": 0.6,
-          "LC4:R": 0.3,
-          "LC10a:L": 150.4,
-          "LC10a:R": 106.9,
+          "LPLC2:L": 97.7,
+          "LC4:L": 102.7,
+          "LPLC2:R": 0.7,
+          "LC4:R": 0.0,
+          "LC10a:L": 152.3,
+          "LC10a:R": 106.7,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
           "JO-E*:R": 0.0,
-          "DNp01:L": 8.5,
+          "DNp01:L": 0.0,
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
@@ -3276,29 +3455,29 @@
       {
         "scene": "approach_right",
         "mean_turn": 0.0,
-        "max_escape": 0.205,
+        "max_escape": 0.162,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.41,
+        "brain_realtime_factor": 3.34,
         "peak_rates_hz": {
           "LPLC2:L": 0.7,
-          "LC4:L": 0.5,
-          "LPLC2:R": 85.9,
-          "LC4:R": 90.2,
-          "LC10a:L": 2.9,
-          "LC10a:R": 150.7,
+          "LC4:L": 0.6,
+          "LPLC2:R": 86.6,
+          "LC4:R": 84.8,
+          "LC10a:L": 2.3,
+          "LC10a:R": 151.2,
           "JO-C*:L": 0.0,
           "JO-C*:R": 0.0,
           "JO-E*:L": 0.0,
           "JO-E*:R": 0.0,
-          "DNp01:L": 12.3,
+          "DNp01:L": 9.7,
           "DNp01:R": 0.0,
           "DNa01:L": 0.0,
           "DNa02:L": 0.0,
           "DNa01:R": 0.0,
           "DNa02:R": 0.0,
           "DNp02:L": 0.0,
-          "DNp02:R": 8.5,
+          "DNp02:R": 8.9,
           "DNp04:L": 0.0,
           "DNp04:R": 0.0,
           "DNp11:L": 0.0,
@@ -3306,7 +3485,7 @@
           "DNp09:L": 0.0,
           "DNp09:R": 0.0,
           "MDN:L": 0.0,
-          "MDN:R": 4.3,
+          "MDN:R": 0.0,
           "DNp18:L": 0.0,
           "DNp18:R": 0.0,
           "DNp20:L": 0.0,
@@ -3319,25 +3498,52 @@
   },
   "performance": [
     {
+      "device": "cpu",
       "condition": "no input (silent brain)",
       "simulated_s": 1.0,
       "wall_s": 0.0,
-      "realtime_factor": 14992.5,
+      "realtime_factor": 15151.52,
       "spikes": 0
     },
     {
+      "device": "cpu",
       "condition": "LPLC2:L at 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 3.177,
-      "realtime_factor": 0.31,
-      "spikes": 54236
+      "wall_s": 1.911,
+      "realtime_factor": 0.52,
+      "spikes": 54690
     },
     {
+      "device": "cpu",
       "condition": "LPLC2 + LC4, both sides, 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 4.341,
-      "realtime_factor": 0.23,
-      "spikes": 155306
+      "wall_s": 3.729,
+      "realtime_factor": 0.27,
+      "spikes": 154158
+    },
+    {
+      "device": "cuda",
+      "condition": "no input (silent brain)",
+      "simulated_s": 1.0,
+      "wall_s": 0.074,
+      "realtime_factor": 13.58,
+      "spikes": 0
+    },
+    {
+      "device": "cuda",
+      "condition": "LPLC2:L at 150 Hz",
+      "simulated_s": 1.0,
+      "wall_s": 0.322,
+      "realtime_factor": 3.1,
+      "spikes": 54690
+    },
+    {
+      "device": "cuda",
+      "condition": "LPLC2 + LC4, both sides, 150 Hz",
+      "simulated_s": 1.0,
+      "wall_s": 0.364,
+      "realtime_factor": 2.74,
+      "spikes": 154158
     }
   ],
   "screen": {
@@ -3351,22 +3557,22 @@
           {
             "type": "DNp15",
             "left_hz": 0,
-            "right_hz": 68
+            "right_hz": 52
           },
           {
             "type": "DNg41",
             "left_hz": 0,
-            "right_hz": 62
+            "right_hz": 52
           },
           {
             "type": "DNb03",
             "left_hz": 0,
-            "right_hz": 44
+            "right_hz": 35
           },
           {
-            "type": "DNa06",
-            "left_hz": 65,
-            "right_hz": 35
+            "type": "DNg36_a",
+            "left_hz": 29,
+            "right_hz": 0
           }
         ]
       },
@@ -3376,7 +3582,7 @@
         "strongest_descending": [
           {
             "type": "DNp15",
-            "left_hz": 25,
+            "left_hz": 22,
             "right_hz": 0
           }
         ]
@@ -3387,7 +3593,7 @@
         "strongest_descending": [
           {
             "type": "DNp15",
-            "left_hz": 38,
+            "left_hz": 32,
             "right_hz": 0
           }
         ]
@@ -3403,17 +3609,17 @@
         "strongest_descending": [
           {
             "type": "DNp20",
-            "left_hz": 105,
+            "left_hz": 110,
             "right_hz": 0
           },
           {
             "type": "DNb06",
-            "left_hz": 55,
+            "left_hz": 60,
             "right_hz": 0
           },
           {
             "type": "DNge043",
-            "left_hz": 32,
+            "left_hz": 28,
             "right_hz": 0
           }
         ]
@@ -3451,17 +3657,17 @@
           {
             "type": "DNge119",
             "left_hz": 0,
-            "right_hz": 75
-          },
-          {
-            "type": "pIP1",
-            "left_hz": 58,
-            "right_hz": 0
+            "right_hz": 72
           },
           {
             "type": "DNp103",
-            "left_hz": 138,
-            "right_hz": 88
+            "left_hz": 142,
+            "right_hz": 78
+          },
+          {
+            "type": "pIP1",
+            "left_hz": 62,
+            "right_hz": 0
           },
           {
             "type": "DNp05",
@@ -3491,7 +3697,7 @@
           },
           {
             "type": "DNp11",
-            "left_hz": 100,
+            "left_hz": 102,
             "right_hz": 0
           }
         ]
@@ -3502,22 +3708,22 @@
         "strongest_descending": [
           {
             "type": "DNa02",
-            "left_hz": 122,
+            "left_hz": 130,
             "right_hz": 0
           },
           {
             "type": "DNg111",
-            "left_hz": 108,
-            "right_hz": 0
-          },
-          {
-            "type": "DNa06",
-            "left_hz": 102,
+            "left_hz": 115,
             "right_hz": 0
           },
           {
             "type": "DNae002",
             "left_hz": 92,
+            "right_hz": 0
+          },
+          {
+            "type": "DNb01",
+            "left_hz": 65,
             "right_hz": 0
           }
         ]
@@ -3533,12 +3739,12 @@
         "strongest_descending": [
           {
             "type": "DNa02",
-            "left_hz": 100,
+            "left_hz": 98,
             "right_hz": 0
           },
           {
             "type": "DNa06",
-            "left_hz": 85,
+            "left_hz": 88,
             "right_hz": 0
           },
           {
@@ -3547,8 +3753,8 @@
             "right_hz": 0
           },
           {
-            "type": "DNge006",
-            "left_hz": 72,
+            "type": "DNge033",
+            "left_hz": 78,
             "right_hz": 0
           }
         ]
@@ -3559,22 +3765,22 @@
         "strongest_descending": [
           {
             "type": "DNb05",
-            "left_hz": 45,
+            "left_hz": 48,
             "right_hz": 0
           },
           {
             "type": "DNa02",
-            "left_hz": 45,
+            "left_hz": 48,
             "right_hz": 0
           },
           {
             "type": "DNp56",
-            "left_hz": 40,
+            "left_hz": 38,
             "right_hz": 0
           },
           {
             "type": "DNbe003",
-            "left_hz": 38,
+            "left_hz": 32,
             "right_hz": 0
           }
         ]
@@ -3585,13 +3791,23 @@
         "strongest_descending": [
           {
             "type": "DNbe001",
-            "left_hz": 38,
+            "left_hz": 32,
             "right_hz": 0
           },
           {
             "type": "DNbe004",
-            "left_hz": 0,
+            "left_hz": 5,
             "right_hz": 22
+          },
+          {
+            "type": "DNg100",
+            "left_hz": 20,
+            "right_hz": 18
+          },
+          {
+            "type": "DNg16",
+            "left_hz": 22,
+            "right_hz": 20
           }
         ]
       },
@@ -3600,14 +3816,9 @@
         "cells": 256,
         "strongest_descending": [
           {
-            "type": "DNpe045",
-            "left_hz": 22,
-            "right_hz": 0
-          },
-          {
             "type": "DNg100",
             "left_hz": 42,
-            "right_hz": 42
+            "right_hz": 48
           }
         ]
       },
@@ -3617,23 +3828,23 @@
         "strongest_descending": [
           {
             "type": "DNp01",
-            "left_hz": 2,
-            "right_hz": 42
+            "left_hz": 5,
+            "right_hz": 48
           },
           {
             "type": "DNp06",
             "left_hz": 2,
-            "right_hz": 32
+            "right_hz": 38
           },
           {
-            "type": "DNp42",
-            "left_hz": 22,
-            "right_hz": 0
+            "type": "DNg40",
+            "left_hz": 0,
+            "right_hz": 22
           },
           {
-            "type": "DNge054",
-            "left_hz": 20,
-            "right_hz": 0
+            "type": "DNp103",
+            "left_hz": 52,
+            "right_hz": 40
           }
         ]
       },
@@ -3643,23 +3854,23 @@
         "strongest_descending": [
           {
             "type": "pIP1",
-            "left_hz": 102,
+            "left_hz": 100,
             "right_hz": 0
           },
           {
             "type": "DNge031",
-            "left_hz": 50,
+            "left_hz": 52,
             "right_hz": 0
           },
           {
             "type": "DNge054",
-            "left_hz": 45,
+            "left_hz": 42,
             "right_hz": 0
           },
           {
-            "type": "DNpe025",
-            "left_hz": 50,
-            "right_hz": 18
+            "type": "DNp34",
+            "left_hz": 0,
+            "right_hz": 30
           }
         ]
       },
@@ -3670,22 +3881,22 @@
           {
             "type": "DNp06",
             "left_hz": 0,
-            "right_hz": 60
+            "right_hz": 55
+          },
+          {
+            "type": "DNp23",
+            "left_hz": 40,
+            "right_hz": 0
+          },
+          {
+            "type": "DNg40",
+            "left_hz": 25,
+            "right_hz": 62
           },
           {
             "type": "DNge119",
             "left_hz": 0,
-            "right_hz": 45
-          },
-          {
-            "type": "DNg40",
-            "left_hz": 22,
-            "right_hz": 65
-          },
-          {
-            "type": "DNp23",
-            "left_hz": 42,
-            "right_hz": 0
+            "right_hz": 38
           }
         ]
       },
@@ -3695,23 +3906,23 @@
         "strongest_descending": [
           {
             "type": "DNpe052",
-            "left_hz": 78,
+            "left_hz": 82,
             "right_hz": 0
           },
           {
             "type": "DNpe040",
-            "left_hz": 32,
+            "left_hz": 30,
             "right_hz": 0
           },
           {
             "type": "DNa06",
-            "left_hz": 42,
+            "left_hz": 35,
             "right_hz": 10
           },
           {
-            "type": "DNg75",
-            "left_hz": 38,
-            "right_hz": 10
+            "type": "DNa01",
+            "left_hz": 0,
+            "right_hz": 22
           }
         ]
       },
@@ -3720,13 +3931,13 @@
         "cells": 75,
         "strongest_descending": [
           {
-            "type": "pIP1",
-            "left_hz": 60,
+            "type": "DNp35",
+            "left_hz": 65,
             "right_hz": 0
           },
           {
-            "type": "DNp35",
-            "left_hz": 55,
+            "type": "pIP1",
+            "left_hz": 62,
             "right_hz": 0
           },
           {
@@ -3736,7 +3947,7 @@
           },
           {
             "type": "DNge054",
-            "left_hz": 22,
+            "left_hz": 25,
             "right_hz": 0
           }
         ]
@@ -3747,22 +3958,22 @@
         "strongest_descending": [
           {
             "type": "DNp26",
-            "left_hz": 130,
+            "left_hz": 128,
             "right_hz": 0
           },
           {
             "type": "DNbe001",
-            "left_hz": 72,
+            "left_hz": 75,
             "right_hz": 0
           },
           {
             "type": "DNp05",
-            "left_hz": 65,
+            "left_hz": 62,
             "right_hz": 0
           },
           {
             "type": "DNp03",
-            "left_hz": 55,
+            "left_hz": 58,
             "right_hz": 0
           }
         ]
@@ -3783,22 +3994,22 @@
         "strongest_descending": [
           {
             "type": "DNp06",
-            "left_hz": 120,
+            "left_hz": 115,
             "right_hz": 0
           },
           {
             "type": "DNp09",
-            "left_hz": 98,
+            "left_hz": 100,
             "right_hz": 0
           },
           {
             "type": "DNp35",
-            "left_hz": 90,
+            "left_hz": 82,
             "right_hz": 0
           },
           {
             "type": "DNp43",
-            "left_hz": 75,
+            "left_hz": 78,
             "right_hz": 0
           }
         ]
@@ -3810,22 +4021,22 @@
           {
             "type": "DNp34",
             "left_hz": 0,
-            "right_hz": 72
+            "right_hz": 65
           },
           {
             "type": "DNpe056",
-            "left_hz": 52,
-            "right_hz": 0
-          },
-          {
-            "type": "DNge010",
-            "left_hz": 28,
+            "left_hz": 62,
             "right_hz": 0
           },
           {
             "type": "DNge104",
             "left_hz": 0,
-            "right_hz": 25
+            "right_hz": 30
+          },
+          {
+            "type": "DNge010",
+            "left_hz": 28,
+            "right_hz": 0
           }
         ]
       },
@@ -3835,7 +4046,7 @@
         "strongest_descending": [
           {
             "type": "DNa02",
-            "left_hz": 140,
+            "left_hz": 138,
             "right_hz": 0
           },
           {
@@ -3844,13 +4055,13 @@
             "right_hz": 0
           },
           {
-            "type": "DNa16",
+            "type": "DNa06",
             "left_hz": 118,
             "right_hz": 0
           },
           {
-            "type": "DNa06",
-            "left_hz": 115,
+            "type": "DNa16",
+            "left_hz": 112,
             "right_hz": 0
           }
         ]
@@ -3875,9 +4086,9 @@
             "right_hz": 0
           },
           {
-            "type": "DNp26",
-            "left_hz": 78,
-            "right_hz": 38
+            "type": "DNa02",
+            "left_hz": 38,
+            "right_hz": 0
           }
         ]
       },
@@ -3886,9 +4097,14 @@
         "cells": 107,
         "strongest_descending": [
           {
+            "type": "DNa10",
+            "left_hz": 135,
+            "right_hz": 100
+          },
+          {
             "type": "DNp26",
-            "left_hz": 48,
-            "right_hz": 12
+            "left_hz": 52,
+            "right_hz": 20
           },
           {
             "type": "DNg96",
@@ -3898,12 +4114,7 @@
           {
             "type": "DNg52",
             "left_hz": 0,
-            "right_hz": 31
-          },
-          {
-            "type": "DNa10",
-            "left_hz": 128,
-            "right_hz": 98
+            "right_hz": 29
           }
         ]
       },
@@ -3918,18 +4129,18 @@
           },
           {
             "type": "DNa07",
-            "left_hz": 60,
+            "left_hz": 58,
             "right_hz": 0
-          },
-          {
-            "type": "DNa01",
-            "left_hz": 0,
-            "right_hz": 50
           },
           {
             "type": "DNae002",
             "left_hz": 0,
-            "right_hz": 50
+            "right_hz": 52
+          },
+          {
+            "type": "DNa01",
+            "left_hz": 0,
+            "right_hz": 48
           }
         ]
       },
@@ -3940,7 +4151,7 @@
           {
             "type": "DNp31",
             "left_hz": 100,
-            "right_hz": 30
+            "right_hz": 28
           },
           {
             "type": "DNae002",
@@ -3949,7 +4160,7 @@
           },
           {
             "type": "DNge030",
-            "left_hz": 25,
+            "left_hz": 22,
             "right_hz": 0
           }
         ]
@@ -3960,7 +4171,7 @@
         "strongest_descending": [
           {
             "type": "DNp03",
-            "left_hz": 185,
+            "left_hz": 190,
             "right_hz": 0
           },
           {
@@ -3970,12 +4181,12 @@
           },
           {
             "type": "DNp35",
-            "left_hz": 145,
+            "left_hz": 140,
             "right_hz": 0
           },
           {
             "type": "DNp11",
-            "left_hz": 108,
+            "left_hz": 105,
             "right_hz": 0
           }
         ]
@@ -3991,17 +4202,17 @@
           },
           {
             "type": "DNpe056",
-            "left_hz": 160,
+            "left_hz": 165,
             "right_hz": 0
           },
           {
             "type": "DNp103",
-            "left_hz": 212,
+            "left_hz": 215,
             "right_hz": 62
           },
           {
             "type": "DNp71",
-            "left_hz": 132,
+            "left_hz": 130,
             "right_hz": 0
           }
         ]
@@ -4012,18 +4223,18 @@
         "strongest_descending": [
           {
             "type": "DNb05",
-            "left_hz": 215,
-            "right_hz": 5
+            "left_hz": 212,
+            "right_hz": 10
           },
           {
             "type": "DNp03",
-            "left_hz": 180,
+            "left_hz": 185,
             "right_hz": 0
           },
           {
-            "type": "DNp31",
-            "left_hz": 170,
-            "right_hz": 20
+            "type": "DNp26",
+            "left_hz": 152,
+            "right_hz": 2
           },
           {
             "type": "DNp57",

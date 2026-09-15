@@ -10,7 +10,13 @@ python -m flybrain_robot.main --synthetic --dry-run --steps 20
 ```
 
 The test suite needs no dataset: the connectome code is tested on small synthetic
-graphs, and the LIF kernel is compared spike for spike with Brian2.
+graphs, and the LIF kernel is compared spike for spike with Brian2. With an NVIDIA
+GPU, `pip install -e ".[gpu]"` also runs the GPU kernel tests, which require
+bit-identical results to the CPU kernel; without one they are skipped.
+
+Keep the two kernels in step: arithmetic that both must share belongs in
+`brain/lif_kernel.py`. Do not write `a * b + c` in floating point there; use `fma`,
+because the GPU compiler fuses such expressions on its own.
 
 Changes that touch the brain path (`vision.py`, `brain/`, `connectome/`) must also
 regenerate the whole-connectome results and commit them together with the code:
