@@ -51,9 +51,19 @@ class Connectome:
     def without_fast_synapses_from(self, transmitters):
         """Copy whose neurons releasing ``transmitters`` have no fast synaptic effect."""
         silent = np.isin(self.transmitter, list(transmitters))
+        manifest = dict(self.manifest, silenced_transmitters=sorted(transmitters))
+        return self._without_output(silent, manifest)
+
+    def silenced(self, indices):
+        """Copy in which the given neurons still fire but reach no target (a lesion)."""
+        silent = np.zeros(self.size, bool)
+        silent[np.asarray(indices)] = True
+        manifest = dict(self.manifest, silenced_neurons=int(silent.sum()))
+        return self._without_output(silent, manifest)
+
+    def _without_output(self, silent, manifest):
         per_edge = np.repeat(silent, np.diff(self.indptr))
         weight = np.where(per_edge, 0, self.weight).astype(self.weight.dtype)
-        manifest = dict(self.manifest, silenced_transmitters=sorted(transmitters))
         return Connectome(**{**self.__dict__, "weight": weight, "manifest": manifest})
 
     def shuffled(self, seed=0):

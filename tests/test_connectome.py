@@ -151,6 +151,13 @@ def test_silencing_transmitters_zeroes_outgoing_weights():
     assert np.array_equal(silent.weight[graph.indptr[5] :], graph.weight[graph.indptr[5] :])
 
 
+def test_silencing_neurons_removes_only_their_output():
+    graph = connectome_from_edges(3, [0, 1, 2], [1, 2, 0], [5, 6, 7])
+    lesioned = graph.silenced([1])
+    assert lesioned.weight.tolist() == [5, 0, 7]
+    assert graph.weight.tolist() == [5, 6, 7]  # the original is untouched
+
+
 def robot_circuit():
     """Mirror-symmetric toy brain using the cell types the MaleCNS backend reads."""
     cells = []

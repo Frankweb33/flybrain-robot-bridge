@@ -63,6 +63,36 @@ PATHWAYS = [
          counterpart="DNp20:R", role="not used", lateral=True),
 ]  # fmt: skip
 
+# Published feeding circuit: sugar GRNs -> ... -> MN9, the proboscis motor neuron
+# (Shiu et al. 2022, eLife; Shiu et al. 2024, Nature 634:210). MaleCNS does not label
+# gustatory neurons by receptor. LB3c and LB3d are the gustatory types with by far the
+# most synapses onto G2N-1 (GNG232) and Zorro (GNG215): 519/766 and 485/107; the next
+# is LB3a with 30/79 (counted 2026-09-15). claw_tpGRN (50 taste-peg GRNs, 2 synapses
+# onto G2N-1) is a gustatory population outside that circuit. Circuit neurons are
+# identified by the `synonyms` column of the release (Shiu 2022; Yao & Scott 2022).
+# Pass condition, written and committed before the first run:
+#   MN9 (mean of left and right) >= 20 Hz while sugar GRNs fire at 150 Hz, and
+#   >= 3x (strongest MN9 response in any shuffled-wiring control + 1 Hz), and
+#   >= 3x (MN9 response to claw_tpGRN stimulation + 1 Hz).
+# Circuit neuron rates and the Roundup/Bract lesions are reported, not required.
+FEEDING = dict(
+    sugar=["LB3c", "LB3d"],
+    other_gustatory=["claw_tpGRN"],
+    readout="MN9",
+    circuit={
+        "G2N-1": ["GNG232"],
+        "Zorro": ["GNG215"],
+        "Phantom": ["GNG229"],
+        "Roundup": ["GNG108"],
+        "Fudog": ["DNg67"],
+        "Bract 1": ["DNge174"],
+        "Bract 2": ["DNge173"],
+        "Sugar SEL PN": ["GNG540", "GNG550"],
+        "Sugar SEL LN": ["GNG056"],
+    },
+    lesions={"Roundup": ["GNG108"], "Bract 1 and 2": ["DNge174", "DNge173"]},
+)
+
 SCENE_EXPECTATIONS = {
     "static": dict(escape=False, turn=0),
     "pan": dict(escape=False, turn=0),
@@ -197,6 +227,40 @@ def pathway_section(graph, control_seeds):
             "rows": rows}  # fmt: skip
 
 
+def feeding_section(graph, control_seeds):
+    f = FEEDING
+    readout = graph.select(f["readout"])
+    circuit = {name: indices(graph, types) for name, types in f["circuit"].items()}
+    sugar = indices(graph, f["sugar"])
+
+    def mn9_hz(g, stimulus):
+        _, rates, _ = trial(g, stimulus)
+        return float(rates[readout].mean()), rates
+
+    hz, rates = mn9_hz(graph, f["sugar"])
+    shuffled = [mn9_hz(graph.shuffled(seed), f["sugar"])[0] for seed in control_seeds]
+    other, _ = mn9_hz(graph, f["other_gustatory"])
+    lesions = {
+        name: round(mn9_hz(graph.silenced(indices(graph, types)), f["sugar"])[0], 1)
+        for name, types in f["lesions"].items()
+    }
+    return dict(
+        sugar_types=f["sugar"], sugar_cells=len(sugar),
+        other_gustatory=f["other_gustatory"],
+        other_gustatory_cells=len(indices(graph, f["other_gustatory"])),
+        stimulus_hz=STIM_HZ, duration_ms=TRIAL_MS, control_seeds=control_seeds,
+        mn9_hz=round(hz, 1),
+        mn9_by_side={graph.side[i]: round(float(rates[i]), 1) for i in readout},
+        mn9_shuffled_hz=[round(x, 1) for x in shuffled],
+        mn9_other_gustatory_hz=round(other, 1),
+        mn9_after_lesion_hz=lesions,
+        circuit_hz={name: round(float(rates[idx].mean()), 1) for name, idx in circuit.items()},
+        sugar_synapses_onto={name: synapses_between(graph, sugar, idx)
+                             for name, idx in circuit.items()},
+        passed=bool(hz >= 20 and hz >= 3 * (max(shuffled) + 1) and hz >= 3 * (other + 1)),
+    )  # fmt: skip
+
+
 def run_scene(backend, name):
     backend.reset()
     encoder, decoder = VisionEncoder(), MotorDecoder()
@@ -321,6 +385,8 @@ def main(argv=None):
     parser.add_argument("--markdown", default=str(ROOT / "docs" / "VALIDATION.md"))
     parser.add_argument("--controls", type=int, default=3, help="Shuffled-wiring control seeds")
     parser.add_argument("--skip-screen", action="store_true")
+    parser.add_argument("--only", nargs="+", metavar="SECTION",
+                        help="Run only these sections and print them; writes no report")  # fmt: skip
     args = parser.parse_args(argv)
     seeds = list(range(1, args.controls + 1))
     started = time.perf_counter()
@@ -337,16 +403,25 @@ def main(argv=None):
         ("reference", lambda: reference_section([1, 2, 3])),
         ("stability", lambda: stability_section(full)),
         ("pathways", lambda: pathway_section(graph, seeds)),
+        ("feeding", lambda: feeding_section(graph, seeds)),
         ("closed_loop", lambda: closed_loop_section(args.data, seeds)),
         ("performance", lambda: performance_section(graph)),
     ]
     if not args.skip_screen:
         steps.append(("screen", lambda: screen_section(graph)))
+    if args.only:
+        unknown = set(args.only) - {key for key, _ in steps}
+        if unknown:
+            parser.error(f"unknown sections: {', '.join(sorted(unknown))}")
+        steps = [(key, run) for key, run in steps if key in args.only]
     for key, run in steps:
         t0 = time.perf_counter()
         print(f"[{key}] running...", flush=True)
         results[key] = run()
         print(f"[{key}] done in {time.perf_counter() - t0:.0f} s", flush=True)
+    if args.only:
+        print(json.dumps({key: results[key] for key, _ in steps}, indent=2))
+        return 0
     results["machine"]["total_seconds"] = round(time.perf_counter() - started)
     Path(args.json).parent.mkdir(parents=True, exist_ok=True)
     Path(args.json).write_text(json.dumps(results, indent=2), encoding="utf-8")
