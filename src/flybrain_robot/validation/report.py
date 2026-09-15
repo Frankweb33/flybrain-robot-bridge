@@ -61,6 +61,58 @@ def _pathways(section):
     )
 
 
+def _sides(values):
+    return f"{values.get('L', 0):.0f}/{values.get('R', 0):.0f}"
+
+
+def _feeding(f):
+    circuit = list(f["circuit_hz"])
+    rows = [
+        ("MN9 mean of left and right, sugar GRNs", f"{f['mn9_hz']} Hz", "≥ 20 Hz"),
+        ("MN9, shuffled wiring (seeds " + ", ".join(map(str, f["control_seeds"])) + ")",
+         " / ".join(f"{x} Hz" for x in f["mn9_shuffled_hz"]),
+         f"≤ {f['mn9_hz'] / 3 - 1:.1f} Hz for a pass"),
+        (f"MN9, {', '.join(f['other_gustatory'])} ({f['other_gustatory_cells']} cells)",
+         f"{f['mn9_other_gustatory_hz']} Hz", f"≤ {f['mn9_hz'] / 3 - 1:.1f} Hz for a pass"),
+    ]  # fmt: skip
+    lesions = [(name, f"{hz} Hz") for name, hz in f["mn9_after_lesion_hz"].items()]
+    post_hoc = [
+        (r["stimulus"], r["cells"], _sides(r["mn9_by_side"]),
+         " · ".join(f"{k} {r['circuit_hz'][k]:.0f}" for k in circuit if r["circuit_hz"][k])
+         or "none",
+         " · ".join(f"{k} {r['synapses_onto'][k]}" for k in circuit if r["synapses_onto"][k])
+         or "none")
+        for r in f["post_hoc"]
+    ]  # fmt: skip
+    reference = "; ".join(
+        f"{label}: MN9 L/R {_sides(v)} Hz" for label, v in f["mn9_reference_settings_by_side"].items()
+    )
+    return (
+        "Shiu et al. (2022, 2024) found that sugar gustatory neurons drive MN9, the motor neuron "
+        "of proboscis extension, through a named set of interneurons. MaleCNS has no receptor "
+        f"labels, so the sugar neurons are the types with the most synapses onto G2N-1 and "
+        f"Zorro: {', '.join(f['sugar_types'])} ({f['sugar_cells']} cells), stimulated at "
+        f"{f['stimulus_hz']:.0f} Hz for {f['duration_ms'] / 1000:.0f} s. The pass condition "
+        "was committed before the first run. "
+        f"**Result: {_mark(f['passed'])}.**\n\n"
+        + _table(["pre-registered condition", "measured", "required"], rows)
+        + f"\n\nMN9 left/right during sugar stimulation: {_sides(f['mn9_by_side'])} Hz.\n\n"
+        + "Circuit neurons during sugar stimulation (Hz) and synapses from the sugar neurons:\n\n"
+        + _table(["neuron", "Hz", "synapses from sugar GRNs"],
+                 [(k, f["circuit_hz"][k], f["sugar_synapses_onto"][k]) for k in circuit])
+        + "\n\nMN9 after silencing a circuit neuron during sugar stimulation (lesions; "
+        "reported, not required):\n\n"
+        + _table(["silenced", "MN9 mean"], lesions)
+        + "\n\n**Post hoc, added after the check failed.** These rows explain the result and do "
+        "not change it. Stimulus 150 Hz for 1 s; MN9 left/right; circuit neurons that fired "
+        "(Hz); synapses from the stimulated cells onto circuit neurons.\n\n"
+        + _table(["stimulus", "cells", "MN9 L/R Hz", "circuit neurons firing", "synapses onto circuit"],
+                 post_hoc)
+        + f"\n\nWith the reference settings of Shiu et al. (w_syn 0.275 mV, modulators "
+        f"excitatory): {reference}."
+    )  # fmt: skip
+
+
 def _closed_loop(section):
     out = []
     for wiring, rows in section.items():
@@ -83,6 +135,8 @@ def _closed_loop(section):
 
 def failures(results):
     failed = [r["name"] for r in results["pathways"]["rows"] if not r["passed"]]
+    if "feeding" in results and not results["feeding"]["passed"]:
+        failed.append("Published feeding circuit (sugar GRNs to MN9)")
     failed += [
         f"{wiring}: {r['scene']} (seed {r.get('seed')})"
         for wiring, rows in results["closed_loop"].items()
@@ -119,6 +173,11 @@ def render_markdown(results):
         ("rows in the release weight table", f"{d['edges_in_release']:,} (includes fragments)"),
         ("inhibitory neurons", f"{d['inhibitory_neurons']:,} ({d['sign_rule']})"),
     ]
+    if "side_rule" in d:
+        dataset_rows += [
+            ("side of a neuron", d["side_rule"]),
+            ("neurons with an optic-lobe column", f"{d['neurons_with_optic_column']:,}"),
+        ]
     if isinstance(d["sources"], dict):
         dataset_rows += [
             (f"`{name}`", f"{info['bytes']:,} bytes, SHA-256 `{info['sha256']}`")
@@ -158,6 +217,10 @@ def render_markdown(results):
         f"Cell types still firing in the second after the stimulus (spikes): {after}.",
         "## 4. Visual pathways in the whole-brain model",
         _pathways(results["pathways"]),
+    ]
+    if "feeding" in results:
+        parts += ["## 4b. Published feeding circuit (pre-registered)", _feeding(results["feeding"])]
+    parts += [
         "## 5. Closed loop: synthetic camera scenes → connectome → motor commands",
         f"Interfaces (the only hand-chosen parts of the brain path): {sensory}. Read-out: "
         f"{readout}. Forward cruise is a constant controller setting; turning and escape come "

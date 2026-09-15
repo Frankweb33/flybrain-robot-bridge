@@ -91,6 +91,18 @@ FEEDING = dict(
         "Sugar SEL LN": ["GNG056"],
     },
     lesions={"Roundup": ["GNG108"], "Bract 1 and 2": ["DNge174", "DNge173"]},
+    # Post hoc, added after the pre-registered check failed on 2026-09-15 (MN9 29 Hz for
+    # sugar, 21.5 Hz for claw_tpGRN). These rows explain the failure; they do not change
+    # the verdict above.
+    post_hoc_stimuli={
+        "sugar GRNs, left only": ["LB3c:L", "LB3d:L"],
+        "sugar GRNs, right only": ["LB3c:R", "LB3d:R"],
+        "claw_tpGRN (taste peg)": ["claw_tpGRN"],
+        "LB1e (other labellar GRNs)": ["LB1e"],
+        "aPhM1 (pharyngeal mechanosensory)": ["aPhM1"],
+        "JO-EV1 (antennal mechanosensory)": ["JO-EV1"],
+        "LPLC2 (visual, both sides)": ["LPLC2"],
+    },
 )
 
 SCENE_EXPECTATIONS = {
@@ -123,7 +135,7 @@ def trial(graph, stimulus, duration_ms=TRIAL_MS, seed=1, params=None):
 def dataset_section(graph):
     keys = ("dataset", "license", "attribution", "sources", "neurons", "edges_in_release",
             "neuron_to_neuron_edges", "synapses", "inhibitory_neurons", "transmitter_counts",
-            "sign_rule")  # fmt: skip
+            "sign_rule", "side_rule", "neurons_with_optic_column")  # fmt: skip
     return {k: graph.manifest[k] for k in keys}
 
 
@@ -227,15 +239,32 @@ def pathway_section(graph, control_seeds):
             "rows": rows}  # fmt: skip
 
 
-def feeding_section(graph, control_seeds):
+def feeding_section(graph, full, control_seeds):
     f = FEEDING
     readout = graph.select(f["readout"])
     circuit = {name: indices(graph, types) for name, types in f["circuit"].items()}
     sugar = indices(graph, f["sugar"])
 
-    def mn9_hz(g, stimulus):
-        _, rates, _ = trial(g, stimulus)
+    def mn9_hz(g, stimulus, params=None):
+        _, rates, _ = trial(g, stimulus, params=params)
         return float(rates[readout].mean()), rates
+
+    def by_side(rates):
+        return {graph.side[i]: round(float(rates[i]), 1) for i in readout}
+
+    post_hoc = []
+    for label, stimulus in f["post_hoc_stimuli"].items():
+        _, rates = mn9_hz(graph, stimulus)
+        source = indices(graph, stimulus)
+        post_hoc.append(dict(
+            stimulus=label, cells=len(source), mn9_by_side=by_side(rates),
+            circuit_hz={k: round(float(rates[v].mean()), 1) for k, v in circuit.items()},
+            synapses_onto={k: synapses_between(graph, source, v) for k, v in circuit.items()},
+        ))  # fmt: skip
+    reference = {}
+    for label, stimulus in (("sugar GRNs", f["sugar"]), ("claw_tpGRN", f["other_gustatory"])):
+        _, rates = mn9_hz(full, stimulus, params=LIFParams())
+        reference[label] = by_side(rates)
 
     hz, rates = mn9_hz(graph, f["sugar"])
     shuffled = [mn9_hz(graph.shuffled(seed), f["sugar"])[0] for seed in control_seeds]
@@ -250,7 +279,7 @@ def feeding_section(graph, control_seeds):
         other_gustatory_cells=len(indices(graph, f["other_gustatory"])),
         stimulus_hz=STIM_HZ, duration_ms=TRIAL_MS, control_seeds=control_seeds,
         mn9_hz=round(hz, 1),
-        mn9_by_side={graph.side[i]: round(float(rates[i]), 1) for i in readout},
+        mn9_by_side=by_side(rates),
         mn9_shuffled_hz=[round(x, 1) for x in shuffled],
         mn9_other_gustatory_hz=round(other, 1),
         mn9_after_lesion_hz=lesions,
@@ -258,6 +287,8 @@ def feeding_section(graph, control_seeds):
         sugar_synapses_onto={name: synapses_between(graph, sugar, idx)
                              for name, idx in circuit.items()},
         passed=bool(hz >= 20 and hz >= 3 * (max(shuffled) + 1) and hz >= 3 * (other + 1)),
+        post_hoc=post_hoc,
+        mn9_reference_settings_by_side=reference,
     )  # fmt: skip
 
 
@@ -403,7 +434,7 @@ def main(argv=None):
         ("reference", lambda: reference_section([1, 2, 3])),
         ("stability", lambda: stability_section(full)),
         ("pathways", lambda: pathway_section(graph, seeds)),
-        ("feeding", lambda: feeding_section(graph, seeds)),
+        ("feeding", lambda: feeding_section(graph, full, seeds)),
         ("closed_loop", lambda: closed_loop_section(args.data, seeds)),
         ("performance", lambda: performance_section(graph)),
     ]
