@@ -1,17 +1,19 @@
-"""Whole-CNS MaleCNS v1.0 backend: camera features in, descending-neuron spikes out.
+"""Whole-CNS MaleCNS v1.0 backend: camera and body features in, descending spikes out.
 
 All 166,700 neurons and their signed synapse counts are simulated with the LIF
-model in ``lif.py``. Only the two interfaces are chosen by hand, and both are
-declared below: which visual projection neurons receive camera features, and
-which descending neurons are read out as motor commands. Everything between
-them is the connectome. See docs/MALECNS_INTEGRATION.md for the evidence behind
-each choice and docs/VALIDATION.md for measured responses.
+model in ``lif.py``. Only the interfaces are chosen by hand, and all are declared
+below: which sensory neurons receive camera and tilt features, and which
+descending neurons are read out as motor commands. Everything between them is the
+connectome. See docs/MALECNS_INTEGRATION.md for the evidence behind each choice and
+docs/VALIDATION.md for measured responses.
 """
 
 import math
 from dataclasses import dataclass
 
 import numpy as np
+
+from flybrain_robot.telemetry import tilt_features
 
 from .base import BrainBackend, MotorActivity
 
@@ -45,6 +47,18 @@ SENSORY_MAP = (
     Drive("object_right", ("LC10a:R",)),
 )
 
+BODY_MAP = (
+    # Johnston's organ: JO-C neurons respond when the antenna is pushed toward the head,
+    # JO-E neurons when it is pulled away (Kamikouchi et al. 2009; Yorozu et al. 2009;
+    # Patella & Wilson 2018). HYPOTHESIS, not measured: nose-up tilt swings both aristae
+    # back (push), nose-down forward (pull), and a roll pushes the lower-side antenna and
+    # pulls the upper one. Tilt features already contain their 3 degree floor.
+    Drive("tilt_back", ("JO-C*:L", "JO-C*:R"), floor=0.0),
+    Drive("tilt_forward", ("JO-E*:L", "JO-E*:R"), floor=0.0),
+    Drive("tilt_left", ("JO-C*:L", "JO-E*:R"), floor=0.0),
+    Drive("tilt_right", ("JO-C*:R", "JO-E*:L"), floor=0.0),
+)
+
 READOUT = {
     # Giant Fiber, the command neuron for the escape takeoff (von Reyn et al. 2014).
     "escape": ("DNp01:L", "DNp01:R"),
@@ -52,8 +66,9 @@ READOUT = {
     "turn_left": ("DNa01:L", "DNa02:L"),
     "turn_right": ("DNa01:R", "DNa02:R"),
 }
-# Logged and visualised only; they do not drive motors.
-MONITOR = ("DNp02", "DNp04", "DNp11", "DNp09", "MDN")
+# Logged and visualised only; they do not drive motors. DNp18 and DNp20 (DNOVS1) have
+# the strongest mirrored responses to Johnston's organ input (VALIDATION.md, body).
+MONITOR = ("DNp02", "DNp04", "DNp11", "DNp09", "MDN", "DNp18", "DNp20")
 
 RATE_TAU_MS = 100.0  # smoothing of spike counts into firing rates
 TURN_FULL_HZ = 60.0  # left/right rate difference that commands a full turn
@@ -89,13 +104,14 @@ class MaleCNSBackend(BrainBackend):
         self.graph = graph
         self.cruise = cruise
         self.sim = LIFSimulator(graph, params=params, seed=seed)
-        self.drives = [
-            (d, np.concatenate([graph.select(p) for p in d.populations])) for d in SENSORY_MAP
-        ]
+        # Visual populations first, in map order: the Poisson generator draws in this order.
+        self.populations = {
+            p: graph.select(p) for d in SENSORY_MAP + BODY_MAP for p in d.populations
+        }
         self.readout = {
             name: [graph.select(spec) for spec in specs] for name, specs in READOUT.items()
         }
-        self.groups = {p: graph.select(p) for d in SENSORY_MAP for p in d.populations}
+        self.groups = dict(self.populations)
         self.groups.update({s: graph.select(s) for specs in READOUT.values() for s in specs})
         self.groups.update(
             {f"{name}:{side}": graph.select(f"{name}:{side}") for name in MONITOR for side in "LR"}
@@ -112,14 +128,23 @@ class MaleCNSBackend(BrainBackend):
     def neuron_count(self):
         return self.graph.size
 
+    def drive_rates(self, sensory_input, telemetry):
+        """Poisson rate (Hz) per driven population; overlapping drives add, capped at 150 Hz."""
+        features = tilt_features(telemetry)
+        rates = dict.fromkeys(self.populations, 0.0)
+        for d in SENSORY_MAP + BODY_MAP:
+            value = features[d.feature] if d in BODY_MAP else getattr(sensory_input, d.feature)
+            for population in d.populations:
+                rates[population] = min(rates[population] + d.rate(value), d.max_rate_hz)
+        return rates
+
     def step(self, sensory_input, telemetry, dt):
-        """Advance the connectome by ``dt`` seconds (at most MAX_STEP_MS). Telemetry is unused."""
+        """Advance the connectome by ``dt`` seconds (at most MAX_STEP_MS)."""
         if not math.isfinite(dt) or dt <= 0:
             raise ValueError("dt must be positive and finite")
         duration = min(dt * 1000, MAX_STEP_MS)
-        self.sim.set_stimulus(
-            [(idx, d.rate(getattr(sensory_input, d.feature))) for d, idx in self.drives]
-        )
+        rates = self.drive_rates(sensory_input, telemetry)
+        self.sim.set_stimulus([(self.populations[p], hz) for p, hz in rates.items()])
         self.sim.run(duration)
         counts = self.sim.take_counts()
         alpha = 1 - math.exp(-duration / RATE_TAU_MS)

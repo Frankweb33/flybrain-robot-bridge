@@ -66,6 +66,7 @@ def test_compile_from_janelia_tables(tmp_path):
     # Sensory neurons have no soma side: root side first, "unknown" falls to the suffix.
     assert list(graph.side) == ["L", "R", "L", "R", "L", "R"]
     assert graph.select("JO-EV1:R").tolist() == [3] and graph.select("JO-CM:L").tolist() == [4]
+    assert graph.select("JO-*").tolist() == [3, 4] and graph.select("JO-C*:L").tolist() == [4]
     assert graph.hex1.tolist() == [-1, -1, -1, -1, -1, 5] and graph.hex2[5] == 7
     assert manifest["neurons_with_optic_column"] == 1
     lplc2, x, gf = graph.select("LPLC2:L")[0], graph.select("X")[0], graph.select("DNp01:L")[0]
@@ -164,14 +165,16 @@ def robot_circuit():
     for side in "LR":
         cells += [("LPLC2", side)] * 6 + [("LC4", side)] * 4 + [("LC10a", side)] * 6
         cells += [(t, side) for t in ("DNp01", "DNa01", "DNa02", "DNp02", "DNp04", "DNp11")]
-        cells += [("DNp09", side), ("MDN", side)]
+        cells += [("DNp09", side), ("MDN", side), ("DNp18", side), ("DNp20", side)]
+        cells += [("JO-CM", side)] * 4 + [("JO-EV1", side)] * 4
     types, sides = zip(*cells)
     index = {}
     for i, key in enumerate(cells):
         index.setdefault(key, []).append(i)
     pre, post, weight = [], [], []
     for side in "LR":
-        for src, dst in (("LPLC2", "DNp01"), ("LC4", "DNp01"), ("LC10a", "DNa02")):
+        for src, dst in (("LPLC2", "DNp01"), ("LC4", "DNp01"), ("LC10a", "DNa02"),
+                         ("JO-EV1", "DNp20")):  # fmt: skip
             for s in index[(src, side)]:
                 pre.append(s), post.append(index[(dst, side)][0]), weight.append(40)
     return connectome_from_edges(len(cells), pre, post, weight, types=types, sides=sides)
@@ -200,6 +203,25 @@ def test_malecns_backend_escapes_and_steers(tmp_path):
     assert activity == MotorActivity(0.4, 0.4, 0.0)  # below the encoder noise floor
 
 
+def test_tilt_reaches_johnstons_organ_without_steering(tmp_path):
+    from flybrain_robot.brain.malecns import MaleCNSBackend
+    from flybrain_robot.telemetry import tilted_telemetry
+
+    save_connectome(robot_circuit(), tmp_path)
+    brain = MaleCNSBackend(tmp_path, params=LIFParams(w_syn=0.4))
+    rates = brain.drive_rates(SensoryInput(), tilted_telemetry(roll_left_deg=20))
+    assert rates["JO-C*:L"] == 150 and rates["JO-E*:R"] == 150  # lower side pushed
+    assert rates["JO-C*:R"] == 0 and rates["JO-E*:L"] == 0 and rates["LPLC2:L"] == 0
+    both = brain.drive_rates(SensoryInput(), tilted_telemetry(roll_left_deg=15, pitch_down_deg=15))
+    assert both["JO-E*:R"] == 150  # roll and pitch drives add, capped at 150 Hz
+    assert 0 < both["JO-E*:L"] < 150
+    for _ in range(30):
+        activity = brain.step(SensoryInput(), tilted_telemetry(pitch_down_deg=20), 1 / 30)
+    named = brain.named_rates()
+    assert named["JO-E*:L"] > 20 and named["DNp20:L"] > 20 and named["JO-C*:L"] == 0
+    assert activity == MotorActivity(0.4, 0.4, 0.0)  # body input is not wired to motors
+
+
 def test_malecns_backend_requires_compiled_data(tmp_path):
     from flybrain_robot.brain.malecns import MaleCNSBackend
 
@@ -217,3 +239,8 @@ def test_cli_runs_connectome_backend(tmp_path, capsys):
           "approach_left", "--dry-run", "--steps", "12"])  # fmt: skip
     out = capsys.readouterr().out
     assert f"neurons={robot_circuit().size}" in out and "GF=" in out
+    main(["--backend", "malecns", "--data", str(tmp_path), "--synthetic", "--scene", "static",
+          "--tilt", "0,20", "--dry-run", "--steps", "11"])  # fmt: skip
+    last = capsys.readouterr().out.strip().splitlines()[-1]
+    assert "tilt(roll/pitch)=+0/+20deg" in last and "JO-C=0/0Hz" in last
+    assert "JO-E=0/0Hz" not in last  # nose down pulls both antennae: JO-E fires

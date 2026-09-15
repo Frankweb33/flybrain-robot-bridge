@@ -32,12 +32,15 @@ class Connectome:
         return len(self.body_id)
 
     def select(self, spec):
-        """Indices for ``TYPE`` or ``TYPE:L`` / ``TYPE:R``; errors if empty.
+        """Indices for ``TYPE``, ``TYPE:L`` / ``TYPE:R`` or a prefix ``JO-E*:L``; errors if empty.
 
         The side is the soma side, or for sensory neurons the side their root enters.
         """
         name, _, side = spec.partition(":")
-        mask = self.type == name
+        if name.endswith("*"):
+            mask = np.char.startswith(self.type.astype(str), name[:-1])
+        else:
+            mask = self.type == name
         if side:
             mask &= self.side == side
         found = np.flatnonzero(mask).astype(np.int32)

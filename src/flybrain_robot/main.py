@@ -12,7 +12,7 @@ from .config import load_config
 from .controller import UDPBridge
 from .motor_decoder import MotorDecoder
 from .protocol import command
-from .telemetry import synthetic_telemetry
+from .telemetry import synthetic_telemetry, tilt_angles, tilted_telemetry
 from .vision import SCENES, VisionEncoder, scene_frame
 
 FRAME_PERIOD = 1 / 30
@@ -32,10 +32,20 @@ def build_brain(backend, cfg, args):
     )
 
 
-def status_line(index, sensory, activity, brain, left, right, imu, stopped, realtime):
+def parse_tilt(text):
+    try:
+        roll, pitch = (float(x) for x in text.split(","))
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("use ROLL_LEFT_DEG,PITCH_DOWN_DEG, e.g. 15,0") from exc
+    return roll, pitch
+
+
+def status_line(index, sensory, telemetry, activity, brain, left, right, imu, stopped, realtime):
+    pitch, roll = tilt_angles(telemetry.accel)
     line = (
         f"frame={index:04d} looming={sensory.looming_left:.2f}/{sensory.looming_right:.2f} "
-        f"object={sensory.object_left:.2f}/{sensory.object_right:.2f} IMU={imu} "
+        f"object={sensory.object_left:.2f}/{sensory.object_right:.2f} "
+        f"tilt(roll/pitch)={roll:+.0f}/{pitch:+.0f}deg IMU={imu} "
         f"motor={activity.left:.2f}/{activity.right:.2f} escape={activity.escape:.2f} "
         f"command={left:+d}/{right:+d} watchdog={'STOP' if stopped else 'ready'}"
     )
@@ -43,7 +53,9 @@ def status_line(index, sensory, activity, brain, left, right, imu, stopped, real
         r = brain.named_rates()
         line += (
             f" | GF={r['DNp01:L']:.0f}/{r['DNp01:R']:.0f}Hz "
-            f"DNa02={r['DNa02:L']:.0f}/{r['DNa02:R']:.0f}Hz brain_x_realtime={realtime:.2f}"
+            f"DNa02={r['DNa02:L']:.0f}/{r['DNa02:R']:.0f}Hz "
+            f"JO-C={r['JO-C*:L']:.0f}/{r['JO-C*:R']:.0f}Hz "
+            f"JO-E={r['JO-E*:L']:.0f}/{r['JO-E*:R']:.0f}Hz brain_x_realtime={realtime:.2f}"
         )
     return line
 
@@ -65,9 +77,14 @@ def main(argv=None):
     parser.add_argument("--wiring", choices=["connectome", "shuffled"],
                         help="shuffled = control with permuted synapse targets")  # fmt: skip
     parser.add_argument("--steps", type=int, default=300, help="Finite frame count (default: 300)")
+    parser.add_argument("--tilt", type=parse_tilt, metavar="ROLL,PITCH",
+                        help="Without --send: hold the synthetic robot tilted, degrees "
+                             "(roll left down, pitch nose down)")  # fmt: skip
     args = parser.parse_args(argv)
     if args.steps < 1:
         parser.error("--steps must be positive")
+    if args.tilt and args.send:
+        parser.error("--tilt simulates the IMU and cannot be combined with --send")
     bridge, capture, decoder, sequence = None, None, None, 0
     try:
         cfg = load_config(args.config)
@@ -122,7 +139,12 @@ def main(argv=None):
                 if not ok:
                     break
             sensory = encoder.encode(frame)
-            telemetry = bridge.receive() if bridge else synthetic_telemetry(index * period)
+            if bridge:
+                telemetry = bridge.receive().remapped(cfg.imu_axes)
+            elif args.tilt:
+                telemetry = tilted_telemetry(*args.tilt)
+            else:
+                telemetry = synthetic_telemetry(index * period)
             now = time.monotonic()
             dt = period if fixed_step else max(0.001, min(now - previous, 0.5))
             previous = now
@@ -136,8 +158,8 @@ def main(argv=None):
                 bridge.send(command(sequence, left, right, stopped))
             if index % 10 == 0:
                 imu = "fresh" if bridge and bridge.fresh() else ("stale" if bridge else "synthetic")
-                print(status_line(index, sensory, activity, brain, left, right, imu, stopped,
-                                  realtime))  # fmt: skip
+                print(status_line(index, sensory, telemetry, activity, brain, left, right, imu,
+                                  stopped, realtime))  # fmt: skip
             time.sleep(max(0, period - (time.monotonic() - started)))
     except KeyboardInterrupt:
         print("Stopped by user.")

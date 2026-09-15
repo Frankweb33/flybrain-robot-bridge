@@ -4,6 +4,8 @@ from pathlib import Path
 
 import yaml
 
+from .telemetry import parse_axes
+
 
 @dataclass
 class Config:
@@ -26,6 +28,7 @@ class Config:
     cruise: float = 0.4
     fast_modulators: bool = False
     wiring: str = "connectome"
+    imu_axes: str = "x,y,z"  # robot axes (x forward, y left, z up) in sensor axes
     logging_level: str = "INFO"
 
     def __post_init__(self):
@@ -57,6 +60,7 @@ class Config:
             raise ValueError("Unknown backend")
         if self.wiring not in ("connectome", "shuffled"):
             raise ValueError("wiring must be 'connectome' or 'shuffled'")
+        parse_axes(self.imu_axes)
 
 
 def load_config(path=None):

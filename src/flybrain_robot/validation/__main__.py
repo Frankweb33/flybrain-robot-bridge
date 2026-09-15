@@ -23,7 +23,7 @@ from flybrain_robot.brain.lif import LIFParams, LIFSimulator
 from flybrain_robot.brain.malecns import MODULATORS, READOUT, SENSORY_MAP, MaleCNSBackend
 from flybrain_robot.connectome.graph import load_connectome
 from flybrain_robot.motor_decoder import MotorDecoder
-from flybrain_robot.telemetry import Telemetry
+from flybrain_robot.telemetry import Telemetry, tilted_telemetry
 from flybrain_robot.vision import SCENES, TOUR_SEGMENT, VisionEncoder, scene_frame
 
 from .report import failures, render_markdown
@@ -122,6 +122,20 @@ JO_SCREEN_TYPES = (
     "JO-CM", "JO-CL",
 )  # fmt: skip
 JO_SCREEN_MS = 400.0
+
+# Body in the closed loop: the robot faces the static scene and is held tilted by 20
+# degrees for 3 s; tilt reaches Johnston's organ through the declared BODY_MAP
+# hypothesis. Pass condition, written and committed before the first run, per tilt:
+#   some descending neuron cell peaks >= 20 Hz, and in every shuffled-wiring control
+#   that same cell peaks below (its connectome peak / 3 - 1 Hz); and
+#   motor commands stay as when level (no escape, |mean turn| < 0.1), because body
+#   input is not wired to motors.
+TILTS = {
+    "nose down 20°": (0.0, 20.0),
+    "nose up 20°": (0.0, -20.0),
+    "left side down 20°": (20.0, 0.0),
+    "right side down 20°": (-20.0, 0.0),
+}
 
 SCENE_EXPECTATIONS = {
     "static": dict(escape=False, turn=0),
@@ -375,6 +389,58 @@ def body_section(graph, control_seeds):
     )  # fmt: skip
 
 
+def run_tilt(backend, roll_left, pitch_down, cells):
+    """Static scene with the robot held tilted; peak smoothed rate of ``cells``."""
+    backend.reset()
+    encoder, decoder = VisionEncoder(), MotorDecoder()
+    telemetry = tilted_telemetry(roll_left, pitch_down)
+    peak = np.zeros(len(cells))
+    turns, escape, reverse = [], 0.0, 0
+    groups = {}
+    for i in range(TOUR_SEGMENT):
+        activity = backend.step(encoder.encode(scene_frame("static", i)), telemetry, 1 / 30)
+        left, right = decoder.update(activity, now=i / 30)
+        turns.append((activity.right - activity.left) / 2)
+        escape = max(escape, activity.escape)
+        reverse += left < 0 and right < 0
+        np.maximum(peak, backend.rates[cells], out=peak)
+        for key, value in backend.named_rates().items():
+            groups[key] = max(groups.get(key, 0.0), value)
+    return peak, dict(mean_turn=round(float(np.mean(turns)), 3), max_escape=round(escape, 3),
+                      reverse_frames=int(reverse),
+                      peak_group_hz={k: round(v, 1) for k, v in groups.items()})  # fmt: skip
+
+
+def body_loop_section(data, control_seeds):
+    real = MaleCNSBackend(data, seed=0)
+    graph = real.graph
+    cells = np.flatnonzero(graph.superclass == "descending_neuron")
+    controls = [MaleCNSBackend(data, seed=seed, wiring="shuffled") for seed in control_seeds]
+    rows = []
+    for label, (roll, pitch) in TILTS.items():
+        peak, motor = run_tilt(real, roll, pitch, cells)
+        shuffled = np.array([run_tilt(c, roll, pitch, cells)[0] for c in controls])
+        survivors = [
+            k for k in np.flatnonzero(peak >= 20)
+            if np.all(shuffled[:, k] < peak[k] / 3 - 1)
+        ]  # fmt: skip
+        order = np.argsort(peak)[::-1][:6]
+        motor_ok = motor["max_escape"] < 0.3 and motor["reverse_frames"] == 0
+        motor_ok = motor_ok and abs(motor["mean_turn"]) < 0.1
+        rows.append(dict(
+            tilt=label, roll_left_deg=roll, pitch_down_deg=pitch, **motor,
+            strongest_descending=[
+                dict(neuron=graph.labels([cells[k]])[0], peak_hz=round(float(peak[k]), 1),
+                     shuffled_peak_hz=[round(float(x), 1) for x in shuffled[:, k]])
+                for k in order if peak[k] > 0
+            ],
+            descending_cells_passing=len(survivors),
+            passed=bool(survivors) and motor_ok,
+        ))  # fmt: skip
+    return dict(duration_s=TOUR_SEGMENT / 30, control_seeds=control_seeds, rows=rows,
+                passed=all(r["passed"] for r in rows))  # fmt: skip
+
+
 def run_scene(backend, name):
     backend.reset()
     encoder, decoder = VisionEncoder(), MotorDecoder()
@@ -519,6 +585,7 @@ def main(argv=None):
         ("pathways", lambda: pathway_section(graph, seeds)),
         ("feeding", lambda: feeding_section(graph, full, seeds)),
         ("body", lambda: body_section(graph, seeds)),
+        ("body_loop", lambda: body_loop_section(args.data, seeds)),
         ("closed_loop", lambda: closed_loop_section(args.data, seeds)),
         ("performance", lambda: performance_section(graph)),
     ]
