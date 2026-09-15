@@ -37,8 +37,8 @@ TRIAL_MS = 1000.0
 # (steering) or the check is about a lateralized pathway, the target must also fire
 # >= 3x its counterpart on the other side ("lateral").
 # History, kept visible on purpose: the first full run (2026-09-15) required
-# lateralization for every row. The Giant Fiber rows then failed at about 2.2x
-# (229 vs 105 Hz) while the shuffled controls stayed at 0 Hz. Escape reads both
+# lateralization for every row. The Giant Fiber rows then failed at 2.2x and 1.8x
+# (229 vs 105 Hz, 213 vs 118 Hz) while shuffled controls stayed at 0 Hz. Escape reads both
 # Giant Fibers, so lateralization is reported for them but no longer required.
 # The interfaces were chosen after an exploratory screen of 33 visual projection
 # types (the "screen" section), so these checks confirm rather than predict.

@@ -1,14 +1,38 @@
-# Hardware draft
+# Hardware
 
-Target: a Strandbeest-style linkage with two continuous-rotation servos, driven
-by an ESP32 / M5Stack Atom Matrix. This design has not been tested on hardware.
+Target: a Strandbeest-style linkage walker with two continuous-rotation servos,
+driven by an M5Stack Atom Matrix (ESP32-PICO-D4, onboard MPU6886 IMU, button,
+LED matrix).
 
-Supply servos from a suitably rated independent supply, share signal ground and
-verify voltage compatibility. Do not power servo motors from an ESP32 GPIO.
-Choose pins from your specific board schematic; no wiring pinout is asserted here.
-Calibrate neutral pulse widths and maximum travel with the robot raised.
+| status | item |
+|---|---|
+| ✅ done | Receiver firmware with servo output, IMU telemetry, arming and watchdog ([firmware/atom_matrix](../firmware/atom_matrix/README.md)) |
+| ✅ done | Compiles with esp32 core 3.3.11, M5Unified 0.2.22, ArduinoJson 7.4.3; checked in CI |
+| ✅ done | PC side: UDP protocol, stale-telemetry stop, final stop packet (unit-tested) |
+| ⬜ open | Flash and run on a physical Atom Matrix |
+| ⬜ open | Servo calibration, direction check, watchdog and Wi-Fi-loss test on the bench |
+| ⬜ open | Recorded closed-loop run of the robot with `--backend malecns` |
 
-Implement the three hardware hooks in the firmware scaffold: initialize outputs,
-apply signed speed and read IMU. Verify the neutral state on boot, malformed
-packets, telemetry loss, Wi-Fi loss, host crash and 500 ms command timeout.
-Use a physical motor power cutoff. Only enable motion after these checks pass.
+Until the open rows are done and recorded here, no claim of a working physical
+robot is made by this repository.
+
+## Wiring
+
+- Servo signals: G22 (left) and G19 (right) by default; confirm against your board.
+- Power servos from a separate, adequately rated supply. Share ground with the
+  Atom. Never power servos from the Atom's 5 V pin or a GPIO.
+- The ESP32 outputs 3.3 V logic; most hobby servos accept it, check yours.
+- Fit a physical switch that cuts servo power.
+
+## Bring-up checklist
+
+1. Flash with `MOTORS_CALIBRATED = false`. The LED is blue until Wi-Fi connects,
+   then red (disarmed). Pressing the button toggles green (armed), but servos stay
+   at neutral because the robot is not calibrated.
+2. Run `python -m flybrain_robot.main --backend mock --synthetic --send --config config.yaml`
+   and confirm the PC reports `IMU=fresh`.
+3. Robot lifted: adjust `LEFT_NEUTRAL_US` / `RIGHT_NEUTRAL_US` until the wheels do
+   not creep, and `*_REVERSED` until positive speed drives forward.
+4. Set `MOTORS_CALIBRATED = true`, flash, arm with the button, and verify: stop on
+   Ctrl+C, stop 500 ms after unplugging the PC's network, stop on button disarm.
+5. Only then put it on the ground, starting with a low `max_speed`.

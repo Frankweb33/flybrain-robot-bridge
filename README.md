@@ -1,184 +1,186 @@
 <div align="center">
 
-<img src="assets/hNXbI.png" alt="FlyBrain Robot Bridge — from visual signals to physical motion" width="100%">
+<img src="assets/hNXbI.png" alt="BRAIN banner (artistic illustration, not a rendering of simulation data)" width="100%">
 
 # FlyBrain Robot Bridge
 
-**Connect a Drosophila connectome simulation to a physical robot.**
+**A camera-to-robot controller whose brain is a spiking simulation of all 166,700 neurons
+of the MaleCNS fruit-fly connectome.**
 
 ![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-79cce8?style=flat-square)
-[![Tests](https://github.com/Himas1211/flybrain-robot-bridge/actions/workflows/test.yml/badge.svg)](https://github.com/Himas1211/flybrain-robot-bridge/actions/workflows/test.yml)
+[![Tests](https://github.com/Frankweb33/flybrain-robot-bridge/actions/workflows/test.yml/badge.svg)](https://github.com/Frankweb33/flybrain-robot-bridge/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-60dfb3?style=flat-square)](LICENSE)
-![Stage: proof of concept](https://img.shields.io/badge/Stage-proof_of_concept-b4bfd0?style=flat-square)
+![Stage: research prototype](https://img.shields.io/badge/Stage-research_prototype-b4bfd0?style=flat-square)
 
-[Quick start](#quick-start) · [Demo](#mock-demo) · [Architecture](#architecture) · [Roadmap](#roadmap)
+[Status](#status) · [Demo](#demo) · [How it works](#how-it-works) · [Run it](#run-it) · [Validation](docs/VALIDATION.md) · [Limits](#limits)
 
 </div>
 
-An experimental interface between a camera, a neural backend and a physical robot.
-Visual motion and IMU signals feed a small demonstration model; a decoder turns
-its activity into commands for the left and right sides of a robot.
+Camera motion is turned into spikes in the fly's own looming and object-detecting visual
+neurons. The whole connectome, 25.6 million connections from the public
+[MaleCNS v1.0](https://male-cns.janelia.org/) release, carries that activity to real
+descending neurons: the Giant Fiber commands escape, DNa01 and DNa02 steer. Their firing
+rates become left and right motor commands for a walking robot.
 
-**Try it in 30 seconds.** The synthetic demo runs locally without a robot, camera,
-network connection or connectome download.
+## Status
 
-> [!NOTE]
-> This repository does not contain a biological brain or a complete emulation of consciousness. The default backend is a small demonstrator. MaleCNS support is an experimental integration target.
+Every ✅ row can be checked on your own machine with the command or file listed.
 
-## What it does
+| | What | How to check |
+|---|---|---|
+| ✅ | Loads the full MaleCNS v1.0 connectome: 166,700 neurons, 25,582,938 connections, 124,177,617 synapses, from SHA-256-pinned public files | `python -m flybrain_robot.connectome.build compile` |
+| ✅ | Simulates every neuron with the leaky integrate-and-fire model of [Shiu et al. 2024](https://www.nature.com/articles/s41586-024-07763-9) | `src/flybrain_robot/brain/lif.py` |
+| ✅ | Simulation kernel reproduces Brian2, the reference simulator, **spike for spike** | `pytest tests/test_lif_reference.py` |
+| ✅ | Looming on one side drives the Giant Fiber; a moving object drives same-side DNa02 steering; shuffled wiring does not | [VALIDATION.md §4](docs/VALIDATION.md#4-visual-pathways-in-the-whole-brain-model) |
+| ✅ | Closed loop on synthetic camera scenes: turns toward a passing object, escapes from approaching ones, ignores camera pans; all behaviour disappears with shuffled wiring | [VALIDATION.md §5](docs/VALIDATION.md#5-closed-loop-synthetic-camera-scenes--connectome--motor-commands) |
+| ✅ | ESP32 receiver firmware (servos, IMU telemetry, arming, watchdog) compiles | CI `firmware` job, [firmware/](firmware/atom_matrix/README.md) |
+| ⬜ | Run on a physical Strandbeest robot | [HARDWARE.md](docs/HARDWARE.md): not done yet, no recording in this repository |
+| ⬜ | Real-time speed under strong visual input | 0.24–0.58× real time on a desktop CPU ([§6](docs/VALIDATION.md#6-speed)) |
+| ⬜ | Biologically accurate fly behaviour | out of scope for an LIF approximation, see [Limits](#limits) |
 
-- Runs locally with synthetic frames, a webcam or a video file.
-- Estimates motion in two image halves and approximate center-relative expansion.
-- Updates eight hand-designed leaky activity groups using vision and IMU features.
-- Limits, smooths and optionally inverts two motor commands; looming triggers reverse motion.
-- Validates JSON/UDP messages and ignores malformed or out-of-order telemetry.
-- Defaults to dry-run. Physical command transmission requires `--send`.
+## Demo
 
-## Architecture
+![Whole-MaleCNS simulation turning synthetic camera scenes into motor commands](assets/connectome-demo.gif)
 
-![Signal flow and IMU feedback](assets/architecture.svg)
+*Rendered from an actual run of the 166,700-neuron model on the synthetic test scenes
+(`examples/render_connectome_demo.py`). A visualization of simulation output, not a
+robot recording.*
 
-`Camera → VisionEncoder → BrainBackend → MotorDecoder → UDP → robot`
+![Peak Giant Fiber rate and mean turn per scene, MaleCNS wiring versus shuffled wiring](assets/connectome-vs-shuffled.png)
 
-`Robot IMU → UDP telemetry → BrainBackend`
+The control keeps every neuron, its transmitter, its synapse counts and its number of
+inputs and outputs, and randomly permutes which neuron each synapse reaches. With the same
+camera input, the Giant Fiber peaks at 194–253 Hz on the real wiring and at most 15 Hz on
+shuffled wiring, and steering disappears.
 
-See [architecture and protocol](docs/ARCHITECTURE.md). The eight groups are
-`left_motion`, `right_motion`, `looming`, `balance_left`, `balance_right`,
-`left_motor`, `right_motor`, and `escape`. These names describe engineering signals,
-not identified biological neurons. The model has a small forward-motion bias.
+## How it works
 
-## Quick start
+![Signal flow](assets/architecture.svg)
+
+1. **Vision** (`vision.py`): optical flow per image half → *looming* (expansion inside a
+   moving region) and *object* (motion relative to the background). Pans and sideways
+   motion do not register as looming.
+2. **Sensory interface**: looming drives LPLC2 and LC4 neurons, object motion drives LC10a
+   neurons of the matching optic lobe, with Poisson spikes at up to 150 Hz.
+3. **Connectome** (`brain/lif.py`, `brain/malecns.py`): all 166,700 neurons at 0.1 ms
+   steps. Nothing between the driven neurons and the read-out is hand-wired.
+4. **Motor read-out**: smoothed Giant Fiber (DNp01) rate → escape (reverse); DNa01 + DNa02
+   left minus right → turn; a constant forward cruise.
+5. **Robot link**: validated JSON over UDP to an ESP32 receiver with its own watchdog.
+
+The two interfaces in steps 2 and 4 are hand-chosen and documented with their evidence in
+[MALECNS_INTEGRATION.md](docs/MALECNS_INTEGRATION.md). Two model settings differ from the
+reference and are explained there with the measurements behind them: the per-synapse weight
+is rescaled for MaleCNS's higher synapse density, and neuromodulators have no fast synaptic
+effect. With the reference settings, one looming stimulus leaves the brain firing about a
+million spikes per second after the input stops.
+
+## Run it
 
 Requires Python 3.11+.
 
 ```bash
-git clone https://github.com/Himas1211/flybrain-robot-bridge.git
+git clone https://github.com/Frankweb33/flybrain-robot-bridge.git
 cd flybrain-robot-bridge
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-python -m flybrain_robot.main --backend mock --synthetic
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev,connectome]"
 ```
 
-The default run lasts 300 frames (about 10 seconds) and uses no network or camera.
-
-## Mock demo
-
-![Synthetic camera, mock activity and decoded commands](assets/mock-demo.gif)
-
-*Generated from the actual synthetic encoder, mock backend and motor decoder.
-This is a visualization of software output, not a physical robot recording.*
+**30-second demo, no download** (the small hand-made mock backend, not a connectome):
 
 ```bash
-python -m flybrain_robot.main --synthetic --dry-run --steps 90
-python -m flybrain_robot.main --backend mock --camera 0 --dry-run
-python -m flybrain_robot.main --backend mock --video /path/to/your/video.mp4 --dry-run
+python -m flybrain_robot.main --backend mock --synthetic --dry-run --steps 90
 ```
 
-Bring your own video for the video-file mode. Terminal output includes
-motion, looming, IMU freshness, motor activity, commands and watchdog state.
-Synthetic mode uses deterministic frames, fixed simulation time steps and a
-synthetic IMU oscillation. It is a signal-flow demo, not a robot physics simulation.
-The printed synthetic Hz is the simulation rate, not a performance benchmark.
-
-## Connecting a physical robot
+**The connectome** (1.1 GB download, about 40 s compile, 16 GB RAM is enough):
 
 ```bash
-cp config.example.yaml config.yaml
-# Set robot_ip, pc_port, robot_port and calibrated motor limits.
+python -m flybrain_robot.connectome.build download --data data/malecns-v1.0
+python -m flybrain_robot.connectome.build compile  --data data/malecns-v1.0
+python -m flybrain_robot.main --backend malecns --synthetic --scene approach_left --dry-run --steps 90
+python -m flybrain_robot.main --backend malecns --synthetic --scene approach_left --wiring shuffled --dry-run --steps 90
+```
+
+Each status line shows camera features, Giant Fiber and DNa02 rates, the motor command and
+how fast the brain runs relative to real time. Other sources: `--camera 0`,
+`--video path.mp4`, or `--scene` with `static`, `pan`, `pass_left`, `approach_center`,
+`approach_right`, `tour`.
+
+**Reproduce every number in the validation report** (adds Brian2; about 5 minutes):
+
+```bash
+pip install -e ".[reference]"
+python -m flybrain_robot.validation --data data/malecns-v1.0
+```
+
+## Connecting a robot
+
+```bash
+cp config.example.yaml config.yaml   # robot_ip, ports, max_speed, backend: malecns
 python -m flybrain_robot.main --camera 0 --config config.yaml --send
 ```
 
-The [firmware scaffold](firmware/atom_matrix/README.md) requires board-specific
-servo and IMU hooks before it can move a robot. It is intentionally disarmed until
-those hooks are implemented. No hardware test has been performed.
+Flash [firmware/atom_matrix](firmware/atom_matrix/README.md) and follow the bring-up
+checklist in [HARDWARE.md](docs/HARDWARE.md). Motors stay at neutral until the firmware is
+marked calibrated **and** armed with the button. The PC sends stop commands when telemetry
+is older than 500 ms; the receiver stops on its own after 500 ms without a command. UDP is
+unauthenticated: use an isolated network.
 
-The PC sends zero commands while telemetry is absent or older than 500 ms.
-The receiver must independently stop motors after 500 ms without a fresh command.
-Ctrl+C and normal exit send a best-effort stop packet. UDP delivery is not guaranteed.
+## Limits
 
-## MaleCNS integration
-
-`MaleCNSBackend` checks the configured dataset path and then exits with
-`Not implemented yet`. No graph is loaded and no simulated MaleCNS result is fabricated.
-See [integration notes](docs/MALECNS_INTEGRATION.md) for the proposed extension points.
-
-## Repository structure
-
-```text
-assets/                       Cover, architecture diagram and recorded mock output
-src/flybrain_robot/            CLI, vision, protocol, decoder, configuration
-src/flybrain_robot/brain/      Backend interface, working mock, MaleCNS stub
-firmware/atom_matrix/          Disarmed ESP32 integration scaffold
-examples/                     Synthetic demo and GIF rendering script
-tests/                        Protocol, model, decoder, watchdog and CLI checks
-docs/                         Architecture, hardware and integration notes
-.github/workflows/test.yml    Ruff, pytest and synthetic smoke run
-```
-
-## Current limitations
-
-This is an early proof of concept. The model is hand-designed and does not use connectome data.
-Motion signals are magnitudes in each image half, not a biological directional
-vision model. Looming is a center-relative optical-flow heuristic and is sensitive
-to camera motion, lighting and frame rate. It is not collision avoidance.
-IMU feedback currently uses gyro yaw only. There is no gait generator, physical
-simulation, interactive dashboard or recorded robot demonstration. UDP has no
-authentication, reliability or replay protection across process restarts.
-Firmware is a scaffold and has not been compiled or tested on a board.
+- **Not yet tested on hardware.** The firmware compiles; flashing, calibration and a
+  recorded run on a robot are the next milestone.
+- **A model, not a fly.** Leaky integrate-and-fire neurons with weights proportional to
+  synapse counts and EM-predicted transmitters. No graded potentials, gap junctions,
+  neuromodulation, plasticity or body. Published LIF models of the fly brain reproduce some
+  sensorimotor circuits, not full behaviour.
+- **Hand-made interfaces.** Camera features are optical-flow heuristics injected into whole
+  neuron populations with hemifield resolution; the fly's own photoreceptors and motion
+  circuits are bypassed. Forward cruise is a controller constant.
+- **Speed.** The brain advances one camera frame (33 ms) per step; with strong visual input
+  a desktop CPU needs longer than that, so a live robot gets fewer commands per second.
+- **Synthetic scenes only.** Real webcams, lighting and motion blur are untested.
 
 ## Roadmap
 
-- [x] Working mock neural backend
-- [x] OpenCV optical-flow encoder (synthetic validation; webcam hardware untested)
-- [x] UDP bridge implementation (physical link untested)
-- [ ] Complete and test Atom Matrix firmware on hardware
-- [ ] Live motor activity visualization
-- [ ] Partial MaleCNS graph loading
-- [ ] Map visual populations to motor populations
-- [ ] GPU simulation backend
-- [ ] Record a physical Strandbeest robot demo
+- [x] Whole-MaleCNS LIF backend with Brian2-verified kernel
+- [x] Looming, object and steering pathways validated against shuffled controls
+- [x] Receiver firmware that compiles for M5Stack Atom Matrix
+- [ ] Bench test of firmware: calibration, watchdog, Wi-Fi loss
+- [ ] Recorded closed-loop run of the physical robot
+- [ ] Real-camera evaluation of the looming and object encoders
+- [ ] GPU kernel for real-time whole-brain simulation under strong input
+- [ ] Retinotopic input instead of whole-population drive
 
-## Scientific sources
+## Sources and attribution
 
-- [Male CNS Connectome — Janelia](https://www.janelia.org/project-team/flyem/male-cns-connectome)
-- [Google Research overview](https://research.google/blog/a-connectomics-milestone-mapping-the-complete-male-fruit-fly-brain/)
-
-## Inspiration and attribution
-
-An independent experimental bridge implementation inspired by open MaleCNS
-research and community experiments with digital Drosophila models. The connectome
-and scientific models belong to their original researchers; this project claims
-no authorship of their discoveries. No third-party project source code or datasets
-are bundled. Related community projects for further reading:
-
-- [nftechie/doomfly](https://github.com/nftechie/doomfly)
-- [ornata/fly](https://github.com/ornata/fly)
-- [eonsystemspbc/fly-brain](https://github.com/eonsystemspbc/fly-brain)
-- [philshiu/Drosophila_brain_model](https://github.com/philshiu/Drosophila_brain_model)
-- [DenisSergeevitch/desktop-fly](https://github.com/DenisSergeevitch/desktop-fly)
-
-Check each project's license before reusing any material. Dependency licenses and
-future dataset terms remain separate from this project's MIT license.
-
-## Safety
-
-Start with dry-run, then calibrate with the robot lifted off the ground. Use an
-independent motor power cutoff and a receiver watchdog. An optical-flow heuristic
-cannot protect people or equipment. Use a trusted isolated network; firmware
-integration needs a hardware review before motion is enabled.
+- **Connectome:** MaleCNS v1.0, HHMI Janelia FlyEM, Google Research, MRC LMB and
+  collaborators, [male-cns.janelia.org](https://male-cns.janelia.org/), licensed CC BY 4.0.
+  Not bundled; downloaded from the original source. The authors do not endorse this project.
+- **Neuron model:** Shiu, P. K. et al. *A Drosophila computational brain model reveals
+  sensorimotor processing.* Nature 634, 210–219 (2024).
+  [Code](https://github.com/philshiu/Drosophila_brain_model) (MIT). Its FlyWire
+  connectivity file was used only to compute the synapses-per-neuron figure for weight
+  rescaling; no FlyWire data is used or distributed here.
+- **Cell-type function:** Klapoetke et al. 2017 (LPLC2), von Reyn et al. 2014 and 2017
+  (Giant Fiber, LC4), Ribeiro et al. 2018 (LC10a), Rayshubskiy et al. 2020 (DNa01/DNa02).
+- Related community projects: [nftechie/doomfly](https://github.com/nftechie/doomfly),
+  [ornata/fly](https://github.com/ornata/fly),
+  [eonsystemspbc/fly-brain](https://github.com/eonsystemspbc/fly-brain),
+  [philshiu/Drosophila_brain_model](https://github.com/philshiu/Drosophila_brain_model),
+  [DenisSergeevitch/desktop-fly](https://github.com/DenisSergeevitch/desktop-fly).
 
 ## Development
 
 ```bash
+pip install -e ".[dev,connectome,reference,demo]"
 ruff check .
 pytest -q
-python -m flybrain_robot.main --synthetic --dry-run --steps 20
 ```
 
-Rebuild the README animation with `pip install -e ".[demo]"` followed by
-`python examples/render_demo.py`. See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Changes to the brain path must regenerate
+`docs/VALIDATION.md`.
 
 ## License
 
-[MIT](LICENSE). Scientific datasets and dependencies retain their own license terms.
+[MIT](LICENSE) for the code. Datasets and dependencies keep their own licenses.

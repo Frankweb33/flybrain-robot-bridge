@@ -51,7 +51,7 @@ def _pathways(section):
         "Pass: target ≥ 20 Hz and ≥ 3× the strongest response in any of the shuffled-wiring "
         f"controls (seeds {', '.join(map(str, section['control_seeds']))}); where marked, also "
         "≥ 3× the same cell type on the other side. The first full run required that for the "
-        "Giant Fiber too; it failed at about 2.2× while the controls stayed at 0 Hz. Escape "
+        "Giant Fiber too; it failed at 1.8× and 2.2× while the controls stayed at 0 Hz. Escape "
         "reads both Giant Fibers, so their ratio is now reported rather than required. "
         "*Direct synapses* and *top two-step routes* (synapses into → out of the intermediate "
         "neuron) are read from the compiled graph.\n\n"
