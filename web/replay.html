@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlyBrain Replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #060c11;
+    --panel: #0b161e;
+    --panel-edge: #16303f;
+    --grid: #122735;
+    --text: #e2f0f6;
+    --muted: #7a95a5;
+    --phosphor: #6ff2c1;
+    --phosphor-dim: #2f8d6f;
+    --cyan: #7fd3ff;
+    --amber: #ffb454;
+    --display: "Fraunces", "Iowan Old Style", Georgia, serif;
+    --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--ink); color: var(--text); }
+  body {
+    font: 13px/1.45 var(--mono);
+    min-height: 100vh;
+    padding: 0 20px 24px;
+    background:
+      radial-gradient(1200px 600px at 70% -10%, rgba(111, 242, 193, 0.07), transparent 60%),
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 100% 32px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 32px 100%,
+      var(--ink);
+    background-blend-mode: normal, soft-light, soft-light, normal;
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0.06;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  header {
+    display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end;
+    padding: 28px 0 18px; border-bottom: 1px solid var(--panel-edge);
+  }
+  .eyebrow { color: var(--phosphor); letter-spacing: 0.24em; font-size: 11px; text-transform: uppercase; }
+  h1 { font: 300 clamp(28px, 4vw, 44px)/1.05 var(--display); margin: 6px 0 0; letter-spacing: -0.01em; }
+  h1 em { font-style: italic; color: var(--phosphor); font-weight: 600; }
+  .meta { color: var(--muted); text-align: right; font-size: 11px; line-height: 1.7; }
+  .meta b { color: var(--text); font-weight: 500; }
+  main {
+    display: grid; gap: 14px; margin-top: 16px;
+    grid-template-columns: minmax(250px, 300px) minmax(0, 1fr) minmax(260px, 320px);
+  }
+  @media (max-width: 1100px) { main { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 700px) {
+    body { padding: 0 16px 20px; }
+    header { grid-template-columns: minmax(0, 1fr); }
+    .meta { text-align: left; }
+  }
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent 40%), var(--panel);
+    border: 1px solid var(--panel-edge); border-radius: 10px; padding: 14px;
+    opacity: 0; transform: translateY(8px); animation: rise 0.6s ease forwards;
+  }
+  .panel:nth-child(2) { animation-delay: 0.08s; }
+  .panel:nth-child(3) { animation-delay: 0.16s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .panel { animation: none; opacity: 1; transform: none; } }
+  .label { color: var(--cyan); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 10px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; }
+  .label span { color: var(--muted); letter-spacing: 0; text-transform: none; }
+  .camera { position: relative; border-radius: 6px; overflow: hidden; border: 1px solid var(--panel-edge); aspect-ratio: 4 / 3; background: #000; }
+  .camera img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+  .camera::after { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(111,242,193,0.5); }
+  .scene-tag { position: absolute; left: 8px; top: 8px; background: rgba(6,12,17,0.8); padding: 2px 7px; border-radius: 4px; color: var(--phosphor); font-size: 11px; z-index: 1; }
+  .features { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px 8px; margin: 12px 0 16px; align-items: center; color: var(--muted); font-size: 11px; }
+  .meter { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--phosphor); transition: width 0.08s linear; }
+  .wheels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .wheel { border: 1px solid var(--panel-edge); border-radius: 8px; padding: 8px 10px; }
+  .wheel small { color: var(--muted); font-size: 10px; letter-spacing: 0.14em; }
+  .wheel .value { font: 600 30px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+  .wheel .value.neg { color: var(--amber); }
+  .escape { margin-top: 10px; border-radius: 8px; padding: 10px; text-align: center; letter-spacing: 0.3em; font-size: 12px; border: 1px solid var(--panel-edge); color: var(--muted); transition: background 0.15s, color 0.15s; }
+  .escape.on { background: var(--amber); color: var(--ink); border-color: var(--amber); box-shadow: 0 0 28px rgba(255,180,84,0.35); }
+  canvas { display: block; width: 100%; }
+  #raster { height: 330px; }
+  #trace { height: 90px; margin-top: 6px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 16px; color: var(--muted); font-size: 11px; margin-top: 8px; }
+  .legend b { display: inline-block; width: 22px; height: 3px; vertical-align: middle; margin-right: 6px; }
+  .active-list { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow: auto; }
+  .active-list li { display: grid; grid-template-columns: 20px minmax(0, 1fr) 54px; gap: 6px; align-items: center; padding: 4px 6px; border-radius: 5px; cursor: pointer; }
+  .active-list li:hover, .active-list li:focus-visible { background: rgba(127,211,255,0.08); outline: none; }
+  .active-list li.selected { background: rgba(111,242,193,0.12); }
+  .active-list .rank { color: var(--muted); font-size: 10px; }
+  .active-list .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .active-list .name small { color: var(--muted); }
+  .active-list .hz { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { font-size: 9px; color: var(--ink); background: var(--cyan); border-radius: 3px; padding: 0 4px; margin-left: 4px; letter-spacing: 0.06em; }
+  #skeleton { height: 250px; margin-top: 10px; border: 1px solid var(--panel-edge); border-radius: 6px; background: radial-gradient(circle at 50% 40%, rgba(111,242,193,0.05), transparent 70%); }
+  .skeleton-note { color: var(--muted); font-size: 11px; margin-top: 6px; min-height: 32px; }
+  .transport {
+    position: sticky; bottom: 0; margin-top: 14px; display: grid; gap: 10px 14px; align-items: center;
+    grid-template-columns: auto auto 1fr auto; background: rgba(6,12,17,0.92); backdrop-filter: blur(6px);
+    border: 1px solid var(--panel-edge); border-radius: 10px; padding: 10px 14px;
+  }
+  @media (max-width: 700px) {
+    .transport { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .transport input[type=range], .transport .clock { grid-column: 1 / -1; }
+  }
+  button, select { font: 500 12px var(--mono); color: var(--text); background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+  button:hover, select:hover { border-color: var(--phosphor-dim); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 2px; }
+  button.play { min-width: 92px; color: var(--ink); background: var(--phosphor); border-color: var(--phosphor); }
+  input[type=range] { width: 100%; accent-color: var(--phosphor); }
+  .clock { font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+  .scenes { display: flex; flex-wrap: wrap; gap: 6px; }
+  .scenes button { padding: 4px 8px; font-size: 11px; }
+  .loader { margin: 60px auto; max-width: 560px; text-align: center; color: var(--muted); border: 1px dashed var(--panel-edge); border-radius: 12px; padding: 36px; }
+  .loader h2 { font: 300 26px var(--display); color: var(--text); margin: 0 0 10px; }
+  footer { margin-top: 18px; color: var(--muted); font-size: 11px; max-width: 900px; }
+  footer a { color: var(--cyan); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="eyebrow">Replay · simulation output</div>
+    <h1><span id="count">Simulated</span> neurons, <em>frame by frame</em></h1>
+  </div>
+  <div class="meta" id="meta">No run loaded</div>
+</header>
+
+<section class="loader" id="loader">
+  <h2>Load a run</h2>
+  <p>This page reads <code>runs/tour.json</code> when served over HTTP
+  (<code>python -m http.server</code> in <code>web/</code>). Opened as a file, choose or drop
+  a run exported with <code>python -m flybrain_robot.replay</code>.</p>
+  <p><input type="file" id="file" accept=".json,application/json" aria-label="Choose a run file"></p>
+  <p id="load-error" role="alert"></p>
+</section>
+
+<div id="app" hidden>
+<main>
+  <section class="panel" aria-label="Camera and motor commands">
+    <div class="label">01 Camera <span>synthetic scene · <span id="clock-small"></span></span></div>
+    <div class="camera"><div class="scene-tag" id="scene">—</div><img id="frame" alt="Camera frame"></div>
+    <div class="features" aria-label="Encoder features">
+      <span></span><span>left half</span><span>right half</span>
+      <span>looming</span><div class="meter"><i id="loom-l"></i></div><div class="meter"><i id="loom-r"></i></div>
+      <span>object</span><div class="meter"><i id="obj-l"></i></div><div class="meter"><i id="obj-r"></i></div>
+    </div>
+    <div class="label">03 Command <span id="spikes"></span></div>
+    <div class="wheels">
+      <div class="wheel"><small>LEFT</small><div class="value" id="cmd-l">+0</div></div>
+      <div class="wheel"><small>RIGHT</small><div class="value" id="cmd-r">+0</div></div>
+    </div>
+    <div class="escape" id="escape">CRUISE</div>
+  </section>
+
+  <section class="panel" aria-label="Firing rates over time">
+    <div class="label">02 Named neurons, whole run <span>smoothed rate, 0 – 300 Hz</span></div>
+    <canvas id="raster" role="img" aria-label="Heat map of firing rates of named neuron groups over the run"></canvas>
+    <canvas id="trace" role="img" aria-label="Turn command and escape activity over the run"></canvas>
+    <div class="legend">
+      <span><b style="background: var(--cyan)"></b>turn (+ left)</span>
+      <span><b style="background: var(--amber)"></b>escape activity</span>
+      <span>click the chart to jump</span>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Most active neurons">
+    <div class="label">04 Most active now <span>whole brain</span></div>
+    <ul class="active-list" id="active"></ul>
+    <canvas id="skeleton" role="img" aria-label="Skeleton of the selected neuron"></canvas>
+    <div class="skeleton-note" id="skeleton-note">Select a neuron to draw its reconstructed skeleton from neuPrint.</div>
+  </section>
+</main>
+
+<div class="transport">
+  <button class="play" id="play" aria-label="Play or pause">▶ Play</button>
+  <select id="speed" aria-label="Playback speed">
+    <option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+    <option value="1" selected>1×</option><option value="2">2×</option>
+  </select>
+  <input type="range" id="scrub" min="0" value="0" aria-label="Frame">
+  <span class="clock" id="clock">0.00 s</span>
+  <div class="scenes" id="scenes" style="grid-column: 1 / -1"></div>
+</div>
+</div>
+
+<footer>
+  Output of a leaky integrate-and-fire model run on the MaleCNS v1.0 connectome (CC BY 4.0,
+  HHMI Janelia FlyEM, Google Research, MRC LMB and collaborators) with synthetic camera scenes.
+  It is not a recording of a fly or of a robot. Skeletons load from
+  <a href="https://neuprint.janelia.org" rel="noopener">neuPrint</a>.
+  The authors of the connectome do not endorse this project.
+</footer>
+
+<script>
+(() => {
+  const ROWS = [
+    ["LPLC2:L", "LPLC2 L", "in"], ["LPLC2:R", "LPLC2 R", "in"], ["LC4:L", "LC4 L", "in"], ["LC4:R", "LC4 R", "in"],
+    ["LC10a:L", "LC10a L", "in"], ["LC10a:R", "LC10a R", "in"],
+    ["DNp01:L", "Giant Fiber L", "out"], ["DNp01:R", "Giant Fiber R", "out"],
+    ["DNa02:L", "DNa02 L", "out"], ["DNa02:R", "DNa02 R", "out"], ["DNa01:L", "DNa01 L", "out"], ["DNa01:R", "DNa01 R", "out"],
+    ["DNp04:L", "DNp04 L", "mon"], ["DNp04:R", "DNp04 R", "mon"], ["DNp11:L", "DNp11 L", "mon"], ["DNp11:R", "DNp11 R", "mon"],
+  ];
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  let run = null, index = 0, playing = false, last = 0, carry = 0, selected = null;
+  const skeletonCache = new Map();
+
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  function setupCanvas(canvas) {
+    const ratio = window.devicePixelRatio || 1;
+    const { width, height } = canvas.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.round(width * ratio));
+    canvas.height = Math.max(1, Math.round(height * ratio));
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    return { ctx, width, height };
+  }
+
+  let rasterImage = null;
+  function renderRaster() {
+    const { ctx, width, height } = setupCanvas($("raster"));
+    const labelW = 104, top = 18, rowH = (height - top) / ROWS.length, n = run.frames.length;
+    const plotW = width - labelW;
+    ctx.fillStyle = css("--panel"); ctx.fillRect(0, 0, width, height);
+    const off = document.createElement("canvas");
+    off.width = n; off.height = ROWS.length;
+    const octx = off.getContext("2d"), img = octx.createImageData(n, ROWS.length);
+    ROWS.forEach(([key], r) => {
+      for (let f = 0; f < n; f++) {
+        const hz = run.frames[f].groups[key] ?? 0;
+        const v = Math.sqrt(Math.min(hz, 300) / 300);
+        const p = (r * n + f) * 4;
+        img.data[p] = 11 + v * 100; img.data[p + 1] = 22 + v * 220; img.data[p + 2] = 30 + v * 163; img.data[p + 3] = 255;
+      }
+    });
+    octx.putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off, labelW, top, plotW, rowH * ROWS.length);
+    ctx.font = `11px ${css("--mono")}`;
+    ROWS.forEach(([, label, kind], r) => {
+      ctx.fillStyle = kind === "out" ? css("--text") : css("--muted");
+      ctx.fillText(label, 4, top + r * rowH + rowH * 0.68);
+      if (r > 0 && ROWS[r - 1][2] !== kind) {
+        ctx.fillStyle = css("--panel-edge"); ctx.fillRect(labelW, top + r * rowH - 1, plotW, 2);
+      }
+    });
+    let start = 0;
+    run.frames.forEach((fr, f) => {
+      const end = f === n - 1 || run.frames[f + 1].scene !== fr.scene;
+      if (end) {
+        const x0 = labelW + (start / n) * plotW, x1 = labelW + ((f + 1) / n) * plotW;
+        const name = fr.scene.replaceAll("_", " ");
+        ctx.fillStyle = css("--muted");
+        if (ctx.measureText(name).width + 6 <= x1 - x0) ctx.fillText(name, x0 + 3, 12);
+        ctx.fillStyle = css("--panel-edge"); ctx.fillRect(x1 - 1, top, 1, height - top);
+        start = f + 1;
+      }
+    });
+    rasterImage = ctx.getImageData(0, 0, $("raster").width, $("raster").height);
+    renderTraceBase();
+  }
+
+  let traceImage = null;
+  function renderTraceBase() {
+    const { ctx, width, height } = setupCanvas($("trace"));
+    const labelW = 104, n = run.frames.length, plotW = width - labelW, mid = height / 2;
+    ctx.fillStyle = css("--panel"); ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = css("--grid"); ctx.fillRect(labelW, mid, plotW, 1);
+    ctx.font = `11px ${css("--mono")}`; ctx.fillStyle = css("--muted");
+    ctx.fillText("turn / escape", 4, mid + 4);
+    const line = (color, value) => {
+      ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
+      run.frames.forEach((fr, f) => {
+        const x = labelW + ((f + 0.5) / n) * plotW, y = mid - value(fr) * (mid - 6);
+        f ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.stroke();
+    };
+    line(css("--amber"), (fr) => fr.motor.escape);
+    line(css("--cyan"), (fr) => (fr.motor.right - fr.motor.left) / 2);
+    traceImage = ctx.getImageData(0, 0, $("trace").width, $("trace").height);
+  }
+
+  function drawPlayhead(canvasId, image) {
+    const canvas = $(canvasId), ctx = canvas.getContext("2d");
+    const ratio = window.devicePixelRatio || 1, width = canvas.width / ratio, labelW = 104;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.putImageData(image, 0, 0); ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    const x = labelW + ((index + 0.5) / run.frames.length) * (width - labelW);
+    ctx.fillStyle = css("--phosphor"); ctx.fillRect(x - 0.75, 0, 1.5, canvas.height / ratio);
+  }
+
+  function imageFor(i) {
+    for (let k = i; k >= 0; k--) if (run.frames[k].image) return run.frames[k].image;
+    return "";
+  }
+
+  function show(i) {
+    index = Math.max(0, Math.min(run.frames.length - 1, i));
+    const fr = run.frames[index];
+    $("frame").src = "data:image/jpeg;base64," + imageFor(index);
+    $("scene").textContent = fr.scene.replaceAll("_", " ");
+    $("clock").textContent = `${fr.t.toFixed(2)} s · frame ${index + 1}/${run.frames.length}`;
+    $("clock-small").textContent = `${fr.t.toFixed(2)} s`;
+    $("scrub").value = index;
+    $("loom-l").style.width = `${fr.features.looming[0] * 100}%`;
+    $("loom-r").style.width = `${fr.features.looming[1] * 100}%`;
+    $("obj-l").style.width = `${fr.features.object[0] * 100}%`;
+    $("obj-r").style.width = `${fr.features.object[1] * 100}%`;
+    const [cl, cr] = fr.motor.command;
+    for (const [id, v] of [["cmd-l", cl], ["cmd-r", cr]]) {
+      $(id).textContent = (v >= 0 ? "+" : "") + v;
+      $(id).classList.toggle("neg", v < 0);
+    }
+    const escaping = fr.motor.escape >= 0.3;
+    $("escape").textContent = escaping ? "ESCAPE" : "CRUISE";
+    $("escape").classList.toggle("on", escaping);
+    $("spikes").textContent = `${fr.spikes.toLocaleString("en-US")} spikes this frame`;
+    renderActive(fr);
+    drawPlayhead("raster", rasterImage);
+    drawPlayhead("trace", traceImage);
+  }
+
+  function renderActive(fr) {
+    const list = $("active");
+    const max = Math.max(1, ...fr.active.map((a) => a[1]));
+    list.replaceChildren(...fr.active.slice(0, 18).map(([row, hz], k) => {
+      const n = run.neurons[row], li = document.createElement("li");
+      li.tabIndex = 0;
+      li.className = selected === n.body_id ? "selected" : "";
+      li.title = `${n.instance || n.type} · ${n.superclass} · body ${n.body_id}`;
+      li.innerHTML = `<span class="rank">${k + 1}</span>
+        <span class="name">${escapeHtml(n.type || n.instance)}${n.side ? " " + n.side : ""}
+        <small>${n.body_id}</small>${n.driven ? '<span class="badge">DRIVEN</span>' : ""}</span>
+        <span class="hz">${hz.toFixed(0)} Hz</span>`;
+      li.style.background = selected === n.body_id ? "" : `linear-gradient(90deg, rgba(111,242,193,${0.1 * hz / max}) ${100 * hz / max}%, transparent 0)`;
+      const pick = () => selectNeuron(n);
+      li.addEventListener("click", pick);
+      li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+      return li;
+    }));
+    if (!fr.active.length) {
+      const li = document.createElement("li");
+      li.innerHTML = '<span></span><span class="name" style="color: var(--muted)">no neuron above 1 Hz</span><span></span>';
+      list.replaceChildren(li);
+    }
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  }
+
+  async function selectNeuron(n) {
+    selected = n.body_id;
+    renderActive(run.frames[index]);
+    const note = $("skeleton-note");
+    note.textContent = `Loading ${n.instance || n.type} (${n.body_id}) from neuPrint…`;
+    try {
+      let points = skeletonCache.get(n.body_id);
+      if (!points) {
+        const url = `https://neuprint.janelia.org/api/skeletons/skeleton/male-cns:v1.0/${n.body_id}?format=swc`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        points = parseSwc(await response.text());
+        skeletonCache.set(n.body_id, points);
+      }
+      if (selected !== n.body_id) return;
+      drawSkeleton(points);
+      note.textContent = `${n.instance || n.type} · ${n.superclass.replaceAll("_", " ")} · body ${n.body_id} · ${points.size.toLocaleString("en-US")} skeleton nodes, x–y projection`;
+    } catch (error) {
+      note.textContent = `Could not load the skeleton (${error.message}). neuPrint needs a network connection.`;
+    }
+  }
+
+  function parseSwc(text) {
+    const nodes = new Map();
+    for (const line of text.split("\n")) {
+      if (!line || line.startsWith("#")) continue;
+      const [id, type, x, y, , r, parent] = line.trim().split(/\s+/).map(Number);
+      if (Number.isFinite(id)) nodes.set(id, { type, x, y, r, parent });
+    }
+    return nodes;
+  }
+
+  function drawSkeleton(nodes) {
+    const { ctx, width, height } = setupCanvas($("skeleton"));
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const n of nodes.values()) { minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x); minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y); }
+    const pad = 14, scale = Math.min((width - 2 * pad) / (maxX - minX || 1), (height - 2 * pad) / (maxY - minY || 1));
+    const ox = (width - (maxX - minX) * scale) / 2, oy = (height - (maxY - minY) * scale) / 2;
+    const px = (n) => [ox + (n.x - minX) * scale, oy + (n.y - minY) * scale];
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = "rgba(111, 242, 193, 0.75)"; ctx.lineWidth = 0.8; ctx.beginPath();
+    let soma = null;
+    for (const n of nodes.values()) {
+      if (n.type === 1 && !soma) soma = n;
+      const p = nodes.get(n.parent);
+      if (!p) continue;
+      const [x0, y0] = px(p), [x1, y1] = px(n);
+      ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+    }
+    ctx.stroke();
+    if (soma) {
+      const [sx, sy] = px(soma);
+      ctx.fillStyle = css("--amber"); ctx.beginPath(); ctx.arc(sx, sy, 3.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function tick(now) {
+    if (!playing) return;
+    const dt = (now - last) / 1000; last = now;
+    carry += dt * Number($("speed").value) / run.meta.frame_period_s;
+    const steps = Math.floor(carry);
+    if (steps > 0) {
+      carry -= steps;
+      if (index + steps >= run.frames.length) { show(run.frames.length - 1); setPlaying(false); return; }
+      show(index + steps);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function setPlaying(on) {
+    playing = on;
+    $("play").textContent = on ? "❚❚ Pause" : "▶ Play";
+    if (on) { if (index >= run.frames.length - 1) show(0); last = performance.now(); carry = 0; requestAnimationFrame(tick); }
+  }
+
+  function start(data) {
+    run = data;
+    $("loader").hidden = true; $("app").hidden = false;
+    const m = run.meta;
+    $("count").textContent = m.neurons.toLocaleString("en-US");
+    $("meta").innerHTML = `<b>${m.neurons.toLocaleString("en-US")}</b> neurons · ${escapeHtml(m.dataset || "")}<br>
+      wiring <b>${escapeHtml(m.wiring)}</b> · seed ${m.seed} · device ${escapeHtml(m.device)} · commit ${escapeHtml(m.commit)}`;
+    $("scrub").max = run.frames.length - 1;
+    const scenes = [];
+    run.frames.forEach((fr, f) => { if (!f || run.frames[f - 1].scene !== fr.scene) scenes.push([fr.scene, f]); });
+    $("scenes").replaceChildren(...scenes.map(([name, f]) => {
+      const b = document.createElement("button");
+      b.textContent = name.replaceAll("_", " ");
+      b.addEventListener("click", () => show(f));
+      return b;
+    }));
+    renderRaster();
+    show(Number(params.get("frame")) || 0);
+    const linked = run.neurons.find((n) => String(n.body_id) === params.get("neuron"));
+    if (linked) selectNeuron(linked);
+  }
+
+  function jumpFromChart(event) {
+    const rect = event.currentTarget.getBoundingClientRect(), labelW = 104;
+    const f = Math.floor(((event.clientX - rect.left - labelW) / (rect.width - labelW)) * run.frames.length);
+    if (f >= 0) show(f);
+  }
+
+  $("play").addEventListener("click", () => setPlaying(!playing));
+  $("scrub").addEventListener("input", (e) => { setPlaying(false); show(Number(e.target.value)); });
+  $("raster").addEventListener("click", jumpFromChart);
+  $("trace").addEventListener("click", jumpFromChart);
+  window.addEventListener("keydown", (e) => {
+    if (!run || e.target.tagName === "SELECT" || e.target.tagName === "INPUT") return;
+    if (e.key === " " && e.target.tagName !== "BUTTON" && e.target.tagName !== "LI") { e.preventDefault(); setPlaying(!playing); }
+    if (e.key === "ArrowRight") { setPlaying(false); show(index + (e.shiftKey ? 10 : 1)); }
+    if (e.key === "ArrowLeft") { setPlaying(false); show(index - (e.shiftKey ? 10 : 1)); }
+  });
+  window.addEventListener("resize", () => { if (run) { renderRaster(); show(index); } });
+
+  $("file").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (file) loadText(await file.text());
+  });
+  document.addEventListener("dragover", (e) => e.preventDefault());
+  document.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) loadText(await file.text());
+  });
+  function loadText(text) {
+    try { start(JSON.parse(text)); }
+    catch (error) { $("load-error").textContent = `Not a run file: ${error.message}`; }
+  }
+
+  fetch(params.get("run") || "runs/tour.json")
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+    .then(start)
+    .catch(() => {});
+})();
+</script>
+</body>
+</html>

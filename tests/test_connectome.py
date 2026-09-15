@@ -247,3 +247,30 @@ def test_cli_runs_connectome_backend(tmp_path, capsys):
     last = capsys.readouterr().out.strip().splitlines()[-1]
     assert "tilt(roll/pitch)=+0/+20deg" in last and "JO-C=0/0Hz" in last
     assert "JO-E=0/0Hz" not in last  # nose down pulls both antennae: JO-E fires
+
+
+def test_replay_export_matches_the_page_format(tmp_path):
+    import base64
+    import json
+
+    import cv2
+
+    from flybrain_robot.replay import main
+
+    save_connectome(robot_circuit(), tmp_path)
+    out = tmp_path / "run.json"
+    main(["--data", str(tmp_path), "--scene", "approach_left", "--frames", "90", "--device", "cpu",
+          "--out", str(out)])  # fmt: skip
+    run = json.loads(out.read_text(encoding="utf-8"))
+    assert run["meta"]["neurons"] == robot_circuit().size and run["meta"]["device"] == "cpu"
+    frames, neurons = run["frames"], run["neurons"]
+    assert len(frames) == 90 and [f["image"] != "" for f in frames] == [i % 2 == 0 for i in range(90)]
+    image = cv2.imdecode(np.frombuffer(base64.b64decode(frames[0]["image"]), np.uint8), 1)
+    assert image.shape == (120, 160, 3)
+    active = [row for f in frames for row, hz in f["active"]]
+    assert active and all(0 <= row < len(neurons) for row in active)
+    assert all(hz >= 1 for f in frames for _, hz in f["active"])
+    assert {n["type"] for n in neurons if n["driven"]} >= {"LPLC2", "LC4"}
+    last = frames[-1]
+    assert last["groups"]["DNp01:L"] > 20 and last["motor"]["escape"] == 1.0
+    assert last["features"]["looming"][0] > last["features"]["looming"][1]
