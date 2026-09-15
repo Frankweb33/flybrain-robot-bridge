@@ -58,6 +58,20 @@ inputs and outputs, and randomly permutes which neuron each synapse reaches. Wit
 camera input, the Giant Fiber peaks at 190–260 Hz on the real wiring and at most 17 Hz on
 shuffled wiring, and steering disappears.
 
+**Replay any frame yourself.** `web/replay.html` plays back an exported run: the camera
+frame, the rates of the named neurons over the whole tour, the motor command, and the 30
+most active of all 166,700 neurons at that moment. Click one to draw its reconstructed
+skeleton from [neuPrint](https://neuprint.janelia.org). The included run
+(`web/runs/tour.json`) was exported from the full model; export your own, for example with
+shuffled wiring, and compare.
+
+```bash
+python -m flybrain_robot.replay --data data/malecns-v1.0 --out web/runs/tour.json   # optional, 540 frames
+python -m http.server --directory web 8000   # then open http://localhost:8000/replay.html
+```
+
+![Replay page: camera frame, firing rates of named neurons over the tour, most active neurons and a neuPrint skeleton](assets/replay.jpg)
+
 ## How it works
 
 ![Signal flow](assets/architecture.svg)

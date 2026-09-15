@@ -81,6 +81,16 @@ slower than real time under strong input; the status line shows
 `brain_x_realtime`, and a live robot then receives commands at a lower rate. The
 mock backend with a live camera uses measured frame intervals.
 
+## Replay
+
+`replay.py` runs a scene through the MaleCNS backend and writes one JSON object per
+frame: a 160 × 120 JPEG of every second camera frame, the encoder features, the
+smoothed rates of the named groups, the 30 most active neurons (≥ 1 Hz, as rows of a
+neuron table with body ID, type and side) and the motor activity and command, plus
+the commit, device and seed of the run. `web/replay.html` is a single static file
+that reads it; skeletons of selected neurons come from the public neuPrint API. A
+run is deterministic per seed, so an exported file can be regenerated.
+
 ## Decoder and safety
 
 `MotorDecoder` scales activity to `max_speed`, applies a dead zone, smooths
