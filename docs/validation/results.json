@@ -1,7 +1,7 @@
 {
   "machine": {
-    "timestamp": "2026-09-15T19:56:37+00:00",
-    "commit": "c56b309",
+    "timestamp": "2026-09-15T20:55:49+00:00",
+    "commit": "7a2f338",
     "source_modified_since_commit": false,
     "python": "3.13.5",
     "numpy": "2.5.3",
@@ -10,7 +10,7 @@
     "cpu": "12th Gen Intel(R) Core(TM) i5-12400",
     "logical_cpus": 12,
     "numba_threads": 12,
-    "total_seconds": 273
+    "total_seconds": 333
   },
   "dataset": {
     "dataset": "MaleCNS v1.0 (minconf 0.5)",
@@ -45,7 +45,9 @@
       "serotonin": 345,
       "unclear": 2850
     },
-    "sign_rule": "gaba, glutamate, histamine inhibitory; all other or unclear excitatory"
+    "sign_rule": "gaba, glutamate, histamine inhibitory; all other or unclear excitatory",
+    "side_rule": "somaSide, else rootSide (sensory neurons), else instance suffix",
+    "neurons_with_optic_column": 23720
   },
   "model": {
     "w_syn_mv": 0.14510408910416958,
@@ -566,6 +568,284 @@
       }
     ]
   },
+  "feeding": {
+    "sugar_types": [
+      "LB3c",
+      "LB3d"
+    ],
+    "sugar_cells": 49,
+    "other_gustatory": [
+      "claw_tpGRN"
+    ],
+    "other_gustatory_cells": 50,
+    "stimulus_hz": 150.0,
+    "duration_ms": 1000.0,
+    "control_seeds": [
+      1,
+      2,
+      3
+    ],
+    "mn9_hz": 29.0,
+    "mn9_by_side": {
+      "L": 58.0,
+      "R": 0.0
+    },
+    "mn9_shuffled_hz": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mn9_other_gustatory_hz": 21.5,
+    "mn9_after_lesion_hz": {
+      "Roundup": 16.5,
+      "Bract 1 and 2": 32.0
+    },
+    "circuit_hz": {
+      "G2N-1": 89.5,
+      "Zorro": 78.0,
+      "Phantom": 84.0,
+      "Roundup": 38.0,
+      "Fudog": 51.5,
+      "Bract 1": 0.0,
+      "Bract 2": 3.5,
+      "Sugar SEL PN": 0.0,
+      "Sugar SEL LN": 0.0
+    },
+    "sugar_synapses_onto": {
+      "G2N-1": 1004,
+      "Zorro": 873,
+      "Phantom": 583,
+      "Roundup": 0,
+      "Fudog": 326,
+      "Bract 1": 0,
+      "Bract 2": 0,
+      "Sugar SEL PN": 0,
+      "Sugar SEL LN": 0
+    },
+    "passed": false,
+    "post_hoc": [
+      {
+        "stimulus": "sugar GRNs, left only",
+        "cells": 23,
+        "mn9_by_side": {
+          "L": 17.0,
+          "R": 0.0
+        },
+        "circuit_hz": {
+          "G2N-1": 38.0,
+          "Zorro": 38.5,
+          "Phantom": 39.0,
+          "Roundup": 3.5,
+          "Fudog": 8.5,
+          "Bract 1": 0.0,
+          "Bract 2": 6.0,
+          "Sugar SEL PN": 0.0,
+          "Sugar SEL LN": 0.0
+        },
+        "synapses_onto": {
+          "G2N-1": 473,
+          "Zorro": 448,
+          "Phantom": 269,
+          "Roundup": 0,
+          "Fudog": 109,
+          "Bract 1": 0,
+          "Bract 2": 0,
+          "Sugar SEL PN": 0,
+          "Sugar SEL LN": 0
+        }
+      },
+      {
+        "stimulus": "sugar GRNs, right only",
+        "cells": 26,
+        "mn9_by_side": {
+          "L": 50.0,
+          "R": 0.0
+        },
+        "circuit_hz": {
+          "G2N-1": 43.5,
+          "Zorro": 38.0,
+          "Phantom": 41.5,
+          "Roundup": 34.5,
+          "Fudog": 25.5,
+          "Bract 1": 5.0,
+          "Bract 2": 19.0,
+          "Sugar SEL PN": 0.0,
+          "Sugar SEL LN": 0.0
+        },
+        "synapses_onto": {
+          "G2N-1": 531,
+          "Zorro": 425,
+          "Phantom": 314,
+          "Roundup": 0,
+          "Fudog": 217,
+          "Bract 1": 0,
+          "Bract 2": 0,
+          "Sugar SEL PN": 0,
+          "Sugar SEL LN": 0
+        }
+      },
+      {
+        "stimulus": "claw_tpGRN (taste peg)",
+        "cells": 50,
+        "mn9_by_side": {
+          "L": 43.0,
+          "R": 0.0
+        },
+        "circuit_hz": {
+          "G2N-1": 0.0,
+          "Zorro": 0.0,
+          "Phantom": 0.0,
+          "Roundup": 40.0,
+          "Fudog": 0.0,
+          "Bract 1": 0.0,
+          "Bract 2": 2.0,
+          "Sugar SEL PN": 0.0,
+          "Sugar SEL LN": 2.5
+        },
+        "synapses_onto": {
+          "G2N-1": 2,
+          "Zorro": 0,
+          "Phantom": 0,
+          "Roundup": 0,
+          "Fudog": 1,
+          "Bract 1": 0,
+          "Bract 2": 0,
+          "Sugar SEL PN": 0,
+          "Sugar SEL LN": 1
+        }
+      },
+      {
+        "stimulus": "LB1e (other labellar GRNs)",
+        "cells": 19,
+        "mn9_by_side": {
+          "L": 0.0,
+          "R": 0.0
+        },
+        "circuit_hz": {
+          "G2N-1": 0.0,
+          "Zorro": 0.0,
+          "Phantom": 0.0,
+          "Roundup": 0.0,
+          "Fudog": 0.0,
+          "Bract 1": 0.0,
+          "Bract 2": 0.0,
+          "Sugar SEL PN": 0.0,
+          "Sugar SEL LN": 0.0
+        },
+        "synapses_onto": {
+          "G2N-1": 10,
+          "Zorro": 0,
+          "Phantom": 18,
+          "Roundup": 0,
+          "Fudog": 18,
+          "Bract 1": 0,
+          "Bract 2": 0,
+          "Sugar SEL PN": 0,
+          "Sugar SEL LN": 0
+        }
+      },
+      {
+        "stimulus": "aPhM1 (pharyngeal mechanosensory)",
+        "cells": 21,
+        "mn9_by_side": {
+          "L": 0.0,
+          "R": 0.0
+        },
+        "circuit_hz": {
+          "G2N-1": 0.0,
+          "Zorro": 0.0,
+          "Phantom": 0.0,
+          "Roundup": 0.0,
+          "Fudog": 0.0,
+          "Bract 1": 0.0,
+          "Bract 2": 0.0,
+          "Sugar SEL PN": 0.0,
+          "Sugar SEL LN": 0.0
+        },
+        "synapses_onto": {
+          "G2N-1": 0,
+          "Zorro": 0,
+          "Phantom": 0,
+          "Roundup": 0,
+          "Fudog": 0,
+          "Bract 1": 0,
+          "Bract 2": 0,
+          "Sugar SEL PN": 44,
+          "Sugar SEL LN": 36
+        }
+      },
+      {
+        "stimulus": "JO-EV1 (antennal mechanosensory)",
+        "cells": 50,
+        "mn9_by_side": {
+          "L": 0.0,
+          "R": 0.0
+        },
+        "circuit_hz": {
+          "G2N-1": 0.0,
+          "Zorro": 0.0,
+          "Phantom": 0.0,
+          "Roundup": 0.0,
+          "Fudog": 0.0,
+          "Bract 1": 0.0,
+          "Bract 2": 0.0,
+          "Sugar SEL PN": 0.0,
+          "Sugar SEL LN": 0.0
+        },
+        "synapses_onto": {
+          "G2N-1": 0,
+          "Zorro": 0,
+          "Phantom": 0,
+          "Roundup": 0,
+          "Fudog": 0,
+          "Bract 1": 0,
+          "Bract 2": 0,
+          "Sugar SEL PN": 0,
+          "Sugar SEL LN": 0
+        }
+      },
+      {
+        "stimulus": "LPLC2 (visual, both sides)",
+        "cells": 185,
+        "mn9_by_side": {
+          "L": 0.0,
+          "R": 0.0
+        },
+        "circuit_hz": {
+          "G2N-1": 0.0,
+          "Zorro": 0.0,
+          "Phantom": 0.0,
+          "Roundup": 0.0,
+          "Fudog": 0.0,
+          "Bract 1": 0.0,
+          "Bract 2": 0.0,
+          "Sugar SEL PN": 0.0,
+          "Sugar SEL LN": 0.0
+        },
+        "synapses_onto": {
+          "G2N-1": 0,
+          "Zorro": 0,
+          "Phantom": 0,
+          "Roundup": 0,
+          "Fudog": 0,
+          "Bract 1": 0,
+          "Bract 2": 0,
+          "Sugar SEL PN": 0,
+          "Sugar SEL LN": 0
+        }
+      }
+    ],
+    "mn9_reference_settings_by_side": {
+      "sugar GRNs": {
+        "L": 154.0,
+        "R": 39.0
+      },
+      "claw_tpGRN": {
+        "L": 148.0,
+        "R": 30.0
+      }
+    }
+  },
   "closed_loop": {
     "connectome": [
       {
@@ -574,7 +854,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 16.42,
+        "brain_realtime_factor": 20.99,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -612,7 +892,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 21.28,
+        "brain_realtime_factor": 21.51,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -688,7 +968,7 @@
         "max_escape": 1.0,
         "reverse_frames": 19,
         "frames": 90,
-        "brain_realtime_factor": 0.57,
+        "brain_realtime_factor": 0.6,
         "peak_rates_hz": {
           "LPLC2:L": 47.2,
           "LC4:L": 46.5,
@@ -762,7 +1042,7 @@
         "max_escape": 1.0,
         "reverse_frames": 28,
         "frames": 90,
-        "brain_realtime_factor": 0.51,
+        "brain_realtime_factor": 0.53,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -801,7 +1081,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 19.23,
+        "brain_realtime_factor": 24.46,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -835,7 +1115,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 20.39,
+        "brain_realtime_factor": 22.06,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -903,7 +1183,7 @@
         "max_escape": 0.194,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.47,
+        "brain_realtime_factor": 0.49,
         "peak_rates_hz": {
           "LPLC2:L": 45.8,
           "LC4:L": 45.3,
@@ -937,7 +1217,7 @@
         "max_escape": 0.245,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.5,
+        "brain_realtime_factor": 0.39,
         "peak_rates_hz": {
           "LPLC2:L": 100.4,
           "LC4:L": 95.2,
@@ -971,7 +1251,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.48,
+        "brain_realtime_factor": 0.39,
         "peak_rates_hz": {
           "LPLC2:L": 0.8,
           "LC4:L": 0.5,
@@ -1005,7 +1285,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 20.83,
+        "brain_realtime_factor": 14.18,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -1039,7 +1319,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 20.57,
+        "brain_realtime_factor": 15.99,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -1073,7 +1353,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.46,
+        "brain_realtime_factor": 0.43,
         "peak_rates_hz": {
           "LPLC2:L": 0.1,
           "LC4:L": 0.1,
@@ -1107,7 +1387,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.46,
+        "brain_realtime_factor": 0.42,
         "peak_rates_hz": {
           "LPLC2:L": 46.3,
           "LC4:L": 44.9,
@@ -1141,7 +1421,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.48,
+        "brain_realtime_factor": 0.47,
         "peak_rates_hz": {
           "LPLC2:L": 98.4,
           "LC4:L": 101.3,
@@ -1175,7 +1455,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.48,
+        "brain_realtime_factor": 0.44,
         "peak_rates_hz": {
           "LPLC2:L": 0.6,
           "LC4:L": 1.5,
@@ -1209,7 +1489,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 20.11,
+        "brain_realtime_factor": 22.57,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -1243,7 +1523,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 20.9,
+        "brain_realtime_factor": 22.54,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -1311,7 +1591,7 @@
         "max_escape": 0.244,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.48,
+        "brain_realtime_factor": 0.4,
         "peak_rates_hz": {
           "LPLC2:L": 44.9,
           "LC4:L": 46.7,
@@ -1345,7 +1625,7 @@
         "max_escape": 0.142,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.5,
+        "brain_realtime_factor": 0.47,
         "peak_rates_hz": {
           "LPLC2:L": 101.4,
           "LC4:L": 96.5,
@@ -1379,7 +1659,7 @@
         "max_escape": 0.205,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 0.5,
+        "brain_realtime_factor": 0.38,
         "peak_rates_hz": {
           "LPLC2:L": 0.7,
           "LC4:L": 0.5,
@@ -1414,21 +1694,21 @@
       "condition": "no input (silent brain)",
       "simulated_s": 1.0,
       "wall_s": 0.0,
-      "realtime_factor": 15723.27,
+      "realtime_factor": 10964.91,
       "spikes": 0
     },
     {
       "condition": "LPLC2:L at 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 2.845,
-      "realtime_factor": 0.35,
+      "wall_s": 2.94,
+      "realtime_factor": 0.34,
       "spikes": 54236
     },
     {
       "condition": "LPLC2 + LC4, both sides, 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 4.165,
-      "realtime_factor": 0.24,
+      "wall_s": 4.077,
+      "realtime_factor": 0.25,
       "spikes": 155306
     }
   ],
