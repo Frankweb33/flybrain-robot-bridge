@@ -182,6 +182,8 @@ of the run ([Recording a run](docs/HARDWARE.md#recording-a-run)).
 - [x] Receiver firmware that compiles for M5Stack Atom Matrix
 - [x] GPU kernel, bit-identical to the CPU kernel, faster than real time
 - [x] Body sense through Johnston's organ (experimental)
+- [x] Browser replay of exported runs, down to single neurons
+- [x] Run recording (video, per-frame log, metadata) for physical runs
 - [ ] Reproduce a published circuit result with a pre-registered check (sugar → MN9 attempted, fails specificity)
 - [ ] Bench test of firmware: calibration, watchdog, Wi-Fi loss
 - [ ] Recorded closed-loop run of the physical robot
