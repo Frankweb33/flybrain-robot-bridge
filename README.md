@@ -32,7 +32,7 @@ Every ✅ row can be checked on your own machine with the command or file listed
 | ✅ | Simulates every neuron with the leaky integrate-and-fire model of [Shiu et al. 2024](https://www.nature.com/articles/s41586-024-07763-9) | `src/flybrain_robot/brain/lif.py` |
 | ✅ | Simulation kernel reproduces Brian2, the reference simulator, **spike for spike** | `pytest tests/test_lif_reference.py` |
 | ✅ | The GPU kernel reproduces the CPU kernel **bit for bit**, including 540 frames of motor commands in the closed loop | [VALIDATION.md §2b](docs/VALIDATION.md#2b-cpu-and-gpu-kernels-agree-exactly), `pytest tests/test_lif_cuda.py` |
-| ✅ | Faster than real time on a desktop GPU: closed loop 2.2–3.3×, strongest looming stimulus 2.7× (RTX 3050); on the CPU 0.3–0.5× under strong input | [VALIDATION.md §5, §6](docs/VALIDATION.md#6-speed) |
+| ✅ | Faster than real time on a desktop GPU: closed loop 2.2–5.8×, strongest looming stimulus 2.8× (RTX 3050); on the CPU 0.3–0.5× under strong input | [VALIDATION.md §5, §6](docs/VALIDATION.md#6-speed) |
 | ✅ | Looming on one side drives the Giant Fiber; a moving object drives same-side DNa02 steering; shuffled wiring does not | [VALIDATION.md §4](docs/VALIDATION.md#4-visual-pathways-in-the-whole-brain-model) |
 | ✅ | Closed loop on synthetic camera scenes: turns toward a passing object, escapes from approaching ones, ignores camera pans; all behaviour disappears with shuffled wiring | [VALIDATION.md §5](docs/VALIDATION.md#5-closed-loop-synthetic-camera-scenes--connectome--motor-commands) |
 | ✅ | Every frame of a run can be replayed in the browser, down to the most active single neurons and their neuPrint skeletons | [web/replay.html](web/replay.html), see [Replay](#demo) |
@@ -172,7 +172,7 @@ of the run ([Recording a run](docs/HARDWARE.md#recording-a-run)).
   neuron populations with hemifield resolution; the fly's own photoreceptors and motion
   circuits are bypassed. Forward cruise is a controller constant.
 - **Speed.** The brain advances one camera frame (33 ms) per step. A desktop GPU keeps up
-  with every synthetic scene; on a CPU alone, strong visual input takes 2–4 times longer than
+  with every synthetic scene; on a CPU alone, strong visual input takes 2–3 times longer than
   real time, so a live robot gets fewer commands per second.
 - **Synthetic scenes only.** Real webcams, lighting and motion blur are untested.
 
