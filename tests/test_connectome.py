@@ -34,13 +34,17 @@ def test_compile_from_janelia_tables(tmp_path):
 
     pd.DataFrame(
         dict(
-            bodyId=[30, 10, 20, 99],
-            superclass=["descending_neuron", "visual_projection", "cb_intrinsic", None],
-            type=["DNp01", "LPLC2", "X", None],
-            instance=["DNp01(GF)_L", "LPLC2_L", "X_L", None],
-            somaSide=["L", "L", "R", None],
+            bodyId=[30, 10, 20, 99, 40, 50, 60],
+            superclass=["descending_neuron", "visual_projection", "cb_intrinsic", None,
+                        "cb_sensory", "cb_sensory", "ol_intrinsic"],
+            type=["DNp01", "LPLC2", "X", None, "JO-EV1", "JO-CM", "L1"],
+            instance=["DNp01(GF)_L", "LPLC2_L", "X_L", None, "JO-EV1_R", "JO-CM_L", "L1_R"],
+            somaSide=["L", "L", "R", None, None, None, "R"],
+            rootSide=[None, None, None, None, "R", "unknown", None],
+            assignedOlHex1=[None, None, None, None, None, None, 5.0],
+            assignedOlHex2=[None, None, None, None, None, None, 7.0],
         )
-    ).to_feather(tmp_path / build.ANNOTATIONS)
+    ).to_feather(tmp_path / build.ANNOTATIONS)  # fmt: skip
     pd.DataFrame(
         dict(
             body=[10, 20, 30, 99],
@@ -55,10 +59,15 @@ def test_compile_from_janelia_tables(tmp_path):
     manifest = build.compile_graph(tmp_path, verify=False)
     graph = load_connectome(tmp_path)
 
-    assert manifest["neurons"] == 3  # body 99 has no superclass: not a neuron
+    assert manifest["neurons"] == 6  # body 99 has no superclass: not a neuron
     assert manifest["neuron_to_neuron_edges"] == 3 and manifest["synapses"] == 12
-    assert list(graph.body_id) == [10, 20, 30]
-    assert list(graph.transmitter) == ["acetylcholine", "gaba", "unclear"]  # type fallback
+    assert list(graph.body_id) == [10, 20, 30, 40, 50, 60]
+    assert list(graph.transmitter[:3]) == ["acetylcholine", "gaba", "unclear"]  # type fallback
+    # Sensory neurons have no soma side: root side first, "unknown" falls to the suffix.
+    assert list(graph.side) == ["L", "R", "L", "R", "L", "R"]
+    assert graph.select("JO-EV1:R").tolist() == [3] and graph.select("JO-CM:L").tolist() == [4]
+    assert graph.hex1.tolist() == [-1, -1, -1, -1, -1, 5] and graph.hex2[5] == 7
+    assert manifest["neurons_with_optic_column"] == 1
     lplc2, x, gf = graph.select("LPLC2:L")[0], graph.select("X")[0], graph.select("DNp01:L")[0]
     edges = {
         (pre, int(post)): int(w)

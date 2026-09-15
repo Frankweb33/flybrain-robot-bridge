@@ -76,6 +76,24 @@ def neuron_transmitters(transmitters, body_ids):
     return nt.fillna("unclear").to_numpy(dtype=str)
 
 
+def neuron_sides(neurons):
+    """Soma side; for sensory neurons (soma outside the CNS) the side their root enters.
+
+    ``somaSide`` is empty for 18,003 neurons of the release, all sensory; 17,867 of
+    them have ``rootSide``. ``rootSide`` "unknown" counts as no side. The instance
+    suffix (``_L``, ``_R``, ``_M``) is the last fallback.
+    """
+    side = neurons["somaSide"].where(neurons["somaSide"].isin(["L", "R", "M"]))
+    side = side.fillna(neurons["rootSide"].where(neurons["rootSide"].isin(["L", "R", "M"])))
+    suffix = neurons["instance"].fillna("").str.extract(r"_([LRM])$", expand=False)
+    return side.fillna(suffix).fillna("").to_numpy(dtype=str)
+
+
+def hex_column(neurons, name):
+    """Optic-lobe column coordinate as int16, -1 where the neuron has no column."""
+    return neurons[name].fillna(-1).to_numpy().astype(np.int16)
+
+
 def compile_graph(data_dir, verify=True):
     import pandas as pd
     import pyarrow as pa
@@ -129,13 +147,17 @@ def compile_graph(data_dir, verify=True):
         "inhibitory_neurons": int((sign < 0).sum()),
         "transmitter_counts": {k: int(v) for k, v in zip(*np.unique(nt, return_counts=True))},
         "sign_rule": "gaba, glutamate, histamine inhibitory; all other or unclear excitatory",
+        "side_rule": "somaSide, else rootSide (sensory neurons), else instance suffix",
+        "neurons_with_optic_column": int(neurons["assignedOlHex1"].notna().sum()),
         "compile_seconds": round(time.monotonic() - started, 1),
     }
     graph = Connectome(
         body_id=body_ids,
         type=text("type"),
         instance=text("instance"),
-        side=text("somaSide"),
+        side=neuron_sides(neurons),
+        hex1=hex_column(neurons, "assignedOlHex1"),
+        hex2=hex_column(neurons, "assignedOlHex2"),
         superclass=text("superclass"),
         transmitter=nt,
         sign=sign,

@@ -29,6 +29,11 @@ Transmitter per neuron: the body's consensus prediction, else the prediction for
 its cell type, else `unclear`. GABA, glutamate and histamine are inhibitory;
 everything else, including `unclear`, is excitatory.
 
+Side per neuron: the soma side; sensory neurons have their soma outside the CNS, so
+for them the side their root enters (`rootSide`), else the `_L`/`_R` suffix of the
+instance name. 548 neurons remain without a side. Optic-lobe column coordinates
+(`assignedOlHex1/2`) are kept for the 23,720 neurons that have them.
+
 ## Neuron model
 
 Leaky integrate-and-fire with conductance-like exponential synapses, using the

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 COMPILED_DIR = "compiled"
 TEXT_COLUMNS = ("type", "instance", "side", "superclass", "transmitter")
 
@@ -16,7 +16,9 @@ class Connectome:
     body_id: np.ndarray
     type: np.ndarray
     instance: np.ndarray
-    side: np.ndarray
+    side: np.ndarray  # "L", "R", "M" or ""
+    hex1: np.ndarray  # optic-lobe column coordinates (int16), -1 if none
+    hex2: np.ndarray
     superclass: np.ndarray
     transmitter: np.ndarray
     sign: np.ndarray
@@ -30,7 +32,10 @@ class Connectome:
         return len(self.body_id)
 
     def select(self, spec):
-        """Indices for ``TYPE`` or ``TYPE:L`` / ``TYPE:R`` (soma side); errors if empty."""
+        """Indices for ``TYPE`` or ``TYPE:L`` / ``TYPE:R``; errors if empty.
+
+        The side is the soma side, or for sensory neurons the side their root enters.
+        """
         name, _, side = spec.partition(":")
         mask = self.type == name
         if side:
