@@ -1,7 +1,7 @@
 {
   "machine": {
-    "timestamp": "2026-09-15T22:04:17+00:00",
-    "commit": "7e926fa",
+    "timestamp": "2026-09-15T22:27:23+00:00",
+    "commit": "4d850fa",
     "source_modified_since_commit": false,
     "python": "3.13.5",
     "numpy": "2.5.3",
@@ -15,7 +15,7 @@
       "numba_cuda_mlir": "0.5.2"
     },
     "device": "auto",
-    "total_seconds": 329
+    "total_seconds": 433
   },
   "dataset": {
     "dataset": "MaleCNS v1.0 (minconf 0.5)",
@@ -2469,7 +2469,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 5.99,
+        "brain_realtime_factor": 4.0,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2515,7 +2515,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 5.38,
+        "brain_realtime_factor": 4.56,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2561,7 +2561,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.15,
+        "brain_realtime_factor": 2.12,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2607,7 +2607,7 @@
         "max_escape": 1.0,
         "reverse_frames": 20,
         "frames": 90,
-        "brain_realtime_factor": 3.31,
+        "brain_realtime_factor": 2.48,
         "peak_rates_hz": {
           "LPLC2:L": 43.8,
           "LC4:L": 45.5,
@@ -2652,7 +2652,7 @@
         "max_escape": 1.0,
         "reverse_frames": 27,
         "frames": 90,
-        "brain_realtime_factor": 3.1,
+        "brain_realtime_factor": 2.64,
         "peak_rates_hz": {
           "LPLC2:L": 122.3,
           "LC4:L": 108.8,
@@ -2697,7 +2697,7 @@
         "max_escape": 1.0,
         "reverse_frames": 30,
         "frames": 90,
-        "brain_realtime_factor": 3.1,
+        "brain_realtime_factor": 2.69,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2744,7 +2744,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 5.94,
+        "brain_realtime_factor": 5.7,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2786,7 +2786,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 6.58,
+        "brain_realtime_factor": 6.62,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2828,7 +2828,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.22,
+        "brain_realtime_factor": 2.31,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.4,
@@ -2870,7 +2870,7 @@
         "max_escape": 0.281,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.96,
+        "brain_realtime_factor": 3.22,
         "peak_rates_hz": {
           "LPLC2:L": 44.6,
           "LC4:L": 48.3,
@@ -2912,7 +2912,7 @@
         "max_escape": 0.27,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.99,
+        "brain_realtime_factor": 3.22,
         "peak_rates_hz": {
           "LPLC2:L": 98.9,
           "LC4:L": 107.9,
@@ -2954,7 +2954,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.03,
+        "brain_realtime_factor": 3.21,
         "peak_rates_hz": {
           "LPLC2:L": 0.6,
           "LC4:L": 0.5,
@@ -2996,7 +2996,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 7.0,
+        "brain_realtime_factor": 5.58,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3038,7 +3038,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 6.94,
+        "brain_realtime_factor": 5.64,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3080,7 +3080,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.23,
+        "brain_realtime_factor": 2.06,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.1,
@@ -3122,7 +3122,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.4,
+        "brain_realtime_factor": 2.88,
         "peak_rates_hz": {
           "LPLC2:L": 47.5,
           "LC4:L": 45.9,
@@ -3164,7 +3164,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.32,
+        "brain_realtime_factor": 2.91,
         "peak_rates_hz": {
           "LPLC2:L": 97.2,
           "LC4:L": 97.5,
@@ -3206,7 +3206,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.27,
+        "brain_realtime_factor": 2.96,
         "peak_rates_hz": {
           "LPLC2:L": 0.7,
           "LC4:L": 1.3,
@@ -3248,7 +3248,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 6.14,
+        "brain_realtime_factor": 4.99,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3290,7 +3290,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 6.74,
+        "brain_realtime_factor": 6.07,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3332,7 +3332,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.3,
+        "brain_realtime_factor": 2.04,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3374,7 +3374,7 @@
         "max_escape": 0.162,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.32,
+        "brain_realtime_factor": 3.02,
         "peak_rates_hz": {
           "LPLC2:L": 47.6,
           "LC4:L": 50.4,
@@ -3416,7 +3416,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.31,
+        "brain_realtime_factor": 2.8,
         "peak_rates_hz": {
           "LPLC2:L": 97.7,
           "LC4:L": 102.7,
@@ -3458,7 +3458,7 @@
         "max_escape": 0.162,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.34,
+        "brain_realtime_factor": 2.6,
         "peak_rates_hz": {
           "LPLC2:L": 0.7,
           "LC4:L": 0.6,
@@ -3496,53 +3496,399 @@
       }
     ]
   },
+  "retina": {
+    "eye_axes": {
+      "L": {
+        "posterior": [
+          -0.557,
+          0.83
+        ],
+        "dorsal": [
+          0.813,
+          0.583
+        ],
+        "cells": {
+          "T4a": 830,
+          "T4b": 840,
+          "T4c": 890,
+          "T4d": 846
+        },
+        "concentration": {
+          "T4a": 0.908,
+          "T4b": 0.931,
+          "T4c": 0.965,
+          "T4d": 0.975
+        },
+        "angles_deg": {
+          "T4a-T4b": 177.7,
+          "T4c-T4d": 165.9,
+          "T4a-T4c": 88.2
+        }
+      },
+      "R": {
+        "posterior": [
+          -0.547,
+          0.837
+        ],
+        "dorsal": [
+          0.805,
+          0.594
+        ],
+        "cells": {
+          "T4a": 849,
+          "T4b": 845,
+          "T4c": 883,
+          "T4d": 859
+        },
+        "concentration": {
+          "T4a": 0.936,
+          "T4b": 0.942,
+          "T4c": 0.973,
+          "T4d": 0.977
+        },
+        "angles_deg": {
+          "T4a-T4b": 178.9,
+          "T4c-T4d": 167.2,
+          "T4a-T4c": 86.7
+        }
+      }
+    },
+    "columns": 1767,
+    "scenes": [
+      {
+        "scene": "grating_left",
+        "mean_hz": {
+          "L2:L": 22.08,
+          "L2:R": 22.35,
+          "Tm1:L": 3.34,
+          "Tm1:R": 3.94,
+          "Tm2:L": 3.08,
+          "Tm2:R": 3.38,
+          "Tm4:L": 0.61,
+          "Tm4:R": 1.99,
+          "Tm9:L": 0.0,
+          "Tm9:R": 0.0,
+          "CT1:L": 55.33,
+          "CT1:R": 46.67,
+          "T5a:L": 0.0,
+          "T5a:R": 0.0,
+          "T5b:L": 0.0,
+          "T5b:R": 0.0,
+          "T5c:L": 0.0,
+          "T5c:R": 0.0,
+          "T5d:L": 0.0,
+          "T5d:R": 0.0,
+          "T4a:L": 0.0,
+          "T4a:R": 0.0,
+          "T4b:L": 0.0,
+          "T4b:R": 0.0,
+          "HSE:L": 0.0,
+          "HSE:R": 0.0,
+          "HSN:L": 0.0,
+          "HSN:R": 0.0,
+          "HSS:L": 0.0,
+          "HSS:R": 0.0,
+          "LPLC2:L": 0.0,
+          "LPLC2:R": 0.0,
+          "LC4:L": 0.0,
+          "LC4:R": 0.0
+        }
+      },
+      {
+        "scene": "grating_right",
+        "mean_hz": {
+          "L2:L": 22.3,
+          "L2:R": 22.52,
+          "Tm1:L": 3.38,
+          "Tm1:R": 3.96,
+          "Tm2:L": 3.11,
+          "Tm2:R": 3.4,
+          "Tm4:L": 0.61,
+          "Tm4:R": 2.08,
+          "Tm9:L": 0.0,
+          "Tm9:R": 0.0,
+          "CT1:L": 55.0,
+          "CT1:R": 46.67,
+          "T5a:L": 0.0,
+          "T5a:R": 0.0,
+          "T5b:L": 0.0,
+          "T5b:R": 0.0,
+          "T5c:L": 0.0,
+          "T5c:R": 0.0,
+          "T5d:L": 0.0,
+          "T5d:R": 0.0,
+          "T4a:L": 0.0,
+          "T4a:R": 0.0,
+          "T4b:L": 0.0,
+          "T4b:R": 0.0,
+          "HSE:L": 0.0,
+          "HSE:R": 0.0,
+          "HSN:L": 0.0,
+          "HSN:R": 0.0,
+          "HSS:L": 0.0,
+          "HSS:R": 0.0,
+          "LPLC2:L": 0.0,
+          "LPLC2:R": 0.0,
+          "LC4:L": 0.0,
+          "LC4:R": 0.0
+        }
+      },
+      {
+        "scene": "flicker",
+        "mean_hz": {
+          "L2:L": 16.89,
+          "L2:R": 16.97,
+          "Tm1:L": 2.1,
+          "Tm1:R": 2.43,
+          "Tm2:L": 1.83,
+          "Tm2:R": 1.98,
+          "Tm4:L": 0.63,
+          "Tm4:R": 1.79,
+          "Tm9:L": 0.0,
+          "Tm9:R": 0.0,
+          "CT1:L": 22.0,
+          "CT1:R": 22.0,
+          "T5a:L": 0.0,
+          "T5a:R": 0.0,
+          "T5b:L": 0.0,
+          "T5b:R": 0.0,
+          "T5c:L": 0.0,
+          "T5c:R": 0.0,
+          "T5d:L": 0.0,
+          "T5d:R": 0.0,
+          "T4a:L": 0.0,
+          "T4a:R": 0.0,
+          "T4b:L": 0.0,
+          "T4b:R": 0.0,
+          "HSE:L": 0.0,
+          "HSE:R": 0.0,
+          "HSN:L": 0.0,
+          "HSN:R": 0.0,
+          "HSS:L": 0.0,
+          "HSS:R": 0.0,
+          "LPLC2:L": 0.0,
+          "LPLC2:R": 0.0,
+          "LC4:L": 0.0,
+          "LC4:R": 0.0
+        }
+      },
+      {
+        "scene": "approach_center",
+        "mean_hz": {
+          "L2:L": 0.12,
+          "L2:R": 0.09,
+          "Tm1:L": 0.01,
+          "Tm1:R": 0.01,
+          "Tm2:L": 0.01,
+          "Tm2:R": 0.01,
+          "Tm4:L": 0.0,
+          "Tm4:R": 0.0,
+          "Tm9:L": 0.0,
+          "Tm9:R": 0.0,
+          "CT1:L": 0.0,
+          "CT1:R": 0.0,
+          "T5a:L": 0.0,
+          "T5a:R": 0.0,
+          "T5b:L": 0.0,
+          "T5b:R": 0.0,
+          "T5c:L": 0.0,
+          "T5c:R": 0.0,
+          "T5d:L": 0.0,
+          "T5d:R": 0.0,
+          "T4a:L": 0.0,
+          "T4a:R": 0.0,
+          "T4b:L": 0.0,
+          "T4b:R": 0.0,
+          "HSE:L": 0.0,
+          "HSE:R": 0.0,
+          "HSN:L": 0.0,
+          "HSN:R": 0.0,
+          "HSS:L": 0.0,
+          "HSS:R": 0.0,
+          "LPLC2:L": 0.0,
+          "LPLC2:R": 0.0,
+          "LC4:L": 0.0,
+          "LC4:R": 0.0
+        }
+      },
+      {
+        "scene": "pan",
+        "mean_hz": {
+          "L2:L": 19.94,
+          "L2:R": 19.09,
+          "Tm1:L": 2.03,
+          "Tm1:R": 2.44,
+          "Tm2:L": 1.77,
+          "Tm2:R": 1.91,
+          "Tm4:L": 0.02,
+          "Tm4:R": 0.15,
+          "Tm9:L": 0.0,
+          "Tm9:R": 0.0,
+          "CT1:L": 33.67,
+          "CT1:R": 23.33,
+          "T5a:L": 0.0,
+          "T5a:R": 0.0,
+          "T5b:L": 0.0,
+          "T5b:R": 0.0,
+          "T5c:L": 0.0,
+          "T5c:R": 0.0,
+          "T5d:L": 0.0,
+          "T5d:R": 0.0,
+          "T4a:L": 0.0,
+          "T4a:R": 0.0,
+          "T4b:L": 0.0,
+          "T4b:R": 0.0,
+          "HSE:L": 0.0,
+          "HSE:R": 0.0,
+          "HSN:L": 0.0,
+          "HSN:R": 0.0,
+          "HSS:L": 0.0,
+          "HSS:R": 0.0,
+          "LPLC2:L": 0.0,
+          "LPLC2:R": 0.0,
+          "LC4:L": 0.0,
+          "LC4:R": 0.0
+        }
+      }
+    ],
+    "saturating_l2": [
+      {
+        "condition": "matched w_syn",
+        "mean_hz": {
+          "L2": 146.32,
+          "Tm1": 16.4,
+          "Tm2": 12.21,
+          "Tm4": 14.79,
+          "Tm9": 0.0,
+          "CT1": 127.5,
+          "T5a": 0.0,
+          "T5b": 0.0,
+          "T5c": 0.0,
+          "T5d": 0.0,
+          "T4a": 0.0,
+          "T4b": 0.0,
+          "HSE": 0.0,
+          "HSN": 0.0,
+          "HSS": 0.0,
+          "LPLC2": 0.0,
+          "LC4": 0.0
+        },
+        "t5_mean_v_mv": -53.17,
+        "t5_max_v_mv": -49.38,
+        "t5_mean_g_mv": -1.117,
+        "t5_share_net_inhibitory": 0.83
+      },
+      {
+        "condition": "Shiu w_syn 0.275 mV",
+        "mean_hz": {
+          "L2": 146.32,
+          "Tm1": 20.31,
+          "Tm2": 14.42,
+          "Tm4": 24.8,
+          "Tm9": 0.0,
+          "CT1": 183.0,
+          "T5a": 0.0,
+          "T5b": 0.0,
+          "T5c": 0.0,
+          "T5d": 0.0,
+          "T4a": 0.0,
+          "T4b": 0.0,
+          "HSE": 0.0,
+          "HSN": 0.0,
+          "HSS": 0.0,
+          "LPLC2": 0.0,
+          "LC4": 0.04
+        },
+        "t5_mean_v_mv": -55.63,
+        "t5_max_v_mv": -46.34,
+        "t5_mean_g_mv": -3.739,
+        "t5_share_net_inhibitory": 0.89
+      }
+    ],
+    "t5_inputs": [
+      {
+        "type": "Tm9",
+        "synapses_per_t5": 38.3
+      },
+      {
+        "type": "Tm2",
+        "synapses_per_t5": 34.8
+      },
+      {
+        "type": "Tm1",
+        "synapses_per_t5": 25.0
+      },
+      {
+        "type": "CT1",
+        "synapses_per_t5": -21.6
+      },
+      {
+        "type": "Tm4",
+        "synapses_per_t5": 20.0
+      },
+      {
+        "type": "TmY15",
+        "synapses_per_t5": -7.3
+      },
+      {
+        "type": "T5b",
+        "synapses_per_t5": 6.3
+      },
+      {
+        "type": "Tm23",
+        "synapses_per_t5": -5.2
+      }
+    ],
+    "floor": 0.05,
+    "full": 0.5
+  },
   "performance": [
     {
       "device": "cpu",
       "condition": "no input (silent brain)",
       "simulated_s": 1.0,
       "wall_s": 0.0,
-      "realtime_factor": 15151.52,
+      "realtime_factor": 13927.58,
       "spikes": 0
     },
     {
       "device": "cpu",
       "condition": "LPLC2:L at 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 1.911,
-      "realtime_factor": 0.52,
+      "wall_s": 2.293,
+      "realtime_factor": 0.44,
       "spikes": 54690
     },
     {
       "device": "cpu",
       "condition": "LPLC2 + LC4, both sides, 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 3.729,
-      "realtime_factor": 0.27,
+      "wall_s": 4.629,
+      "realtime_factor": 0.22,
       "spikes": 154158
     },
     {
       "device": "cuda",
       "condition": "no input (silent brain)",
       "simulated_s": 1.0,
-      "wall_s": 0.074,
-      "realtime_factor": 13.58,
+      "wall_s": 0.175,
+      "realtime_factor": 5.72,
       "spikes": 0
     },
     {
       "device": "cuda",
       "condition": "LPLC2:L at 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 0.322,
-      "realtime_factor": 3.1,
+      "wall_s": 0.326,
+      "realtime_factor": 3.07,
       "spikes": 54690
     },
     {
       "device": "cuda",
       "condition": "LPLC2 + LC4, both sides, 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 0.364,
-      "realtime_factor": 2.74,
+      "wall_s": 0.357,
+      "realtime_factor": 2.8,
       "spikes": 154158
     }
   ],
