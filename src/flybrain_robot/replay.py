@@ -10,7 +10,6 @@ the most active neurons of the whole brain, and the motor commands.
 import argparse
 import base64
 import json
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +19,7 @@ import numpy as np
 
 from .brain.malecns import MaleCNSBackend
 from .motor_decoder import MotorDecoder
+from .recording import commit
 from .telemetry import Telemetry
 from .vision import PATTERNS, SCENES, TOUR_SEGMENT, scene_frame
 
@@ -30,14 +30,6 @@ def thumbnail(frame):
     small = cv2.resize(frame, (160, 120), interpolation=cv2.INTER_AREA)
     ok, encoded = cv2.imencode(".jpg", small, [cv2.IMWRITE_JPEG_QUALITY, 70])
     return base64.b64encode(encoded.tobytes()).decode("ascii") if ok else ""
-
-
-def commit():
-    try:
-        return subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True,
-                              text=True, check=True).stdout.strip()  # fmt: skip
-    except (OSError, subprocess.CalledProcessError):
-        return "unknown"
 
 
 def export(data, scene="tour", frames=None, wiring="connectome", seed=0, device="auto",

@@ -177,6 +177,39 @@ def test_cli_reads_a_video_file(tmp_path, capsys):
     assert "looming=0.00/0.00" not in lines[-1]  # the approaching object is seen in the file
 
 
+def test_record_writes_video_log_and_metadata(tmp_path, capsys):
+    import cv2
+
+    from flybrain_robot.main import main
+    from flybrain_robot.recording import plot, read_log
+
+    main(["--backend", "mock", "--synthetic", "--scene", "approach_left", "--dry-run", "--steps",
+          str(TOUR_SEGMENT), "--record", str(tmp_path)])  # fmt: skip
+    (run,) = tmp_path.iterdir()
+    assert f"record={run}" in capsys.readouterr().out
+    meta = json.loads((run / "meta.json").read_text(encoding="utf-8"))
+    assert meta["run"]["backend"] == "mock" and meta["config"]["max_speed"] == 35
+    assert meta["commit"] and "numpy" in meta["versions"] and "--record" in meta["argv"]
+    rows = read_log(run)
+    assert [r["frame"] for r in rows] == list(range(TOUR_SEGMENT))
+    assert all(a["t"] < b["t"] for a, b in zip(rows, rows[1:]))
+    assert rows[-1]["imu"] == "synthetic" and max(r["looming"][0] for r in rows) > 0.5
+    video = cv2.VideoCapture(str(run / "video.avi"))
+    frames = []
+    while True:
+        ok, frame = video.read()
+        if not ok:
+            break
+        frames.append(frame)
+    video.release()
+    assert len(frames) == TOUR_SEGMENT and frames[0].shape == scene_frame("approach_left", 0).shape
+    assert frames[5][:5].mean() < 40  # burned-in label band
+    pytest.importorskip("PIL")
+    from PIL import Image
+
+    assert Image.open(plot(run)).size == (1200, 820)
+
+
 def test_cli_subprocess():
     result = subprocess.run(
         [sys.executable, "-m", "flybrain_robot.main", "--synthetic", "--dry-run", "--steps", "2"],

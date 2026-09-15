@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import sys
 import time
 
 import cv2
@@ -12,10 +13,12 @@ from .config import load_config
 from .controller import UDPBridge
 from .motor_decoder import MotorDecoder
 from .protocol import command
+from .recording import Recorder
 from .telemetry import synthetic_telemetry, tilt_angles, tilted_telemetry
 from .vision import PATTERNS, SCENES, VisionEncoder, scene_frame
 
 FRAME_PERIOD = 1 / 30
+log = logging.getLogger("flybrain_robot")
 
 
 def build_brain(backend, cfg, args):
@@ -48,7 +51,7 @@ def status_line(index, sensory, telemetry, activity, brain, left, right, imu, st
     line = (
         f"frame={index:04d} looming={sensory.looming_left:.2f}/{sensory.looming_right:.2f} "
         f"object={sensory.object_left:.2f}/{sensory.object_right:.2f} "
-        f"tilt(roll/pitch)={roll:+.0f}/{pitch:+.0f}deg IMU={imu} "
+        f"tilt(roll/pitch)={round(roll):+d}/{round(pitch):+d}deg IMU={imu} "
         f"motor={activity.left:.2f}/{activity.right:.2f} escape={activity.escape:.2f} "
         f"command={left:+d}/{right:+d} watchdog={'STOP' if stopped else 'ready'}"
     )
@@ -89,15 +92,20 @@ def main(argv=None):
     parser.add_argument("--tilt", type=parse_tilt, metavar="ROLL,PITCH",
                         help="Without --send: hold the synthetic robot tilted, degrees "
                              "(roll left down, pitch nose down)")  # fmt: skip
+    parser.add_argument("--record", metavar="DIR",
+                        help="Write video, per-frame log and metadata to DIR/<UTC time>/")  # fmt: skip
     args = parser.parse_args(argv)
     if args.steps < 1:
         parser.error("--steps must be positive")
     if args.tilt and args.send:
         parser.error("--tilt simulates the IMU and cannot be combined with --send")
-    bridge, capture, decoder, sequence = None, None, None, 0
+    bridge, capture, decoder, recorder, sequence = None, None, None, None, 0
     try:
         cfg = load_config(args.config)
-        logging.basicConfig(level=cfg.logging_level)
+        # logging_level applies to this package; numba-cuda-mlir logs every kernel it
+        # compiles at INFO level through the root logger.
+        logging.basicConfig(level=logging.WARNING)
+        log.setLevel(cfg.logging_level)
         backend = args.backend or cfg.backend
         brain = build_brain(backend, cfg, args)
         decoder = MotorDecoder(
@@ -138,11 +146,22 @@ def main(argv=None):
             if hasattr(brain, "neuron_count")
             else ""
         )
+        if args.record:
+            settings = dict(
+                backend=backend, source=str(origin), send=bool(args.send), steps=args.steps,
+                neurons=getattr(brain, "neuron_count", None), device=getattr(brain, "device", None),
+                wiring=args.wiring or cfg.wiring, seed=cfg.brain_seed,
+                body_feedback=args.body_feedback or cfg.body_feedback,
+                vision=args.vision or cfg.vision, tilt=args.tilt,
+            )  # fmt: skip
+            recorder = Recorder(args.record, cfg, settings, sys.argv[1:] if argv is None else argv,
+                                period)  # fmt: skip
         print(
             f"source={origin} backend={backend}{neurons} "
             f"UDP={'enabled' if bridge else 'off (dry-run)'}"
+            + (f" record={recorder.directory}" if recorder else "")
         )
-        previous = time.monotonic()
+        previous = first = time.monotonic()
         for index in range(args.steps):
             started = time.monotonic()
             if capture is None:
@@ -169,8 +188,12 @@ def main(argv=None):
             sequence += 1
             if bridge:
                 bridge.send(command(sequence, left, right, stopped))
+            imu = "fresh" if bridge and bridge.fresh() else ("stale" if bridge else "synthetic")
+            if recorder:
+                rates = brain.named_rates() if hasattr(brain, "named_rates") else {}
+                recorder.write(index, started - first, frame, sensory, telemetry, imu, activity,
+                               (left, right), stopped, sequence, rates, realtime)  # fmt: skip
             if index % 10 == 0:
-                imu = "fresh" if bridge and bridge.fresh() else ("stale" if bridge else "synthetic")
                 print(status_line(index, sensory, telemetry, activity, brain, left, right, imu,
                                   stopped, realtime))  # fmt: skip
             time.sleep(max(0, period - (time.monotonic() - started)))
@@ -185,11 +208,13 @@ def main(argv=None):
             try:
                 bridge.send(command(sequence + 1, emergency_stop=True))
             except OSError:
-                logging.warning("Final stop datagram failed; robot watchdog must stop motors")
+                log.warning("Final stop datagram failed; robot watchdog must stop motors")
             finally:
                 bridge.close()
         if capture:
             capture.release()
+        if recorder:
+            recorder.close()
 
 
 if __name__ == "__main__":

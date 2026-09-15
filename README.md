@@ -155,7 +155,9 @@ Flash [firmware/atom_matrix](firmware/atom_matrix/README.md) and follow the brin
 checklist in [HARDWARE.md](docs/HARDWARE.md). Motors stay at neutral until the firmware is
 marked calibrated **and** armed with the button. The PC sends stop commands when telemetry
 is older than 500 ms; the receiver stops on its own after 500 ms without a command. UDP is
-unauthenticated: use an isolated network.
+unauthenticated: use an isolated network. Add `--record runs` to save the camera video,
+a per-frame log of features, neuron rates, IMU and commands, and the commit and settings
+of the run ([Recording a run](docs/HARDWARE.md#recording-a-run)).
 
 ## Limits
 
