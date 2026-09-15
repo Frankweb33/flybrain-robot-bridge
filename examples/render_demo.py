@@ -1,4 +1,4 @@
-"""Render real mock-backend output for the README. Install the [demo] extra first."""
+"""Render assets/mock-demo.gif from the mock backend (no connectome needed). Needs [demo]."""
 
 from pathlib import Path
 
@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from flybrain_robot.brain.mock import MockBrain
 from flybrain_robot.motor_decoder import MotorDecoder
 from flybrain_robot.telemetry import synthetic_telemetry
-from flybrain_robot.vision import VisionEncoder, synthetic_frame
+from flybrain_robot.vision import VisionEncoder, scene_frame
 
 ROOT = Path(__file__).resolve().parents[1]
 BG, PANEL, TEXT, MUTED, GREEN, BLUE = (
@@ -23,6 +23,7 @@ BG, PANEL, TEXT, MUTED, GREEN, BLUE = (
 
 def font(size):
     for path in (
+        "C:/Windows/Fonts/arial.ttf",
         "/System/Library/Fonts/Supplemental/Arial.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     ):
@@ -34,8 +35,8 @@ def font(size):
 def main():
     encoder, brain, decoder = VisionEncoder(), MockBrain(), MotorDecoder()
     images = []
-    for step in range(120):
-        frame = synthetic_frame(step)
+    for step in range(90):
+        frame = scene_frame("approach_center", step)
         sensory = encoder.encode(frame)
         telemetry = synthetic_telemetry(step / 30)
         activity = brain.step(sensory, telemetry, 1 / 30)
@@ -44,11 +45,12 @@ def main():
             continue
         image = Image.new("RGB", (1080, 490), BG)
         draw = ImageDraw.Draw(image)
-        draw.text((32, 22), "SYNTHETIC DEMO / ACTUAL MODEL OUTPUT", font=font(16), fill=GREEN)
-        draw.text((32, 58), "See the signal become a command.", font=font(30), fill=TEXT)
+        draw.text((32, 22), "MOCK BACKEND / ACTUAL MODEL OUTPUT", font=font(16), fill=GREEN)
+        title = "The no-download demonstrator: eight hand-made signals."
+        draw.text((32, 58), title, font=font(30), fill=TEXT)
         draw.text(
             (32, 106),
-            "Deterministic input · Eight mock populations · No hardware connected",
+            "Not a connectome (see connectome-demo.gif for MaleCNS) · no hardware connected",
             font=font(16),
             fill=MUTED,
         )
