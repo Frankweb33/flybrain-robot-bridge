@@ -208,7 +208,10 @@ def test_tilt_reaches_johnstons_organ_without_steering(tmp_path):
     from flybrain_robot.telemetry import tilted_telemetry
 
     save_connectome(robot_circuit(), tmp_path)
-    brain = MaleCNSBackend(tmp_path, params=LIFParams(w_syn=0.4))
+    default = MaleCNSBackend(tmp_path, params=LIFParams(w_syn=0.4))
+    ignored = default.drive_rates(SensoryInput(), tilted_telemetry(roll_left_deg=20))
+    assert not any(ignored.values())  # body feedback is off unless asked for
+    brain = MaleCNSBackend(tmp_path, params=LIFParams(w_syn=0.4), body_feedback=True)
     rates = brain.drive_rates(SensoryInput(), tilted_telemetry(roll_left_deg=20))
     assert rates["JO-C*:L"] == 150 and rates["JO-E*:R"] == 150  # lower side pushed
     assert rates["JO-C*:R"] == 0 and rates["JO-E*:L"] == 0 and rates["LPLC2:L"] == 0
@@ -240,7 +243,7 @@ def test_cli_runs_connectome_backend(tmp_path, capsys):
     out = capsys.readouterr().out
     assert f"neurons={robot_circuit().size}" in out and "GF=" in out
     main(["--backend", "malecns", "--data", str(tmp_path), "--synthetic", "--scene", "static",
-          "--tilt", "0,20", "--dry-run", "--steps", "11"])  # fmt: skip
+          "--body-feedback", "--tilt", "0,20", "--dry-run", "--steps", "11"])  # fmt: skip
     last = capsys.readouterr().out.strip().splitlines()[-1]
     assert "tilt(roll/pitch)=+0/+20deg" in last and "JO-C=0/0Hz" in last
     assert "JO-E=0/0Hz" not in last  # nose down pulls both antennae: JO-E fires

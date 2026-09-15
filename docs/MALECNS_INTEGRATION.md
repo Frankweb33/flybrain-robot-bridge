@@ -67,7 +67,7 @@ Section 3 of [VALIDATION.md](VALIDATION.md) shows all four combinations.
 ## Interfaces chosen by hand
 
 A connectome specifies wiring, not how a camera maps onto photoreceptors or how
-descending neurons map onto two wheels. These two interfaces are the only
+descending neurons map onto two wheels. These interfaces are the only
 hand-designed parts of the brain path and are declared in `brain/malecns.py`.
 
 **Sensory input.** The camera encoder (`vision.py`) computes per-hemifield
@@ -83,6 +83,25 @@ Rates are 0 Hz up to a noise floor of 0.1 and rise linearly to 150 Hz. The whole
 population is driven together: the model has hemifield resolution, not
 retinotopy, and photoreceptors and early motion circuits are bypassed.
 
+**Body input (experimental, off by default).** With `body_feedback: true`, the
+tilt of the robot, from its accelerometer, drives Johnston's organ neurons, the
+fly's antennal gravity and wind sensors. Tilt features rise linearly from 0 at 3°
+to 1 at 20°; overlapping drives add and are capped at 150 Hz.
+
+| tilt | neurons driven | why |
+|---|---|---|
+| nose up | JO-C (CM, CL, CA) both sides | JO-C respond to the antenna pushed toward the head (Kamikouchi et al. 2009; Yorozu et al. 2009; Patella & Wilson 2018) |
+| nose down | JO-E (EV, ED) both sides | JO-E respond to the antenna pulled away |
+| left or right side down | JO-C of the lower side, JO-E of the upper side | |
+
+Which body tilt pushes or pulls the antenna is **not established in the
+literature**; the table is a hypothesis about the mechanics of a fly's antenna
+under gravity. A screen of ten JO types finds 22 JO-type → descending-type pairs
+with mirror-image responses that vanish on shuffled wiring (VALIDATION.md §4c),
+none of them in the motor read-out. It is off by default because in the closed loop (§4d) a 20° roll
+still reaches the Giant Fiber and DNa02 through the connectome and changes motor
+commands. On a robot, check `imu_axes` first (HARDWARE.md).
+
 **Motor read-out.** Firing rates are smoothed with a 100 ms time constant.
 
 | read-out | neurons | use |
@@ -91,7 +110,8 @@ retinotopy, and photoreceptors and early motion circuits are bypassed.
 | steering | DNa01 + DNa02, left minus right | ipsilateral turning (Rayshubskiy et al. 2020); 60 Hz difference = full turn |
 | forward | none | constant `cruise` setting in the controller |
 
-DNp02, DNp04, DNp11, DNp09 and MDN are logged but do not drive motors.
+DNp02, DNp04, DNp11, DNp09, MDN, DNp18 and DNp20 are logged but do not drive
+motors.
 
 The interfaces were chosen after an exploratory screen of 33 visual projection
 types (appendix of VALIDATION.md). The screen, the pathway checks and the scene
@@ -122,6 +142,7 @@ desktop CPU, and the status line prints the ratio as `brain_x_realtime`.
   identity is predicted from EM, not measured.
 - The fly's own motion vision (photoreceptors → T4/T5 → lobula plate) is not
   simulated from pixels; a flow estimate is injected into projection neurons.
-- No body, legs or sensory feedback from the robot enter the brain. IMU
-  telemetry is used by the safety watchdog only.
+- No legs or proprioception. Tilt can enter through Johnston's organ, as an
+  experimental option with a hypothetical mapping; by default IMU telemetry is
+  used by the safety watchdog only.
 - Synthetic scenes are not a physical test. See [HARDWARE.md](HARDWARE.md).

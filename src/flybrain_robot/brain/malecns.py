@@ -85,6 +85,7 @@ class MaleCNSBackend(BrainBackend):
         fast_modulators=False,
         wiring="connectome",
         params=None,
+        body_feedback=False,
     ):
         from flybrain_robot.connectome.graph import load_connectome
 
@@ -103,6 +104,9 @@ class MaleCNSBackend(BrainBackend):
             raise ValueError("cruise must be between 0 and 1")
         self.graph = graph
         self.cruise = cruise
+        # Off by default: in VALIDATION.md a 20 degree roll reaches the Giant Fiber and
+        # DNa02 through the connectome and changes motor commands.
+        self.body_feedback = body_feedback
         self.sim = LIFSimulator(graph, params=params, seed=seed)
         # Visual populations first, in map order: the Poisson generator draws in this order.
         self.populations = {
@@ -132,7 +136,7 @@ class MaleCNSBackend(BrainBackend):
         """Poisson rate (Hz) per driven population; overlapping drives add, capped at 150 Hz."""
         features = tilt_features(telemetry)
         rates = dict.fromkeys(self.populations, 0.0)
-        for d in SENSORY_MAP + BODY_MAP:
+        for d in SENSORY_MAP + (BODY_MAP if self.body_feedback else ()):
             value = features[d.feature] if d in BODY_MAP else getattr(sensory_input, d.feature)
             for population in d.populations:
                 rates[population] = min(rates[population] + d.rate(value), d.max_rate_hz)

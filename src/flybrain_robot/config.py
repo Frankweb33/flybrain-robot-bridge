@@ -29,6 +29,7 @@ class Config:
     fast_modulators: bool = False
     wiring: str = "connectome"
     imu_axes: str = "x,y,z"  # robot axes (x forward, y left, z up) in sensor axes
+    body_feedback: bool = False  # experimental: tilt drives Johnston's organ neurons
     logging_level: str = "INFO"
 
     def __post_init__(self):
@@ -53,7 +54,7 @@ class Config:
                 raise ValueError(f"Invalid {name}")
         if type(self.brain_seed) is not int or self.brain_seed < 0:
             raise ValueError("brain_seed must be a non-negative integer")
-        for name in ("invert_left", "invert_right", "fast_modulators"):
+        for name in ("invert_left", "invert_right", "fast_modulators", "body_feedback"):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be boolean")
         if self.backend not in ("mock", "malecns"):

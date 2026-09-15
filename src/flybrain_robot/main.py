@@ -29,6 +29,7 @@ def build_brain(backend, cfg, args):
         cruise=cfg.cruise,
         fast_modulators=cfg.fast_modulators,
         wiring=args.wiring or cfg.wiring,
+        body_feedback=args.body_feedback or cfg.body_feedback,
     )
 
 
@@ -77,6 +78,8 @@ def main(argv=None):
     parser.add_argument("--wiring", choices=["connectome", "shuffled"],
                         help="shuffled = control with permuted synapse targets")  # fmt: skip
     parser.add_argument("--steps", type=int, default=300, help="Finite frame count (default: 300)")
+    parser.add_argument("--body-feedback", action="store_true",
+                        help="Experimental: robot tilt drives Johnston's organ neurons")  # fmt: skip
     parser.add_argument("--tilt", type=parse_tilt, metavar="ROLL,PITCH",
                         help="Without --send: hold the synthetic robot tilted, degrees "
                              "(roll left down, pitch nose down)")  # fmt: skip

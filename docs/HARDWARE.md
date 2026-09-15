@@ -30,7 +30,9 @@ robot is made by this repository.
    then red (disarmed). Pressing the button toggles green (armed), but servos stay
    at neutral because the robot is not calibrated.
 2. Run `python -m flybrain_robot.main --backend mock --synthetic --send --config config.yaml`
-   and confirm the PC reports `IMU=fresh`.
+   and confirm the PC reports `IMU=fresh`. Check the axes in the status line: level
+   shows `tilt(roll/pitch)=+0/+0deg`, nose down gives positive pitch, left side down
+   positive roll. If not, set `imu_axes` in `config.yaml` (for example `-y,x,z`).
 3. Robot lifted: adjust `LEFT_NEUTRAL_US` / `RIGHT_NEUTRAL_US` until the wheels do
    not creep, and `*_REVERSED` until positive speed drives forward.
 4. Set `MOTORS_CALIBRATED = true`, flash, arm with the button, and verify: stop on

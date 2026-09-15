@@ -136,6 +136,10 @@ TILTS = {
     "left side down 20°": (20.0, 0.0),
     "right side down 20°": (-20.0, 0.0),
 }
+# Post hoc, added after the tilt loop check failed on 2026-09-15 (a 20 degree roll
+# triggered the Giant Fiber, others turned through DNa02): the same tilts at smaller
+# angles, real wiring only, to find where motor commands start to change. Reported only.
+TILT_SWEEP_SCALES = (0.25, 0.5, 0.75)
 
 SCENE_EXPECTATIONS = {
     "static": dict(escape=False, turn=0),
@@ -412,10 +416,13 @@ def run_tilt(backend, roll_left, pitch_down, cells):
 
 
 def body_loop_section(data, control_seeds):
-    real = MaleCNSBackend(data, seed=0)
+    real = MaleCNSBackend(data, seed=0, body_feedback=True)
     graph = real.graph
     cells = np.flatnonzero(graph.superclass == "descending_neuron")
-    controls = [MaleCNSBackend(data, seed=seed, wiring="shuffled") for seed in control_seeds]
+    controls = [
+        MaleCNSBackend(data, seed=seed, wiring="shuffled", body_feedback=True)
+        for seed in control_seeds
+    ]
     rows = []
     for label, (roll, pitch) in TILTS.items():
         peak, motor = run_tilt(real, roll, pitch, cells)
@@ -437,8 +444,19 @@ def body_loop_section(data, control_seeds):
             descending_cells_passing=len(survivors),
             passed=bool(survivors) and motor_ok,
         ))  # fmt: skip
+    sweep = []
+    for label, (roll, pitch) in TILTS.items():
+        for scale in TILT_SWEEP_SCALES:
+            _, motor = run_tilt(real, roll * scale, pitch * scale, cells)
+            g = motor["peak_group_hz"]
+            sweep.append(dict(
+                tilt=label, degrees=round(20 * scale, 1), mean_turn=motor["mean_turn"],
+                max_escape=motor["max_escape"], reverse_frames=motor["reverse_frames"],
+                peak_hz={k: g[k] for k in ("DNp01:L", "DNp01:R", "DNa02:L", "DNa02:R",
+                                           "DNa01:L", "DNa01:R")},
+            ))  # fmt: skip
     return dict(duration_s=TOUR_SEGMENT / 30, control_seeds=control_seeds, rows=rows,
-                passed=all(r["passed"] for r in rows))  # fmt: skip
+                passed=all(r["passed"] for r in rows), post_hoc_sweep=sweep)  # fmt: skip
 
 
 def run_scene(backend, name):

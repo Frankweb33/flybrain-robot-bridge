@@ -30,6 +30,17 @@ Farneback optical flow. For each image half it reports:
 them). `tests/test_core.py` checks that pans and sideways passes do not register
 as looming and that approaches do, on the correct side.
 
+## Body
+
+`telemetry.py` uses robot axes x forward, y left, z up. At rest the accelerometer
+reads +1 g on the axis pointing up, so nose-down pitch by an angle a gives
+accel.x = −sin(a) and a left-side-down roll gives accel.y = −sin(a). `imu_axes`
+remaps sensor axes onto robot axes (for example `-y,x,z`). `tilt_features` turns
+the reading into `tilt_forward`, `tilt_back`, `tilt_left` and `tilt_right`, 0 below
+3° and 1 at 20°. With `body_feedback` on, the MaleCNS backend drives Johnston's
+organ neurons from them (experimental, off by default; see
+[MALECNS_INTEGRATION.md](MALECNS_INTEGRATION.md)).
+
 ## Brain backends
 
 Both implement `BrainBackend.step(sensory, telemetry, dt) → MotorActivity(left,

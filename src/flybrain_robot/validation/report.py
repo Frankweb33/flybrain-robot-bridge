@@ -113,6 +113,79 @@ def _feeding(f):
     )  # fmt: skip
 
 
+def _body(b):
+    screen = [
+        (r["jo_type"], _sides(r["cells"]), ", ".join(
+            f"{x['type']} {x['left_hz']}/{x['right_hz']}" for x in r["strongest_descending_left_stimulus"]
+        ) or "none ≥ 20 Hz")
+        for r in b["screen"]
+    ]  # fmt: skip
+    pairs = [
+        (c["jo_type"], c["descending_type"], c["relation"],
+         f"{c['left_stimulus_hz']['target']:.0f} / {c['left_stimulus_hz']['other']:.0f}",
+         f"{c['right_stimulus_hz']['target']:.0f} / {c['right_stimulus_hz']['other']:.0f}",
+         " / ".join(f"{max(c['shuffled_target_hz'][s]):.0f}" for s in "LR"), _mark(c["passed"]))
+        for c in b["mirrored_candidates"]
+    ]  # fmt: skip
+    return (
+        "Johnston's organ (JO) neurons sense static antennal deflection, which is how the fly "
+        "senses gravity and wind; JO-C neurons respond when the antenna is pushed toward the "
+        "head, JO-E neurons when it is pulled away (Kamikouchi et al. 2009; Yorozu et al. 2009; "
+        f"Patella & Wilson 2018). Each JO type fires at {b['stimulus_hz']:.0f} Hz on one side "
+        f"for {b['duration_ms']:.0f} ms. The pass condition, committed before the first run, "
+        "requires a lateralized descending response that replicates mirror-image from the other "
+        "side and stays below a third on every shuffled control (seeds "
+        f"{', '.join(map(str, b['control_seeds']))}). **Result: {_mark(b['passed'])}** — "
+        f"{sum(c['passed'] for c in b['mirrored_candidates'])} of "
+        f"{len(b['mirrored_candidates'])} mirrored pairs pass.\n\n"
+        + _table(["JO type", "cells L/R", "strongest descending responses to left stimulus (L/R Hz)"],
+                 screen)
+        + "\n\nMirrored pairs (target / other cell of the same type, Hz):\n\n"
+        + _table(["JO type", "descending type", "relation", "left stimulus", "right stimulus",
+                  "shuffled max, L / R stimulus", "result"], pairs)
+        + "\n\nNone of the responding descending types is in the motor read-out (DNp01, DNa01, "
+        "DNa02), so body input is not wired to motors."
+    )  # fmt: skip
+
+
+def _body_loop(b):
+    rows = [
+        (r["tilt"], f"{r['peak_group_hz']['JO-C*:L']:.0f}/{r['peak_group_hz']['JO-C*:R']:.0f}",
+         f"{r['peak_group_hz']['JO-E*:L']:.0f}/{r['peak_group_hz']['JO-E*:R']:.0f}",
+         r["descending_cells_passing"],
+         ", ".join(f"{x['neuron']} {x['peak_hz']:.0f}" for x in r["strongest_descending"][:3]),
+         f"{r['mean_turn']:+.3f}", r["max_escape"], r["reverse_frames"],
+         _pair(r["peak_group_hz"], "DNp01"), _pair(r["peak_group_hz"], "DNa02"),
+         _mark(r["passed"]))
+        for r in b["rows"]
+    ]  # fmt: skip
+    sweep = [
+        (r["tilt"], r["degrees"], f"{r['mean_turn']:+.3f}", r["max_escape"], r["reverse_frames"],
+         _pair(r["peak_hz"], "DNp01"), _pair(r["peak_hz"], "DNa02"))
+        for r in b["post_hoc_sweep"]
+    ]  # fmt: skip
+    return (
+        "The robot faces the static scene for "
+        f"{b['duration_s']:.0f} s while held tilted; `body_feedback` is on and tilt drives JO "
+        "neurons through the declared hypothesis (nose-up and the lower side push the antenna → "
+        "JO-C; nose-down and the upper side pull it → JO-E). Pass condition, committed before "
+        "the first run, per tilt: some descending cell peaks ≥ 20 Hz and below a third of that "
+        "in every shuffled control, **and** motor commands stay as when level (no escape, "
+        f"|mean turn| < 0.1). **Result: {_mark(b['passed'])}.**\n\n"
+        + _table(["tilt", "JO-C L/R Hz", "JO-E L/R Hz", "descending cells passing",
+                  "strongest descending (Hz)", "mean turn", "max escape", "reversing frames",
+                  "peak GF L/R Hz", "peak DNa02 L/R Hz", "result"], rows)
+        + "\n\nTilt reaches hundreds of descending cells that stay silent on shuffled wiring, but "
+        "it also reaches the Giant Fiber and DNa02 through the connectome, so motor commands "
+        "change although body input is not wired to them. `body_feedback` is therefore off by "
+        "default.\n\n"
+        "**Post hoc, added after the check failed:** the same tilts at smaller angles, real "
+        "wiring only.\n\n"
+        + _table(["tilt", "degrees", "mean turn", "max escape", "reversing frames",
+                  "peak GF L/R Hz", "peak DNa02 L/R Hz"], sweep)
+    )  # fmt: skip
+
+
 def _closed_loop(section):
     out = []
     for wiring, rows in section.items():
@@ -137,6 +210,10 @@ def failures(results):
     failed = [r["name"] for r in results["pathways"]["rows"] if not r["passed"]]
     if "feeding" in results and not results["feeding"]["passed"]:
         failed.append("Published feeding circuit (sugar GRNs to MN9)")
+    if "body" in results and not results["body"]["passed"]:
+        failed.append("Johnston's organ screen")
+    if "body_loop" in results and not results["body_loop"]["passed"]:
+        failed += [f"Tilt loop: {r['tilt']}" for r in results["body_loop"]["rows"] if not r["passed"]]
     failed += [
         f"{wiring}: {r['scene']} (seed {r.get('seed')})"
         for wiring, rows in results["closed_loop"].items()
@@ -220,6 +297,11 @@ def render_markdown(results):
     ]
     if "feeding" in results:
         parts += ["## 4b. Published feeding circuit (pre-registered)", _feeding(results["feeding"])]
+    if "body" in results:
+        parts += ["## 4c. Body sense: Johnston's organ (pre-registered)", _body(results["body"])]
+    if "body_loop" in results:
+        parts += ["## 4d. Tilted robot in the closed loop (pre-registered)",
+                  _body_loop(results["body_loop"])]  # fmt: skip
     parts += [
         "## 5. Closed loop: synthetic camera scenes → connectome → motor commands",
         f"Interfaces (the only hand-chosen parts of the brain path): {sensory}. Read-out: "
