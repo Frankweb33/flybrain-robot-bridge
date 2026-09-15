@@ -234,6 +234,60 @@ def _tilt_seeds(rows):
     )  # fmt: skip
 
 
+def _retina(r):
+    axes = [
+        (side, a["cells"]["T4a"], a["angles_deg"]["T4a-T4b"], a["angles_deg"]["T4c-T4d"],
+         a["angles_deg"]["T4a-T4c"], " / ".join(f"{a['concentration'][k]:.2f}" for k in
+                                                ("T4a", "T4b", "T4c", "T4d")))
+        for side, a in r["eye_axes"].items()
+    ]  # fmt: skip
+    shown = ("L2", "Tm1", "Tm2", "Tm4", "Tm9", "CT1", "T5a", "T5b", "T4a", "HSE", "LPLC2")
+    scenes = [
+        (s["scene"],) + tuple(_sides({side: s["mean_hz"][f"{t}:{side}"] for side in "LR"})
+                               .replace("/", " / ") for t in shown)
+        for s in r["scenes"]
+    ]  # fmt: skip
+    saturating = [
+        (x["condition"], ", ".join(f"{t} {hz:g}" for t, hz in x["mean_hz"].items() if hz > 0),
+         x["t5_mean_v_mv"], x["t5_max_v_mv"], x["t5_mean_g_mv"],
+         f"{x['t5_share_net_inhibitory']:.0%}")
+        for x in r["saturating_l2"]
+    ]  # fmt: skip
+    inputs = ", ".join(f"{x['type']} {x['synapses_per_t5']:+g}" for x in r["t5_inputs"])
+    return (
+        "**Exploratory, not pre-registered.** In `vision: retina` the camera is not reduced to "
+        "optical flow: each of the "
+        f"{r['columns']:,} lamina L2 cells with column coordinates receives Poisson spikes in "
+        f"proportion to how much darker its pixel became (0 Hz up to {r['floor']:.0%}, 150 Hz "
+        f"from {r['full']:.0%}), and motion has to be computed by the connectome. The first "
+        "simulations in this mode ran before any pass condition was written and already showed "
+        "the motion detectors silent, so this section reports observations and a mechanism, "
+        "with no pass or fail.\n\n"
+        "*Where the columns look.* The orientation of each eye's column lattice comes from the "
+        "wiring: every T4 cell gets Mi9 input from the side a preferred-direction stimulus "
+        "approaches from and Mi4 input from the other side (Takemura et al. 2017), so the "
+        "Mi4-minus-Mi9 input centroid points along its preferred direction. Opposite subtypes "
+        "come out opposite and orthogonal subtypes orthogonal:\n\n"
+        + _table(["eye", "T4a cells", "T4a vs T4b", "T4c vs T4d", "T4a vs T4c",
+                  "agreement across cells (a/b/c/d)"], axes)
+        + "\n\nMean firing rate over 3 s per scene (Hz, left / right eye):\n\n"
+        + _table(["scene"] + list(shown), scenes)
+        + "\n\nEvery L2 cell of both eyes driven at 150 Hz for 1 s, T5 membrane sampled from 0.2 s:\n\n"
+        + _table(["weight", "mean rates (Hz)", "T5 mean v mV", "T5 max v mV", "T5 mean g mV",
+                  "samples with net inhibition"], saturating)
+        + f"\n\nSigned synapses onto an average T5 cell: {inputs}.\n\n"
+        "The OFF pathway carries the signal from L2 to Tm1, Tm2 and Tm4, but T5 stays below "
+        "threshold even under saturating input: CT1, two GABAergic cells that contact every "
+        "column, fire at over 100 Hz and keep T5 inhibited, and Tm9, T5's largest excitatory "
+        "input, is silent because its input L3 has column coordinates only in the right eye and "
+        "is not driven. In the fly CT1 computes locally in each column; as a single point neuron "
+        "it inhibits the whole eye at once. The ON pathway is not driven at all, because "
+        "glutamatergic L1 signals light by releasing less transmitter. Vision therefore stays "
+        "on optical flow by default. (The approaching disk of the synthetic scenes is mostly "
+        "brighter than the background, so in `approach_center` almost no column darkens.)"
+    )  # fmt: skip
+
+
 def _closed_loop(section):
     out = []
     for wiring, rows in section.items():
@@ -370,6 +424,11 @@ def render_markdown(results):
         "pathway (LC10a → DNa02) still turns the robot toward it as the Giant Fiber commands "
         "reverse.",
         _closed_loop(results["closed_loop"]),
+    ]
+    if "retina" in results:
+        parts += ["## 5b. Retinotopic vision through the lamina (exploratory)",
+                  _retina(results["retina"])]  # fmt: skip
+    parts += [
         "## 6. Speed",
         _table(["device", "condition", "simulated s", "wall s", "× real time", "spikes"],
                [(r.get("device", "cpu"), r["condition"], r["simulated_s"], r["wall_s"],

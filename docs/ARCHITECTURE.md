@@ -25,6 +25,11 @@ Farneback optical flow. For each image half it reports:
 - `left_motion/right_motion`: mean flow magnitude (used by the mock backend).
 - `yaw_flow`: median horizontal flow, a whole-view rotation estimate.
 
+`RetinaEncoder` (experimental `vision: retina`) computes no motion: it samples the
+160 × 120 image at the pixel of each lamina column (positions from
+`connectome/retinotopy.py`) and reports how much darker each became since the last
+frame.
+
 `scene_frame` renders deterministic test scenes (`static`, `pan`, `pass_left`,
 `approach_center`, `approach_left`, `approach_right`, or `tour` through all of
 them). `tests/test_core.py` checks that pans and sideways passes do not register

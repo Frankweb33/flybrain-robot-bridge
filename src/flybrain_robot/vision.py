@@ -1,18 +1,23 @@
-"""Camera adapter: dense optical flow reduced to a few per-hemifield visual features.
+"""Camera adapters.
 
-These are engineering estimates, not a model of the fly retina:
+``VisionEncoder`` (vision "flow") reduces dense optical flow to a few per-hemifield
+features. These are engineering estimates, not a model of the fly retina:
 
 * ``left_motion`` / ``right_motion``: mean flow magnitude in each image half.
-* ``looming_left`` / ``looming_right``: net flow divergence (expansion) in each half.
-  Uniform translation and rotation have zero divergence, so a pan or a sideways
-  pass does not register as looming; an object growing in the image does.
+* ``looming_left`` / ``looming_right``: positive flow divergence inside moving regions,
+  away from motion boundaries. Uniform translation and rotation have zero divergence,
+  so a pan or a sideways pass does not register as looming; a growing object does.
 * ``object_left`` / ``object_right``: flow that differs from the half's median flow,
   i.e. something moving relative to the background rather than the whole view.
 * ``yaw_flow``: median horizontal flow, positive when the scene moves right
   (as it does when the camera turns left).
+
+``RetinaEncoder`` (vision "retina") computes no motion at all: it reports how much
+darker each optic-lobe column's pixel became since the previous frame, and the
+connectome has to compute motion from that (``connectome/retinotopy.py``).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import cv2
 import numpy as np
@@ -35,6 +40,30 @@ class SensoryInput:
     object_left: float = 0.0
     object_right: float = 0.0
     yaw_flow: float = 0.0
+    # Retina mode: darkening per optic-lobe column, 0..1, in RetinaEncoder column order.
+    retina: np.ndarray | None = field(default=None, compare=False)
+
+
+class RetinaEncoder:
+    """Per-column temporal darkening at the pixels given by ``x``, ``y`` (160x120 image)."""
+
+    def __init__(self, x, y):
+        self.xi = np.clip(np.round(np.asarray(x)).astype(int), 0, WIDTH - 1)
+        self.yi = np.clip(np.round(np.asarray(y)).astype(int), 0, HEIGHT - 1)
+        self.previous = None
+
+    def reset(self):
+        self.previous = None
+
+    def encode(self, frame):
+        gray = cv2.cvtColor(cv2.resize(frame, (WIDTH, HEIGHT)), cv2.COLOR_BGR2GRAY)
+        values = cv2.blur(gray, (3, 3)).astype(np.float64)[self.yi, self.xi]
+        if self.previous is None:
+            self.previous = values
+            return SensoryInput(retina=np.zeros(len(values)))
+        darkening = np.clip((self.previous - values) / np.maximum(self.previous, 8.0), 0.0, 1.0)
+        self.previous = values
+        return SensoryInput(retina=darkening)
 
 
 def _clip01(value):
@@ -109,14 +138,40 @@ def render_scene(cx, radius, pan=0.0, cy=120.0):
 
 
 SCENES = ("static", "pan", "pass_left", "approach_center", "approach_left", "approach_right")
+# Motion-vision test patterns, not part of the tour: a square-wave grating of vertical
+# bars drifting left or right, and the same grating reversing contrast in place
+# ("flicker"), which darkens each column as often as the drifting grating but carries
+# no coherent motion.
+PATTERNS = ("grating_left", "grating_right", "flicker")
+GRATING_PERIOD_PX = 40
+GRATING_SPEED_PX = 3
+# Contrast reversal every 4 frames gives the same mean column darkening per frame as the
+# drifting grating through RetinaEncoder (0.088 vs 0.086, measured 2026-09-16 before any
+# neuron was simulated), so neither pattern delivers more input than the other.
+FLICKER_FRAMES = 4
 TOUR_SEGMENT = 90
 
 
+def grating(offset, inverted=False):
+    x = np.arange(320)
+    dark = ((x + offset) % GRATING_PERIOD_PX) < GRATING_PERIOD_PX // 2
+    if inverted:
+        dark = ~dark
+    row = np.where(dark, 40, 200).astype(np.uint8)
+    return cv2.cvtColor(np.tile(row, (240, 1)), cv2.COLOR_GRAY2BGR)
+
+
 def scene_frame(name, index):
-    """Deterministic 320x240 test scenes; ``tour`` cycles through all of them."""
+    """Deterministic 320x240 test scenes; ``tour`` cycles through the SCENES."""
     if name == "tour":
         name = SCENES[(index // TOUR_SEGMENT) % len(SCENES)]
         index %= TOUR_SEGMENT
+    if name == "grating_left":  # bars move toward the left edge
+        return grating(GRATING_SPEED_PX * index)
+    if name == "grating_right":
+        return grating(-GRATING_SPEED_PX * index)
+    if name == "flicker":
+        return grating(0, inverted=bool((index // FLICKER_FRAMES) % 2))
     t = index % TOUR_SEGMENT
     if name == "static":
         return render_scene(160, 0)
@@ -127,7 +182,9 @@ def scene_frame(name, index):
     looming = 12 + 90 * (t / TOUR_SEGMENT) ** 3
     cx = {"approach_center": 160, "approach_left": 70, "approach_right": 250}.get(name)
     if cx is None:
-        raise ValueError(f"Unknown scene {name!r}; choose from tour, {', '.join(SCENES)}")
+        raise ValueError(
+            f"Unknown scene {name!r}; choose from tour, {', '.join(SCENES + PATTERNS)}"
+        )
     return render_scene(cx, looming)
 
 

@@ -221,6 +221,24 @@ def _run(
     return n_active, swaps
 
 
+def stimulus_arrays(drive, dt_ms, size):
+    """(listed neuron indices, per-step Poisson probability for every neuron)."""
+    index, rates = [], []
+    for neurons, rate in drive:
+        neurons = np.asarray(neurons, np.int32).ravel()
+        rate = np.broadcast_to(np.asarray(rate, np.float64), neurons.shape)
+        if not np.all(np.isfinite(rate)) or np.any(rate < 0):
+            raise ValueError("Stimulus rates must be finite and non-negative")
+        index.append(neurons)
+        rates.append(rate)
+    prob = np.zeros(size, np.float64)
+    if not index:
+        return np.zeros(0, np.int32), prob
+    index = np.concatenate(index)
+    np.add.at(prob, index, np.concatenate(rates) * dt_ms / 1000)
+    return index, np.minimum(prob, 1.0, out=prob)
+
+
 def _kernel_array(values, dtype):
     flags = ["C_CONTIGUOUS", "WRITEABLE", "OWNDATA"]
     return np.require(np.asarray(values, dtype=dtype), dtype, flags)
@@ -301,26 +319,15 @@ class LIFSimulator:
     def set_stimulus(self, drive):
         """``drive`` is an iterable of ``(neuron_indices, poisson_rate_hz)`` pairs.
 
-        Each neuron has one Poisson rate; a neuron listed twice gets the sum of its
-        rates (a probability of at most 1 per step). Driven neurons have no refractory
-        period, as in the reference model, until they are left out of a later stimulus.
+        The rate is a number or an array with one rate per listed neuron. Each neuron
+        has one Poisson rate; a neuron listed twice gets the sum of its rates (a
+        probability of at most 1 per step). Driven neurons have no refractory period, as
+        in the reference model, until they are left out of a later stimulus.
         """
-        index, rates = [], []
-        for neurons, rate in drive:
-            if not math.isfinite(rate) or rate < 0:
-                raise ValueError("Stimulus rates must be finite and non-negative")
-            neurons = np.asarray(neurons, np.int32).ravel()
-            index.append(neurons)
-            rates.append(np.full(len(neurons), float(rate)))
+        index, prob = stimulus_arrays(drive, self.params.dt_ms, self.connectome.size)
         self.refractory_steps[self.stim_index] = self.default_refractory
-        self.prob.fill(0)
-        if index:
-            self.stim_index = _kernel_array(np.concatenate(index), np.int32)
-            per_step = np.concatenate(rates) * self.params.dt_ms / 1000
-            np.add.at(self.prob, self.stim_index, per_step)
-            np.minimum(self.prob, 1.0, out=self.prob)
-        else:
-            self.stim_index = np.zeros(0, np.int32)
+        self.stim_index = _kernel_array(index, np.int32)
+        self.prob[:] = prob
         self.refractory_steps[self.stim_index] = 0
         self._activate(np.flatnonzero(self.prob > 0))
 

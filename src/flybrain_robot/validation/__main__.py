@@ -146,6 +146,14 @@ TILT_SWEEP_SCALES = (0.25, 0.5, 0.75)
 # each tilt changes motor commands. Reported only; the verdict above stays with seed 0.
 TILT_SEEDS = (1, 2, 3, 4, 5)
 
+# Retinotopic vision (exploratory, NOT pre-registered): the first simulations in this
+# mode ran on 2026-09-16 before any pass condition was written, and already showed T5,
+# T4, HS, LPLC2 and LC4 silent. This section reproduces those observations and the
+# mechanism behind them; it has no pass or fail.
+RETINA_TYPES = ("L2", "Tm1", "Tm2", "Tm4", "Tm9", "CT1", "T5a", "T5b", "T5c", "T5d",
+                "T4a", "T4b", "HSE", "HSN", "HSS", "LPLC2", "LC4")  # fmt: skip
+RETINA_SCENES = ("grating_left", "grating_right", "flicker", "approach_center", "pan")
+
 SCENE_EXPECTATIONS = {
     "static": dict(escape=False, turn=0),
     "pan": dict(escape=False, turn=0),
@@ -482,6 +490,62 @@ def body_loop_section(data, control_seeds):
                 post_hoc_seeds=by_seed)  # fmt: skip
 
 
+def retina_section(data, graph):
+    backend = MaleCNSBackend(data, seed=0, vision="retina", device=DEVICE)
+    g = backend.graph
+    groups = {f"{t}:{s}": g.select(f"{t}:{s}") for t in RETINA_TYPES for s in "LR"}
+    axes = {
+        side: dict(posterior=[round(float(x), 3) for x in a.posterior],
+                   dorsal=[round(float(x), 3) for x in a.dorsal], cells=a.cells,
+                   concentration=a.concentration, angles_deg=a.angles_deg)
+        for side, a in backend.eye_axes.items()
+    }  # fmt: skip
+    scenes = []
+    for name in RETINA_SCENES:
+        backend.reset()
+        encoder = backend.make_encoder()
+        counts = np.zeros(g.size)
+        for i in range(TOUR_SEGMENT):
+            backend.step(encoder.encode(scene_frame(name, i)), Telemetry(), 1 / 30)
+            counts += backend.last_counts
+        hz = counts / (TOUR_SEGMENT / 30)
+        scenes.append(dict(scene=name, mean_hz={k: round(float(hz[v].mean()), 2)
+                                                for k, v in groups.items()}))  # fmt: skip
+    l2 = backend.retina_cells
+    t5 = np.flatnonzero(np.isin(graph.type, ["T5a", "T5b", "T5c", "T5d"]))
+    saturating = []
+    for label, params, net in (("matched w_syn", None, graph),
+                               ("Shiu w_syn 0.275 mV", LIFParams(), graph)):  # fmt: skip
+        sim = make_simulator(net, params=params, seed=1, device="cpu")
+        sim.set_stimulus([(l2, STIM_HZ)])
+        v_samples, g_samples = [], []
+        for chunk in range(20):
+            sim.run(TRIAL_MS / 20)
+            if chunk >= 4:
+                v_samples.append(sim.v[t5].copy())
+                g_samples.append(sim.g[t5].copy())
+        hz = sim.take_counts() / (TRIAL_MS / 1000)
+        v, gg = np.array(v_samples), np.array(g_samples)
+        saturating.append(dict(
+            condition=label, mean_hz={t: round(float(hz[graph.type == t].mean()), 2)
+                                      for t in RETINA_TYPES},
+            t5_mean_v_mv=round(float(v.mean()), 2), t5_max_v_mv=round(float(v.max()), 2),
+            t5_mean_g_mv=round(float(gg.mean()), 3), t5_share_net_inhibitory=round(float(np.mean(gg < 0)), 2),
+        ))  # fmt: skip
+    indptr, indices, weight = np.asarray(graph.indptr), np.asarray(graph.indices), np.asarray(graph.weight)
+    pre = np.repeat(np.arange(graph.size, dtype=np.int32), np.diff(indptr))
+    is_t5 = np.zeros(graph.size, bool)
+    is_t5[t5] = True
+    edges = np.flatnonzero(is_t5[indices])
+    totals = {}
+    for t, w in zip(graph.type[pre[edges]], weight[edges]):
+        totals[str(t)] = totals.get(str(t), 0) + int(w)
+    inputs = [dict(type=t, synapses_per_t5=round(w / len(t5), 1))
+              for t, w in sorted(totals.items(), key=lambda kv: -abs(kv[1]))[:8]]  # fmt: skip
+    return dict(eye_axes=axes, columns=int(len(l2)), scenes=scenes, saturating_l2=saturating,
+                t5_inputs=inputs, floor=0.05, full=0.5)  # fmt: skip
+
+
 def run_scene(backend, name):
     backend.reset()
     encoder, decoder = VisionEncoder(), MotorDecoder()
@@ -697,6 +761,7 @@ def main(argv=None):
         ("body", lambda: body_section(graph, seeds)),
         ("body_loop", lambda: body_loop_section(args.data, seeds)),
         ("closed_loop", lambda: closed_loop_section(args.data, seeds)),
+        ("retina", lambda: retina_section(args.data, graph)),
         ("performance", lambda: performance_section(graph)),
     ]
     if not args.skip_screen:

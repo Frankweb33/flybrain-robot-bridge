@@ -18,7 +18,7 @@ import warnings
 import numpy as np
 
 from . import lif_kernel
-from .lif import KernelConstants, LIFParams, _kernel_array
+from .lif import KernelConstants, LIFParams, _kernel_array, stimulus_arrays
 
 try:
     from numba_cuda_mlir import cuda
@@ -162,23 +162,13 @@ class CudaLIFSimulator:
 
     def set_stimulus(self, drive):
         """Same semantics as ``LIFSimulator.set_stimulus``."""
-        index, rates = [], []
-        for neurons, rate in drive:
-            if not math.isfinite(rate) or rate < 0:
-                raise ValueError("Stimulus rates must be finite and non-negative")
-            neurons = np.asarray(neurons, np.int32).ravel()
-            index.append(neurons)
-            rates.append(np.full(len(neurons), float(rate)))
-        new_index = np.concatenate(index).astype(np.int32) if index else np.zeros(0, np.int32)
+        new_index, prob = stimulus_arrays(drive, self.params.dt_ms, self.n)
         if not np.array_equal(new_index, self.stim_index):
             self.host_refractory_steps[self.stim_index] = self.default_refractory
             self.host_refractory_steps[new_index] = 0
             self.refractory_steps.copy_to_device(self.host_refractory_steps)
             self.stim_index = new_index
-        self.host_prob.fill(0)
-        if index:
-            np.add.at(self.host_prob, new_index, np.concatenate(rates) * self.params.dt_ms / 1000)
-            np.minimum(self.host_prob, 1.0, out=self.host_prob)
+        self.host_prob[:] = prob
         self.prob.copy_to_device(self.host_prob)
 
     def run(self, duration_ms):

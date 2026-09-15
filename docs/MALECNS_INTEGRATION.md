@@ -114,6 +114,23 @@ Rates are 0 Hz up to a noise floor of 0.1 and rise linearly to 150 Hz. The whole
 population is driven together: the model has hemifield resolution, not
 retinotopy, and photoreceptors and early motion circuits are bypassed.
 
+**Retinotopic input (experimental, `vision: retina`).** Instead of optical-flow
+features, each of the 1,767 lamina L2 cells with column coordinates receives
+Poisson spikes in proportion to how much darker its pixel became, and motion would
+have to be computed by the fly's own circuits. Where each column looks is derived
+from the wiring: T4 cells receive Mi9 input from the side a preferred-direction
+stimulus approaches from and Mi4 input from the other side (Takemura et al. 2017),
+so their Mi4-minus-Mi9 input centroids give each eye's front-to-back (T4a) and
+upward (T4c) axes; opposite subtypes come out 178° and 166° apart and orthogonal
+subtypes 87–88°. The camera placement of the eye is a hand-made approximation
+(anterior columns at the image midline, posterior at the edge). In this model the
+signal reaches Tm1, Tm2 and Tm4 but not T5, T4, HS or LPLC2, even with every L2 cell
+at 150 Hz: two GABAergic CT1 cells, point neurons here but local processors in the
+fly, inhibit every T5, and Tm9, T5's largest excitatory input, is not driven because
+L3 lacks column coordinates in the left eye. The ON pathway cannot be driven,
+because glutamatergic L1 signals light by releasing less transmitter. Section 5b of
+VALIDATION.md has the numbers; vision therefore stays on optical flow.
+
 **Body input (experimental, off by default).** With `body_feedback: true`, the
 tilt of the robot, from its accelerometer, drives Johnston's organ neurons, the
 fly's antennal gravity and wind sensors. Tilt features rise linearly from 0 at 3°

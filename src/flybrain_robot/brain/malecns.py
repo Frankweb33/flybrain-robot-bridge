@@ -70,6 +70,18 @@ READOUT = {
 # the strongest mirrored responses to Johnston's organ input (VALIDATION.md, body).
 MONITOR = ("DNp02", "DNp04", "DNp11", "DNp09", "MDN", "DNp18", "DNp20")
 
+# Vision "retina" (experimental): instead of flow features, darkening at each lamina
+# column's pixel drives that column's L2 cell. L2 is cholinergic and feeds the OFF
+# motion pathway (Tm1, Tm2, Tm4 -> T5). The ON pathway starts with glutamatergic L1,
+# which signals light by releasing less glutamate; a model that only adds spikes to
+# neurons at rest cannot express that, so L1 is not driven. Column positions come from
+# the connectome (connectome/retinotopy.py). Rates: 0 Hz up to 5 % darkening, 150 Hz
+# at 50 % or more.
+RETINA_TYPE = "L2"
+RETINA_FLOOR = 0.05
+RETINA_FULL = 0.5
+RETINA_MONITOR = ("T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d", "HSE", "HSN", "HSS")
+
 RATE_TAU_MS = 100.0  # smoothing of spike counts into firing rates
 TURN_FULL_HZ = 60.0  # left/right rate difference that commands a full turn
 ESCAPE_FULL_HZ = 60.0  # Giant Fiber rate that maps to escape activity 1.0
@@ -87,6 +99,7 @@ class MaleCNSBackend(BrainBackend):
         params=None,
         body_feedback=False,
         device="auto",
+        vision="flow",
     ):
         from flybrain_robot.connectome.graph import load_connectome
 
@@ -97,6 +110,19 @@ class MaleCNSBackend(BrainBackend):
         graph = load_connectome(dataset_path)
         if not fast_modulators:
             graph = graph.without_fast_synapses_from(MODULATORS)
+        if vision not in ("flow", "retina"):
+            raise ValueError("vision must be 'flow' or 'retina'")
+        self.vision = vision
+        if vision == "retina":
+            # From the real wiring even for the shuffled control: the interface stays fixed.
+            from flybrain_robot.connectome.retinotopy import column_image_positions, eye_axes
+
+            self.eye_axes = {side: eye_axes(graph, side) for side in "LR"}
+            columns = [column_image_positions(graph, RETINA_TYPE, self.eye_axes[side])
+                       for side in "LR"]  # fmt: skip
+            self.retina_cells = np.concatenate([c[0] for c in columns])
+            self.retina_x = np.concatenate([c[1] for c in columns])
+            self.retina_y = np.concatenate([c[2] for c in columns])
         if wiring == "shuffled":  # negative control: same neurons, random targets
             graph = graph.shuffled(seed)
         elif wiring != "connectome":
@@ -109,18 +135,19 @@ class MaleCNSBackend(BrainBackend):
         # DNa02 through the connectome and changes motor commands.
         self.body_feedback = body_feedback
         self.sim = make_simulator(graph, params=params, seed=seed, device=device)
-        # Visual populations first, in map order: the Poisson generator draws in this order.
-        self.populations = {
-            p: graph.select(p) for d in SENSORY_MAP + BODY_MAP for p in d.populations
-        }
+        visual = SENSORY_MAP if vision == "flow" else ()
+        self.populations = {p: graph.select(p) for d in visual + BODY_MAP for p in d.populations}
         self.readout = {
             name: [graph.select(spec) for spec in specs] for name, specs in READOUT.items()
         }
-        self.groups = dict(self.populations)
+        self.groups = {p: graph.select(p) for d in SENSORY_MAP + BODY_MAP for p in d.populations}
         self.groups.update({s: graph.select(s) for specs in READOUT.values() for s in specs})
         self.groups.update(
             {f"{name}:{side}": graph.select(f"{name}:{side}") for name in MONITOR for side in "LR"}
         )
+        if vision == "retina":
+            self.groups.update({f"{name}:{side}": graph.select(f"{name}:{side}")
+                                for name in RETINA_MONITOR for side in "LR"})  # fmt: skip
         self.device = self.sim.device
         # One full block compiles every kernel before the control loop starts.
         self.sim.run(self.sim.params.t_dly_ms)
@@ -129,6 +156,7 @@ class MaleCNSBackend(BrainBackend):
     def reset(self):
         self.sim.reset()
         self.rates = np.zeros(self.graph.size)
+        self.last_counts = np.zeros(self.graph.size, np.int32)
         self.activity = MotorActivity()
 
     @property
@@ -139,7 +167,8 @@ class MaleCNSBackend(BrainBackend):
         """Poisson rate (Hz) per driven population; overlapping drives add, capped at 150 Hz."""
         features = tilt_features(telemetry)
         rates = dict.fromkeys(self.populations, 0.0)
-        for d in SENSORY_MAP + (BODY_MAP if self.body_feedback else ()):
+        visual = SENSORY_MAP if self.vision == "flow" else ()
+        for d in visual + (BODY_MAP if self.body_feedback else ()):
             value = features[d.feature] if d in BODY_MAP else getattr(sensory_input, d.feature)
             for population in d.populations:
                 rates[population] = min(rates[population] + d.rate(value), d.max_rate_hz)
@@ -151,9 +180,12 @@ class MaleCNSBackend(BrainBackend):
             raise ValueError("dt must be positive and finite")
         duration = min(dt * 1000, MAX_STEP_MS)
         rates = self.drive_rates(sensory_input, telemetry)
-        self.sim.set_stimulus([(self.populations[p], hz) for p, hz in rates.items()])
+        stimulus = [(self.populations[p], hz) for p, hz in rates.items()]
+        if self.vision == "retina":
+            stimulus.append((self.retina_cells, self.retina_rates(sensory_input.retina)))
+        self.sim.set_stimulus(stimulus)
         self.sim.run(duration)
-        counts = self.sim.take_counts()
+        counts = self.last_counts = self.sim.take_counts()
         alpha = 1 - math.exp(-duration / RATE_TAU_MS)
         self.rates += alpha * (counts / (duration / 1000) - self.rates)
         escape = max(self.rate(idx) for idx in self.readout["escape"]) / ESCAPE_FULL_HZ
@@ -166,6 +198,21 @@ class MaleCNSBackend(BrainBackend):
             escape=float(min(escape, 1.0)),
         )
         return self.activity
+
+    def retina_rates(self, darkening):
+        if darkening is None:
+            return 0.0
+        value = np.nan_to_num(np.asarray(darkening, np.float64))
+        scaled = (value - RETINA_FLOOR) / (RETINA_FULL - RETINA_FLOOR)
+        return 150.0 * np.clip(scaled, 0.0, 1.0)
+
+    def make_encoder(self):
+        """The camera encoder this backend expects."""
+        from flybrain_robot.vision import RetinaEncoder, VisionEncoder
+
+        if self.vision == "retina":
+            return RetinaEncoder(self.retina_x, self.retina_y)
+        return VisionEncoder()
 
     def rate(self, indices):
         return float(self.rates[indices].mean())

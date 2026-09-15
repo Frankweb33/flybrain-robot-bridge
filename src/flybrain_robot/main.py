@@ -13,7 +13,7 @@ from .controller import UDPBridge
 from .motor_decoder import MotorDecoder
 from .protocol import command
 from .telemetry import synthetic_telemetry, tilt_angles, tilted_telemetry
-from .vision import SCENES, VisionEncoder, scene_frame
+from .vision import PATTERNS, SCENES, VisionEncoder, scene_frame
 
 FRAME_PERIOD = 1 / 30
 
@@ -31,6 +31,7 @@ def build_brain(backend, cfg, args):
         wiring=args.wiring or cfg.wiring,
         body_feedback=args.body_feedback or cfg.body_feedback,
         device=args.device or cfg.device,
+        vision=args.vision or cfg.vision,
     )
 
 
@@ -69,7 +70,7 @@ def main(argv=None):
     source.add_argument("--camera", type=int)
     source.add_argument("--video")
     source.add_argument("--synthetic", action="store_true")
-    parser.add_argument("--scene", choices=("tour",) + SCENES, default="tour",
+    parser.add_argument("--scene", choices=("tour",) + SCENES + PATTERNS, default="tour",
                         help="Synthetic scene (default: tour through all of them)")  # fmt: skip
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true")
@@ -81,6 +82,8 @@ def main(argv=None):
     parser.add_argument("--steps", type=int, default=300, help="Finite frame count (default: 300)")
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"],
                         help="Simulator device for --backend malecns (default: auto)")  # fmt: skip
+    parser.add_argument("--vision", choices=["flow", "retina"],
+                        help="Camera interface for --backend malecns (retina is experimental)")  # fmt: skip
     parser.add_argument("--body-feedback", action="store_true",
                         help="Experimental: robot tilt drives Johnston's organ neurons")  # fmt: skip
     parser.add_argument("--tilt", type=parse_tilt, metavar="ROLL,PITCH",
@@ -111,7 +114,7 @@ def main(argv=None):
                 )
             }
         )
-        encoder = VisionEncoder()
+        encoder = brain.make_encoder() if hasattr(brain, "make_encoder") else VisionEncoder()
         video = args.video or (cfg.video if args.camera is None else None)
         origin = (
             f"synthetic:{args.scene}"

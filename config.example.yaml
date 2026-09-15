@@ -19,4 +19,6 @@ fast_modulators: false # true = dopamine/octopamine/serotonin act as fast excita
 wiring: connectome     # shuffled = negative control
 imu_axes: x,y,z        # robot x forward, y left, z up in sensor axes, e.g. -y,x,z
 body_feedback: false   # experimental: tilt drives Johnston's organ (see VALIDATION.md 4d)
+device: auto           # auto, cpu or cuda; identical results
+vision: flow           # flow, or experimental retina (see VALIDATION.md 5b)
 logging_level: INFO

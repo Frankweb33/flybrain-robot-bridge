@@ -38,6 +38,7 @@ Every ✅ row can be checked on your own machine with the command or file listed
 | ✅ | ESP32 receiver firmware (servos, IMU telemetry, arming, watchdog) compiles | CI `firmware` job, [firmware/](firmware/atom_matrix/README.md) |
 | ✅ | Johnston's organ, the fly's gravity sensor, drives mirror-image descending responses that vanish on shuffled wiring (21 pairs, pre-registered) | [VALIDATION.md §4c](docs/VALIDATION.md#4c-body-sense-johnstons-organ-pre-registered) |
 | ⬜ | Body feedback in the loop: robot tilt reaches hundreds of descending cells and pitch leaves motor commands unchanged, but a 20° roll onto the left side reaches the escape threshold in 3 of 5 brain seeds (a right roll turns the robot in 1 of 5), so `body_feedback` is experimental and off by default | [VALIDATION.md §4d](docs/VALIDATION.md#4d-tilted-robot-in-the-closed-loop-pre-registered) |
+| ⬜ | Vision from pixels through the fly's own motion circuits: the connectome's wiring alone recovers the four T4 direction axes (178° apart for opposite, 87° for orthogonal subtypes), but driving 1,767 lamina columns from the camera reaches Tm1/Tm2 and not the motion detectors T5, so the robot uses optical-flow features (`vision: retina` is experimental) | [VALIDATION.md §5b](docs/VALIDATION.md#5b-retinotopic-vision-through-the-lamina-exploratory) |
 | ⬜ | Reproduce the published sugar → MN9 feeding circuit ([Shiu et al.](https://www.nature.com/articles/s41586-024-07763-9)): sugar neurons engage G2N-1, Zorro, Phantom, Roundup and Fudog and drive MN9 to 30 Hz (0 Hz with shuffled wiring), but taste-peg neurons also reach MN9 through Roundup, so the pre-registered specificity check fails | [VALIDATION.md §4b](docs/VALIDATION.md#4b-published-feeding-circuit-pre-registered) |
 | ⬜ | Run on a physical Strandbeest robot | [HARDWARE.md](docs/HARDWARE.md): not done yet, no recording in this repository |
 | ⬜ | Biologically accurate fly behaviour | out of scope for an LIF approximation, see [Limits](#limits) |
@@ -161,7 +162,7 @@ unauthenticated: use an isolated network.
 - [ ] Bench test of firmware: calibration, watchdog, Wi-Fi loss
 - [ ] Recorded closed-loop run of the physical robot
 - [ ] Real-camera evaluation of the looming and object encoders
-- [ ] Retinotopic input instead of whole-population drive
+- [ ] Retinotopic input that reaches the motion detectors (lamina drive reaches Tm1/Tm2, not T5)
 
 ## Sources and attribution
 
