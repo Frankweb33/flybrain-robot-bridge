@@ -35,6 +35,7 @@ filterwarnings = [
     "ignore:.*parseAll.*",
     "ignore:Grid size .* under-utilization",
     "ignore:Host array used in CUDA kernel",
+    "ignore:__int__ returned non-int:DeprecationWarning",
 ]
 
 [tool.ruff.lint]
