@@ -10,13 +10,12 @@ import pytest
 
 import flybrain_robot
 from flybrain_robot.brain.base import MotorActivity
-from flybrain_robot.brain.malecns import MaleCNSBackend
 from flybrain_robot.brain.mock import MockBrain
 from flybrain_robot.config import Config
 from flybrain_robot.motor_decoder import MotorDecoder
 from flybrain_robot.protocol import PacketError, command, decode, encode
 from flybrain_robot.telemetry import Telemetry
-from flybrain_robot.vision import SensoryInput, VisionEncoder, synthetic_frame
+from flybrain_robot.vision import TOUR_SEGMENT, SensoryInput, VisionEncoder, scene_frame
 
 
 def test_packet_roundtrip():
@@ -92,19 +91,39 @@ def test_deterministic_mock_and_feedback():
         b.step(sensory, Telemetry(), 1 / 30)
     np.testing.assert_array_equal(a.state, b.state)
     assert a.get_motor_activity().left > a.get_motor_activity().right
-    old_left = a.get_motor_activity().left
-    a.step(sensory, Telemetry(gyro=(0, 0, 90)), 0.5)
-    assert a.get_motor_activity().left < old_left
+    before = a.get_motor_activity()
+    a.step(sensory, Telemetry(gyro=(0, 0, 90)), 0.5)  # robot yawing left
+    after = a.get_motor_activity()
+    assert after.right < before.right  # counter-steer right...
+    assert after.left >= before.left - 1e-9  # ...without slowing the left side
     a.reset()
     assert not a.state.any()
 
 
-def test_vision_detects_expansion():
+def scene_features(name):
     encoder = VisionEncoder()
-    assert encoder.encode(synthetic_frame(0)) == SensoryInput()
-    results = [encoder.encode(synthetic_frame(i)) for i in range(1, 60)]
-    assert max(r.left_motion for r in results) > 0.01
-    assert max(r.looming for r in results) > 0.01
+    assert encoder.encode(scene_frame(name, 0)) == SensoryInput()
+    return [encoder.encode(scene_frame(name, i)) for i in range(1, TOUR_SEGMENT)]
+
+
+def peak(rows, field):
+    return max(getattr(r, field) for r in rows)
+
+
+def test_vision_separates_looming_from_translation_and_rotation():
+    # The original encoder reported sideways motion as looming and missed approaches.
+    for name in ("static", "pan", "pass_left"):
+        rows = scene_features(name)
+        assert peak(rows, "looming_left") < 0.1 and peak(rows, "looming_right") < 0.1, name
+    assert peak(scene_features("pan"), "object_left") < 0.1  # whole-view motion is no object
+    assert scene_features("pan")[-1].yaw_flow < -0.2
+    passing = scene_features("pass_left")
+    assert peak(passing, "object_left") > 0.4 and peak(passing, "object_right") < 0.1
+    left, right = scene_features("approach_left"), scene_features("approach_right")
+    assert peak(left, "looming_left") > 0.5 and peak(left, "looming_right") < 0.1
+    assert peak(right, "looming_right") > 0.5 and peak(right, "looming_left") < 0.1
+    center = scene_features("approach_center")
+    assert min(peak(center, "looming_left"), peak(center, "looming_right")) > 0.3
 
 
 def test_no_camera_or_socket_in_synthetic(monkeypatch, capsys):
@@ -132,13 +151,6 @@ def test_cli_subprocess():
 def test_imports():
     for module in pkgutil.walk_packages(flybrain_robot.__path__, flybrain_robot.__name__ + "."):
         importlib.import_module(module.name)
-
-
-def test_malecns_is_explicit_stub(tmp_path):
-    with pytest.raises(ValueError, match="Obtain data"):
-        MaleCNSBackend()
-    with pytest.raises(NotImplementedError, match="Not implemented yet"):
-        MaleCNSBackend(tmp_path)
 
 
 @pytest.mark.parametrize(

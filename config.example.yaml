@@ -12,5 +12,9 @@ looming_threshold: 0.3
 watchdog_timeout: 0.5
 invert_left: false
 invert_right: false
-dataset_path: null
+dataset_path: data/malecns-v1.0  # used by backend: malecns
+brain_seed: 0
+cruise: 0.4            # constant forward command; the connectome steers and escapes
+fast_modulators: false # true = dopamine/octopamine/serotonin act as fast excitation
+wiring: connectome     # shuffled = negative control
 logging_level: INFO

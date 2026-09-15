@@ -29,6 +29,8 @@ class MockBrain(BrainBackend):
         if not math.isfinite(dt) or dt <= 0:
             raise ValueError("dt must be positive and finite")
         s = sensory_input
+        # Gyro z up: positive yaw rate = turning left. Counter-steer by slowing the
+        # opposite side, so feedback damps a turn instead of reinforcing it.
         balance = float(np.clip(telemetry.gyro[2] / 90, -1, 1))
         drive = np.array(
             [
@@ -37,8 +39,8 @@ class MockBrain(BrainBackend):
                 s.looming,
                 max(balance, 0),
                 max(-balance, 0),
-                0.15 + s.right_motion * 0.7 - max(balance, 0),
-                0.15 + s.left_motion * 0.7 - max(-balance, 0),
+                0.15 + s.right_motion * 0.7 - max(-balance, 0),
+                0.15 + s.left_motion * 0.7 - max(balance, 0),
                 s.looming,
             ]
         )
