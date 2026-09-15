@@ -100,6 +100,28 @@ def test_deterministic_mock_and_feedback():
     assert not a.state.any()
 
 
+def test_tilt_features_follow_gravity():
+    from flybrain_robot.telemetry import synthetic_telemetry, tilt_features, tilted_telemetry
+
+    assert tilt_features(Telemetry()) == dict.fromkeys(tilt_features(Telemetry()), 0.0)
+    left = tilt_features(tilted_telemetry(roll_left_deg=20))
+    assert left["tilt_left"] == pytest.approx(1.0) and left["tilt_right"] == 0.0
+    nose_down = tilt_features(tilted_telemetry(pitch_down_deg=11.5))
+    assert nose_down["tilt_forward"] == pytest.approx(0.5) and nose_down["tilt_back"] == 0.0
+    # The synthetic sway used by every scene stays below the 3 degree floor.
+    assert all(not any(tilt_features(synthetic_telemetry(t / 10)).values()) for t in range(100))
+    broken = Telemetry(accel=(float("nan"), 0.0, 1.0))
+    assert not any(tilt_features(broken).values())
+
+
+def test_imu_axes_remap():
+    telemetry = Telemetry(gyro=(1.0, 2.0, 3.0), accel=(0.1, 0.2, 0.9))
+    assert telemetry.remapped("-y,x,z") == Telemetry((-2.0, 1.0, 3.0), (-0.2, 0.1, 0.9))
+    assert telemetry.remapped("x,y,z") is telemetry
+    with pytest.raises(ValueError, match="imu_axes"):
+        telemetry.remapped("x,x,z")
+
+
 def scene_features(name):
     encoder = VisionEncoder()
     assert encoder.encode(scene_frame(name, 0)) == SensoryInput()

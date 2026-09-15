@@ -105,6 +105,24 @@ FEEDING = dict(
     },
 )
 
+# Body feedback through Johnston's organ (JO), the antennal organ that senses gravity
+# and wind through static antennal deflection (Kamikouchi et al. 2009; Yorozu et al.
+# 2009). Which MaleCNS JO subtype reports which deflection is not annotated, so every
+# JO type with at least 18 cells is screened.
+# Pass condition, written and committed before the first run: there is a JO type T and
+# a descending neuron type D with a left and a right cell such that
+#   T on the left drives one D cell >= 20 Hz and >= 3x (the other D cell + 1 Hz),
+#   T on the right drives the mirror-image D cell with the same thresholds, and
+#   in every shuffled-wiring control that D cell stays below (its rate / 3 - 1 Hz)
+#   for both stimuli.
+# Ten JO types are compared against every paired descending type, so a single-side hit
+# could be chance; the mirror replication is required for that reason.
+JO_SCREEN_TYPES = (
+    "JO-EV1", "JO-EV2", "JO-EV3", "JO-EV5", "JO-EV6", "JO-ED1", "JO-ED2_a", "JO-ED2_b",
+    "JO-CM", "JO-CL",
+)  # fmt: skip
+JO_SCREEN_MS = 400.0
+
 SCENE_EXPECTATIONS = {
     "static": dict(escape=False, turn=0),
     "pan": dict(escape=False, turn=0),
@@ -292,6 +310,71 @@ def feeding_section(graph, full, control_seeds):
     )  # fmt: skip
 
 
+def descending_pairs(graph):
+    """{type: {"L": [indices], "R": [indices]}} for descending types with both sides."""
+    pairs = {}
+    for i in np.flatnonzero(graph.superclass == "descending_neuron"):
+        pairs.setdefault(graph.type[i], {}).setdefault(graph.side[i], []).append(i)
+    return {t: s for t, s in pairs.items() if t and "L" in s and "R" in s}
+
+
+def lateral_hit(on, off):
+    return on >= 20 and on >= 3 * (off + 1)
+
+
+def body_section(graph, control_seeds):
+    pairs = descending_pairs(graph)
+    controls = [graph.shuffled(seed) for seed in control_seeds]
+    rows, candidates = [], []
+    for jo in JO_SCREEN_TYPES:
+        rates = {s: trial(graph, [f"{jo}:{s}"], duration_ms=JO_SCREEN_MS)[1] for s in "LR"}
+        mean = {
+            (s, d, side): float(rates[s][cells[side]].mean())
+            for s in "LR" for d, cells in pairs.items() for side in "LR"
+        }  # fmt: skip
+        strongest = sorted(
+            ((d, mean[("L", d, "L")], mean[("L", d, "R")]) for d in pairs),
+            key=lambda row: -abs(row[1] - row[2]),
+        )
+        rows.append(dict(
+            jo_type=jo, cells={s: len(graph.select(f"{jo}:{s}")) for s in "LR"},
+            strongest_descending_left_stimulus=[
+                dict(type=d, left_hz=round(lh), right_hz=round(rh))
+                for d, lh, rh in strongest[:4] if max(lh, rh) >= 20
+            ],
+        ))  # fmt: skip
+        for d in pairs:
+            for relation, target in (("ipsilateral", {"L": "L", "R": "R"}),
+                                     ("contralateral", {"L": "R", "R": "L"})):  # fmt: skip
+                other = {s: "R" if target[s] == "L" else "L" for s in "LR"}
+                if all(lateral_hit(mean[(s, d, target[s])], mean[(s, d, other[s])]) for s in "LR"):
+                    candidates.append((jo, d, relation, target, other, mean))
+    checked = []
+    for jo, d, relation, target, other, mean in candidates:
+        shuffled = {s: [] for s in "LR"}
+        for control in controls:
+            for s in "LR":
+                _, control_rates, _ = trial(control, [f"{jo}:{s}"], duration_ms=JO_SCREEN_MS)
+                shuffled[s].append(float(control_rates[pairs[d][target[s]]].mean()))
+        passed = all(
+            max(shuffled[s]) < mean[(s, d, target[s])] / 3 - 1 for s in "LR"
+        )
+        checked.append(dict(
+            jo_type=jo, descending_type=d, relation=relation,
+            left_stimulus_hz=dict(target=round(mean[("L", d, target["L"])], 1),
+                                  other=round(mean[("L", d, other["L"])], 1)),
+            right_stimulus_hz=dict(target=round(mean[("R", d, target["R"])], 1),
+                                   other=round(mean[("R", d, other["R"])], 1)),
+            shuffled_target_hz={s: [round(x, 1) for x in v] for s, v in shuffled.items()},
+            passed=bool(passed),
+        ))  # fmt: skip
+    return dict(
+        duration_ms=JO_SCREEN_MS, stimulus_hz=STIM_HZ, control_seeds=control_seeds,
+        screen=rows, mirrored_candidates=checked,
+        passed=any(c["passed"] for c in checked),
+    )  # fmt: skip
+
+
 def run_scene(backend, name):
     backend.reset()
     encoder, decoder = VisionEncoder(), MotorDecoder()
@@ -435,6 +518,7 @@ def main(argv=None):
         ("stability", lambda: stability_section(full)),
         ("pathways", lambda: pathway_section(graph, seeds)),
         ("feeding", lambda: feeding_section(graph, full, seeds)),
+        ("body", lambda: body_section(graph, seeds)),
         ("closed_loop", lambda: closed_loop_section(args.data, seeds)),
         ("performance", lambda: performance_section(graph)),
     ]
