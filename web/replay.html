@@ -337,8 +337,8 @@
       li.className = selected === n.body_id ? "selected" : "";
       li.title = `${n.instance || n.type} · ${n.superclass} · body ${n.body_id}`;
       li.innerHTML = `<span class="rank">${k + 1}</span>
-        <span class="name">${escapeHtml(n.type || n.instance)}${n.side ? " " + n.side : ""}
-        <small>${n.body_id}</small>${n.driven ? '<span class="badge">DRIVEN</span>' : ""}</span>
+        <span class="name">${escapeHtml(n.type || n.instance)}${n.side ? " " + escapeHtml(n.side) : ""}
+        <small>${escapeHtml(n.body_id)}</small>${n.driven ? '<span class="badge">DRIVEN</span>' : ""}</span>
         <span class="hz">${hz.toFixed(0)} Hz</span>`;
       li.style.background = selected === n.body_id ? "" : `linear-gradient(90deg, rgba(111,242,193,${0.1 * hz / max}) ${100 * hz / max}%, transparent 0)`;
       const pick = () => selectNeuron(n);
@@ -365,7 +365,7 @@
     try {
       let points = skeletonCache.get(n.body_id);
       if (!points) {
-        const url = `https://neuprint.janelia.org/api/skeletons/skeleton/male-cns:v1.0/${n.body_id}?format=swc`;
+        const url = `https://neuprint.janelia.org/api/skeletons/skeleton/male-cns:v1.0/${encodeURIComponent(n.body_id)}?format=swc`;
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         points = parseSwc(await response.text());
@@ -438,7 +438,7 @@
     const m = run.meta;
     $("count").textContent = m.neurons.toLocaleString("en-US");
     $("meta").innerHTML = `<b>${m.neurons.toLocaleString("en-US")}</b> neurons · ${escapeHtml(m.dataset || "")}<br>
-      wiring <b>${escapeHtml(m.wiring)}</b> · seed ${m.seed} · device ${escapeHtml(m.device)} · commit ${escapeHtml(m.commit)}`;
+      wiring <b>${escapeHtml(m.wiring)}</b> · seed ${escapeHtml(m.seed)} · device ${escapeHtml(m.device)} · commit ${escapeHtml(m.commit)}`;
     $("scrub").max = run.frames.length - 1;
     const scenes = [];
     run.frames.forEach((fr, f) => { if (!f || run.frames[f - 1].scene !== fr.scene) scenes.push([fr.scene, f]); });
