@@ -447,6 +447,16 @@ def _sensitivity(x):
         + _table(['seed', 'scene', 'max escape', 'mean turn', 'peak Giant Fiber Hz'], seed_rows)
     )  # fmt: skip
 
+def skipped(results):
+    """Headline checks that did not run here, so that a partial run cannot read as a pass."""
+    missing = []
+    if "skipped" in results.get("reference", {}):
+        missing.append("Brian2 spike-for-spike comparison (" + results["reference"]["skipped"] + ")")
+    if "skipped" in results.get("devices", {}):
+        missing.append("CPU and GPU agreement (" + results["devices"]["skipped"] + ")")
+    return missing
+
+
 def failures(results):
     failed = [r["name"] for r in results["pathways"]["rows"] if not r["passed"]]
     if "feeding" in results and not results["feeding"]["passed"]:
@@ -474,8 +484,10 @@ def failures(results):
 def render_markdown(results):
     m, d, model = results["machine"], results["dataset"], results["model"]
     stability, perf = results["stability"], results["performance"]
-    failed = failures(results)
+    failed, not_run = failures(results), skipped(results)
     summary = "All checks below passed." if not failed else "Failed: " + ", ".join(failed) + "."
+    if not_run:
+        summary += " **Not run on this machine: " + "; ".join(not_run) + ".**"
     sensory = "; ".join(
         f"`{s['feature']}` → {', '.join(s['populations'])} (0–{s['max_rate_hz']:.0f} Hz above "
         f"{s['floor']})"

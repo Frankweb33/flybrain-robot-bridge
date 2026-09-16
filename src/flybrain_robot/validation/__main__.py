@@ -29,12 +29,13 @@ from flybrain_robot.brain.malecns import (
     SENSORY_MAP,
     MaleCNSBackend,
 )
+from flybrain_robot.connectome.columns import held_out_accuracy
 from flybrain_robot.connectome.graph import load_connectome
 from flybrain_robot.motor_decoder import MotorDecoder
 from flybrain_robot.telemetry import Telemetry, tilted_telemetry
 from flybrain_robot.vision import SCENES, TOUR_SEGMENT, VisionEncoder, scene_frame
 
-from .report import failures, render_markdown
+from .report import failures, render_markdown, skipped
 
 ROOT = Path(__file__).resolve().parents[3]
 STIM_HZ = 150.0
@@ -50,6 +51,7 @@ TRIAL_MS = 1000.0
 # Giant Fibers, so lateralization is reported for them but no longer required.
 # The interfaces were chosen after an exploratory screen of 33 visual projection
 # types (the "screen" section), so these checks confirm rather than predict.
+PATHWAY_SEEDS = (1, 2, 3)
 PATHWAYS = [
     dict(name="Looming (left) to Giant Fiber", stimulus=["LPLC2:L"], target="DNp01:L",
          counterpart="DNp01:R", role="escape (either side)", lateral=False),
@@ -215,6 +217,9 @@ EYE_CONFIGURATIONS = (
     (f"slow {', '.join(EYE_SLOW_TYPES)} ({EYE_SLOW_TAU_MS:.0f} ms)", True),
 )
 
+# The real wiring is run at as many seeds as the shuffled control, after a review noted
+# that the control had more replication than the claim.
+CLOSED_LOOP_SEEDS = (0, 1, 2)
 SCENE_EXPECTATIONS = {
     "static": dict(escape=False, turn=0),
     "pan": dict(escape=False, turn=0),
@@ -339,7 +344,10 @@ def pathway_section(graph, control_seeds):
     rows = []
     for p in PATHWAYS:
         target, counterpart = graph.select(p["target"]), graph.select(p["counterpart"])
-        _, rates, _ = trial(graph, p["stimulus"])
+        # Three Poisson seeds for the claim, as many as for the controls: a single run
+        # hid how much of a margin is noise.
+        per_seed = [trial(graph, p["stimulus"], seed=seed)[1] for seed in PATHWAY_SEEDS]
+        target_by_seed = [round(float(r[target].mean()), 1) for r in per_seed]
         shuffled, within_superclass = [], []
         for control in regional:
             _, control_rates, _ = trial(control, p["stimulus"])
@@ -347,10 +355,12 @@ def pathway_section(graph, control_seeds):
         for control in controls:
             _, control_rates, _ = trial(control, p["stimulus"])
             shuffled.append(float(control_rates[target].mean()))
-        hz, other = float(rates[target].mean()), float(rates[counterpart].mean())
+        hz = float(np.mean([r[target].mean() for r in per_seed]))
+        other = float(np.mean([r[counterpart].mean() for r in per_seed]))
         source = indices(graph, p["stimulus"])
         rows.append(dict(
             p, target_hz=round(hz, 1), counterpart_hz=round(other, 1),
+            target_hz_by_seed=target_by_seed,
             shuffled_hz=[round(x, 1) for x in shuffled],
             shuffled_within_superclass_hz=[round(x, 1) for x in within_superclass],
             direct_synapses=synapses_between(graph, source, target),
@@ -360,7 +370,8 @@ def pathway_section(graph, control_seeds):
                         and (not p["lateral"] or hz >= 3 * (other + 1))),
         ))  # fmt: skip
     return {"stimulus_hz": STIM_HZ, "duration_ms": TRIAL_MS, "control_seeds": control_seeds,
-            "rows": rows}  # fmt: skip
+            "seeds": list(PATHWAY_SEEDS), "rows": rows,
+            "shuffle_clause_binds": any(max(r["shuffled_hz"]) * 3 + 3 > 20 for r in rows)}  # fmt: skip
 
 
 def feeding_section(graph, full, control_seeds):
@@ -431,7 +442,7 @@ def lateral_hit(on, off):
 def body_section(graph, control_seeds):
     pairs = descending_pairs(graph)
     controls = [graph.shuffled(seed) for seed in control_seeds]
-    rows, candidates = [], []
+    rows, candidates, tested = [], [], 0
     for jo in JO_SCREEN_TYPES:
         rates = {s: trial(graph, [f"{jo}:{s}"], duration_ms=JO_SCREEN_MS)[1] for s in "LR"}
         mean = {
@@ -452,6 +463,7 @@ def body_section(graph, control_seeds):
         for d in pairs:
             for relation, target in (("ipsilateral", {"L": "L", "R": "R"}),
                                      ("contralateral", {"L": "R", "R": "L"})):  # fmt: skip
+                tested += 1
                 other = {s: "R" if target[s] == "L" else "L" for s in "LR"}
                 if all(lateral_hit(mean[(s, d, target[s])], mean[(s, d, other[s])]) for s in "LR"):
                     candidates.append((jo, d, relation, target, other, mean))
@@ -652,7 +664,7 @@ def scene_passed(row, expect):
 
 def closed_loop_section(data, control_seeds):
     sections = {}
-    for wiring, seeds in [("connectome", [0]), ("shuffled", control_seeds)]:
+    for wiring, seeds in [("connectome", CLOSED_LOOP_SEEDS), ("shuffled", control_seeds)]:
         rows = []
         for seed in seeds:
             backend = MaleCNSBackend(data, seed=seed, wiring=wiring, device=DEVICE)
@@ -770,6 +782,7 @@ def participation_section(data, scenes=("approach_left", "pass_left")):
                 two_step_intermediates=int(between.sum()), rows=rows)  # fmt: skip
 
 
+SPEED_REPEATS = 3
 SPEED_CONDITIONS = [
     ("no input (silent brain)", []),
     ("LPLC2:L at 150 Hz", ["LPLC2:L"]),
@@ -791,10 +804,18 @@ def performance_section(graph):
     for device in devices:
         trial(graph, [], duration_ms=10, device=device)  # compile before timing
         for label, stimulus in SPEED_CONDITIONS:
-            _, rates, wall = trial(graph, stimulus, device=device)
+            # Repeated: a single timing on a GPU that also drives the display varied by a
+            # factor of 2.5 between regenerations of this report.
+            walls, rates = [], None
+            for repeat in range(SPEED_REPEATS):
+                _, rates, wall = trial(graph, stimulus, device=device, seed=1 + repeat)
+                walls.append(wall)
+            factors = sorted(round(TRIAL_MS / 1000 / w, 2) for w in walls)
             rows.append(dict(device=device, condition=label, simulated_s=TRIAL_MS / 1000,
-                             wall_s=round(wall, 3), realtime_factor=round(TRIAL_MS / 1000 / wall, 2),
-                             spikes=int(rates.sum())))  # fmt: skip
+                             wall_s=round(float(np.median(walls)), 3),
+                             realtime_factor=factors[len(factors) // 2],
+                             realtime_factor_range=[factors[0], factors[-1]],
+                             repeats=SPEED_REPEATS, spikes=int(rates.sum())))  # fmt: skip
     return rows
 
 
@@ -904,6 +925,50 @@ def eye_direction_rows(backend):
     return rows, hs
 
 
+def eye_stimulus_check(backend, frames=80):
+    """Positive control: does the grating really travel across the modelled retina?
+
+    A null result about motion is worthless unless the stimulus arrives as motion. This
+    measures the photoreceptor drive itself, with no neurons involved: how strongly each
+    cell is modulated, how many columns one grating period covers (two would be the
+    aliasing limit), and whether the phase advances across the eye in the direction the
+    pattern moves.
+    """
+    from flybrain_robot.vision import GRATING_PERIOD_PX, GRATING_SPEED_PX, WIDTH
+
+    encoder = backend.make_encoder()
+    period_px = GRATING_PERIOD_PX * WIDTH / 320  # scenes are 320 wide, the encoder 160
+    period_frames = GRATING_PERIOD_PX / GRATING_SPEED_PX
+    k = int(round(frames / period_frames))
+    eyes = {}
+    left = np.arange(len(backend.retina_cells)) < len(backend.retina_cells) // 2
+    hexes = np.stack([backend.graph.hex1[backend.retina_cells],
+                      backend.graph.hex2[backend.retina_cells]], axis=1).astype(float)  # fmt: skip
+    for side, mask in (("L", left), ("R", ~left)):
+        axis = backend.eye_axes[side].posterior
+        along = hexes[mask] @ axis  # position in columns along the eye's posterior axis
+        x = np.asarray(backend.retina_x)[mask]
+        slope = np.polyfit(along, x, 1)[0]  # image pixels per column
+        rows = {}
+        for direction in ("grating_left", "grating_right", "still"):
+            series = np.array([
+                encoder.encode(scene_frame("grating_left" if direction == "still" else direction,
+                                           0 if direction == "still" else i)).retina
+                for i in range(frames)
+            ])[:, mask]  # fmt: skip
+            component = np.fft.rfft(series - series.mean(0), axis=0)[k]
+            amplitude = np.abs(component) * 2 / frames
+            expected = 2 * np.pi * x / period_px * (1 if direction == "grating_left" else -1)
+            phase = np.angle(component)
+            agreement = float(np.abs(np.mean(np.exp(1j * (phase - expected)))))
+            rows[direction] = dict(mean_modulation=round(float(amplitude.mean()), 4),
+                                   phase_agreement=round(agreement, 3))  # fmt: skip
+        eyes[side] = dict(cells=int(mask.sum()), pixels_per_column=round(float(abs(slope)), 2),
+                          columns_per_grating_period=round(period_px / abs(slope), 2),
+                          patterns=rows)  # fmt: skip
+    return eyes
+
+
 def eye_configuration(data, seeds, slow_inputs):
     """One model configuration of the eye mode, measured against the same criteria."""
     backend = MaleCNSBackend(data, seed=0, vision="eye", device=DEVICE, slow_inputs=slow_inputs)
@@ -930,6 +995,8 @@ def eye_configuration(data, seeds, slow_inputs):
         "full-field flicker": eye_rates(backend, "flicker", groups),
     }  # fmt: skip
     configuration = dict(
+        stimulus_check=eye_stimulus_check(backend),
+        held_out_columns=held_out_accuracy(backend.graph),
         tonic_hz=EYE_TONIC_HZ, tonic_cells=backend.tonic_cells,
         photoreceptors=int(len(backend.retina_cells)), neurons=int(graph.size),
         slow_inputs=list(EYE_SLOW_TYPES) if slow_inputs else [],
@@ -1091,8 +1158,10 @@ def main(argv=None):
     Path(args.json).write_text(json.dumps(results, indent=2), encoding="utf-8")
     Path(args.markdown).write_text(render_markdown(results), encoding="utf-8")
     print(f"Wrote {args.json} and {args.markdown}")
-    failed = failures(results)
-    print("All checks passed." if not failed else f"Failed checks: {', '.join(failed)}")
+    failed, not_run = failures(results), skipped(results)
+    if not_run:
+        print(f"Not run on this machine: {'; '.join(not_run)}")
+    print("All checks that ran passed." if not failed else f"Failed checks: {', '.join(failed)}")
     return 1 if failed else 0
 
 

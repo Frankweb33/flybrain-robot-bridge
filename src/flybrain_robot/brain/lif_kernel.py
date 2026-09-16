@@ -31,7 +31,15 @@ import numpy as np
 FIXED_SHIFT = 20
 MAX_BLOCK_STEPS = 32  # spike bits of a block are kept in a uint32
 
-fma = math.fma  # replaced per device by ``specialize``
+def _fma_fallback(a, b, c):
+    """a * b + c with two roundings; only used if the interpreter has no fused version."""
+    return a * b + c
+
+
+# Replaced per device by ``specialize`` with the CPU intrinsic or the CUDA libdevice call,
+# both correctly rounded. math.fma needs Python 3.13; on 3.11 and 3.12 the pure-Python
+# path falls back to two roundings, which the kernels never use.
+fma = getattr(math, "fma", _fma_fallback)
 
 
 def specialize(function, **names):

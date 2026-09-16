@@ -210,6 +210,65 @@ def test_record_writes_video_log_and_metadata(tmp_path, capsys):
     assert Image.open(plot(run)).size == (1200, 820)
 
 
+class RecordingSocket:
+    """Fake UDP socket: records what the controller sends, answers one telemetry per frame."""
+
+    def __init__(self, telemetry=False):
+        self.sent, self.telemetry, self.pending, self.sequence = [], telemetry, 1, 0
+
+    def bind(self, address):
+        pass
+
+    def setblocking(self, flag):
+        pass
+
+    def sendto(self, data, target):
+        self.sent.append(decode(data))
+        self.pending = 1  # the robot answers each command with one telemetry packet
+
+    def recvfrom(self, size):
+        if not (self.telemetry and self.pending):
+            raise BlockingIOError()
+        self.pending -= 1
+        self.sequence += 1
+        packet = dict(type="telemetry", sequence=self.sequence, gyro=[0, 0, 0], accel=[0, 0, 1],
+                      left_speed=0, right_speed=0)  # fmt: skip
+        return encode(packet), ("127.0.0.1", 9000)
+
+    def close(self):
+        pass
+
+
+def send_run(monkeypatch, tmp_path, telemetry, steps=3, scene="tour"):
+    from flybrain_robot.main import main
+
+    config = tmp_path / "config.yaml"
+    config.write_text("robot_ip: 127.0.0.1\nbackend: mock\n", encoding="utf-8")
+    fake = RecordingSocket(telemetry)
+    monkeypatch.setattr(socket, "socket", lambda *args: fake)
+    monkeypatch.setattr(socket, "gethostbyname", lambda host: host)
+    main(["--synthetic", "--scene", scene, "--send", "--steps", str(steps),
+          "--config", str(config)])  # fmt: skip
+    return fake.sent
+
+
+def test_send_stops_the_robot_without_telemetry(monkeypatch, tmp_path):
+    """No telemetry means the watchdog stop, and a final stop packet on the way out."""
+    sent = send_run(monkeypatch, tmp_path, False)
+    assert len(sent) == 4  # one per frame plus the final stop
+    assert all(p["type"] == "motor_command" for p in sent)
+    assert all(p["emergency_stop"] for p in sent)
+    assert all(p["left"] == 0 and p["right"] == 0 for p in sent)
+    assert [p["sequence"] for p in sent] == [1, 2, 3, 4]
+
+
+def test_send_drives_the_robot_with_fresh_telemetry(monkeypatch, tmp_path):
+    sent = send_run(monkeypatch, tmp_path, True, steps=40, scene="approach_left")
+    assert not any(p["emergency_stop"] for p in sent[:-1])
+    assert any(p["left"] != 0 or p["right"] != 0 for p in sent[:-1])  # the brain commands motion
+    assert sent[-1]["emergency_stop"] and sent[-1]["left"] == 0  # final stop packet
+
+
 def test_cli_subprocess():
     result = subprocess.run(
         [sys.executable, "-m", "flybrain_robot.main", "--synthetic", "--dry-run", "--steps", "2"],
@@ -218,6 +277,17 @@ def test_cli_subprocess():
     )
     assert result.returncode == 0, result.stderr
     assert "motor=" in result.stdout
+
+
+def test_imports_without_python_313_fma(monkeypatch):
+    """math.fma arrived in 3.13; the package must still import on the versions CI uses."""
+    import importlib
+    import math
+
+    monkeypatch.delattr(math, "fma", raising=False)
+    kernel = importlib.reload(importlib.import_module("flybrain_robot.brain.lif_kernel"))
+    assert kernel.fma(2.0, 3.0, 1.0) == 7.0
+    importlib.reload(importlib.import_module("flybrain_robot.vision"))
 
 
 def test_imports():

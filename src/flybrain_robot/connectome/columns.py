@@ -24,6 +24,8 @@ from .graph import Connectome
 MIN_SYNAPSES = 20  # below this a centroid is guesswork
 MAX_SPREAD = 1.5  # columns; above this the cell is wide-field, not columnar
 ROUNDS = 2  # a second pass reaches cells whose partners were imputed in the first
+# Partner types that get a compartment of their own per column (see compartmentalize).
+SEPARATE_PARTNERS = ("T4", "T5")
 
 
 def hex_distance(q1, r1, q2, r2):
@@ -73,6 +75,39 @@ def accuracy(graph, min_synapses=MIN_SYNAPSES):
                 median_error=float(np.median(error)))  # fmt: skip
 
 
+def held_out_accuracy(graph, cell_types=("L2", "Mi1", "Tm9", "C3"), **kwargs):
+    """Accuracy when a whole cell type's columns are hidden, as they are for T4 and T5.
+
+    :func:`accuracy` measures the rule on neurons whose own type is annotated elsewhere in
+    the eye, which is easier than the case it is used for. Here every cell of one type
+    loses its column at once, so the rule has to work from other types only, through the
+    same two rounds of imputation.
+    """
+    true1 = np.asarray(graph.hex1).astype(np.int32)
+    true2 = np.asarray(graph.hex2).astype(np.int32)
+    types = np.asarray(graph.type)
+    results = {}
+    for cell_type in cell_types:
+        hidden = (types == cell_type) & (true1 >= 0)
+        if hidden.sum() < 10:
+            continue
+        blind = Connectome(**{**graph.__dict__,
+                              "hex1": np.where(hidden, -1, true1).astype(np.int16),
+                              "hex2": np.where(hidden, -1, true2).astype(np.int16)})  # fmt: skip
+        filled = impute_columns(blind, **kwargs)
+        guess1 = np.asarray(filled.hex1).astype(np.int32)[hidden]
+        guess2 = np.asarray(filled.hex2).astype(np.int32)[hidden]
+        recovered = guess1 >= 0
+        error = hex_distance(guess1[recovered], guess2[recovered],
+                             true1[hidden][recovered], true2[hidden][recovered])  # fmt: skip
+        results[cell_type] = dict(
+            cells=int(hidden.sum()), got_a_column=round(float(recovered.mean()), 4),
+            exact=round(float((error == 0).mean()), 4) if len(error) else None,
+            within_one=round(float((error <= 1).mean()), 4) if len(error) else None,
+        )  # fmt: skip
+    return results
+
+
 def impute_columns(graph, rounds=ROUNDS, min_synapses=MIN_SYNAPSES, max_spread=MAX_SPREAD):
     """Copy of the graph in which columnar neurons without a column get one."""
     hex1 = np.array(graph.hex1, np.int32)
@@ -96,12 +131,18 @@ def impute_columns(graph, rounds=ROUNDS, min_synapses=MIN_SYNAPSES, max_spread=M
                          "hex2": hex2.astype(np.int16), "manifest": manifest})  # fmt: skip
 
 
-def compartmentalize(graph, types=("CT1",)):
+def compartmentalize(graph, types=("CT1",), separate=SEPARATE_PARTNERS):
     """Copy in which each cell of ``types`` becomes one neuron per partner column.
 
     Every synapse keeps its partner, its count and its sign; only the cell body it
     belongs to is split, so a compartment can no longer drive the whole eye. Synapses
     with partners that have no column share one remaining compartment per cell.
+
+    CT1 has about 1,400 isolated units in one cell, roughly two per column: its medulla
+    terminals are ON-selective and feed T4, its lobula terminals OFF-selective and feed
+    T5 (Meier & Borst 2019). Splitting by column alone would join those two, so partners
+    whose type starts with one of ``separate`` get a compartment of their own per column,
+    and everything else shares a third.
     """
     split = np.isin(np.asarray(graph.type), list(types))
     if not split.any():
@@ -112,6 +153,11 @@ def compartmentalize(graph, types=("CT1",)):
     post = indices.astype(np.int64)
     hex1, hex2 = np.asarray(graph.hex1).astype(np.int64), np.asarray(graph.hex2).astype(np.int64)
     column = np.where(hex1 >= 0, hex1 * 128 + hex2, -1)  # one integer per column
+    partner_type = np.asarray(graph.type).astype(str)
+    tag = np.zeros(size, np.int64)
+    for k, prefix in enumerate(separate, start=1):
+        tag[np.char.startswith(partner_type, prefix)] = k
+    column = np.where(column >= 0, column * (len(separate) + 1) + tag, -1)
 
     # Every synapse of a split cell is labelled with the column of its partner; an edge
     # between two split cells is labelled once for each end.
@@ -119,7 +165,10 @@ def compartmentalize(graph, types=("CT1",)):
     cells = np.concatenate([pre[out_side], post[in_side]])
     keys = np.concatenate([column[post[out_side]], column[pre[in_side]]])
     unique, inverse = np.unique(np.stack([cells, keys], axis=1), axis=0, return_inverse=True)
-    parent, new_column = unique[:, 0], unique[:, 1]
+    parent, key = unique[:, 0], unique[:, 1]
+    tags = len(separate) + 1
+    new_column = np.where(key >= 0, key // tags, -1)
+    new_tag = np.where(key >= 0, key % tags, -1)
     new_index = np.empty(len(unique), np.int64)
     _, first = np.unique(parent, return_index=True)  # the first compartment keeps the parent row
     extra = np.ones(len(unique), bool)
@@ -144,7 +193,9 @@ def compartmentalize(graph, types=("CT1",)):
         fields[name] = values
     fields["instance"] = fields["instance"].astype(object)
     for k, index in enumerate(new_index):
-        suffix = f"_col{new_column[k] // 128}_{new_column[k] % 128}" if new_column[k] >= 0 else "_rest"
+        part = ("_" + separate[new_tag[k] - 1]) if new_tag[k] > 0 else ""
+        suffix = (f"_col{new_column[k] // 128}_{new_column[k] % 128}{part}"
+                  if new_column[k] >= 0 else "_rest")  # fmt: skip
         fields["instance"][index] = str(fields["instance"][index]).split("_col")[0] + suffix
     fields["instance"] = fields["instance"].astype(str)
 
@@ -156,6 +207,7 @@ def compartmentalize(graph, types=("CT1",)):
     np.cumsum(np.bincount(pre, minlength=new_size), out=new_indptr[1:])
     manifest = dict(graph.manifest, compartments=dict(
         types=list(types), cells=int(split.sum()), compartments=len(unique),
+        separate_partners=list(separate),
         edges_without_partner_column=int((keys < 0).sum()),
     ))  # fmt: skip
     return Connectome(indptr=new_indptr, indices=post.astype(np.int32), weight=weight,
