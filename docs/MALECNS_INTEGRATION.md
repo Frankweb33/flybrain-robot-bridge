@@ -98,7 +98,11 @@ Two deliberate differences in the model, both switchable:
    act through slow metabotropic receptors. A handful of these neurons contact
    thousands of partners each; as fast excitatory synapses they broadcast
    activity across the brain. `fast_modulators: true` restores the reference
-   convention.
+   convention. What this removes is worth stating plainly: 868 neurons, 631,260
+   edges and 1,788,712 synapses (1.4% of the total), with a mean out-degree of
+   727 against 153 for the brain as a whole. The receptor argument licenses
+   "slow", not "zero", and octopamine in particular carries the fly's locomotor
+   state into visual processing — which a walking robot removes here.
 
 Section 3 of [VALIDATION.md](VALIDATION.md) shows all four combinations.
 
@@ -115,7 +119,14 @@ projection neurons of the corresponding optic lobe with Poisson spikes:
 | feature | neurons driven | why |
 |---|---|---|
 | `looming_left/right`: expansion inside moving regions | LPLC2 and LC4 of that side | looming-sensitive projection neurons upstream of the escape pathway (Klapoetke et al. 2017; von Reyn et al. 2017) |
-| `object_left/right`: motion relative to the background | LC10a of that side | small-object motion detectors used in visual pursuit (Ribeiro et al. 2018) |
+| `object_left/right`: motion relative to the background | LC10a of that side | small-object visual projection neurons that steer pursuit **during courtship** (Ribeiro et al. 2018) |
+
+The LC10a citation is weaker than the others and is used outside its context: Hindmarsh
+Sten et al. 2021 show that this pathway's gain is raised by P1-driven arousal and that it
+specifies tracking *in the courting male*. This model has no arousal state and no
+neuromodulation, so it runs the pathway in the condition where the fly does not use it for
+pursuit. LC10a → DNa02 is also entirely polysynaptic here (0 direct synapses; the route
+runs through AOTU neurons).
 
 Rates are 0 Hz up to a noise floor of 0.1 and rise linearly to 150 Hz. The whole
 population is driven together: the model has hemifield resolution, not
@@ -143,6 +154,11 @@ VALIDATION.md has the numbers; vision therefore stays on optical flow.
 brightness of its pixel, and everything after that is the connectome. Three changes are
 needed to make that possible at all, and each is declared:
 
+The retina this drives is not a fly's retina. The release contains 3,377 R1-R6 cells
+against about 9,600 in a fly, and they are split 1,112 left against 2,265 right, so one
+eye is sampled twice as densely as the other. Any left-right comparison in this mode,
+including the pre-registered mirror-symmetry condition, inherits that asymmetry.
+
 1. **Columns from the wiring.** The release assigns optic-lobe columns to 23,720 neurons
    but not to T4, T5, Tm3, L4 or the photoreceptors. A columnar cell's partners sit in and
    around its own column, so the synapse-weighted centroid of the partner columns recovers
@@ -159,12 +175,22 @@ needed to make that possible at all, and each is declared:
    *darkness as a release from inhibition*. A spiking model whose neurons are silent at
    rest cannot express that at all. Columnar optic-lobe neurons therefore get a resting
    potential above threshold and fire at 20 Hz without input; synaptic input grades that
-   rate in both directions (`brain/lif.py`, `resting_for_rate`).
+   rate in both directions (`brain/lif.py`, `resting_for_rate`). This surrogate is
+   one-sided: 20 Hz corresponds to 0.71 mV above threshold, so 0.71 mV of inhibition
+   silences the cell completely while excitation raises the rate without bound. And it is
+   not cheap — 72,658 tonic cells at 20 Hz are 1.45 million spikes per second of baseline,
+   more than the runaway state that motivated rescaling the synaptic weight (below).
 
-With those, the ON/OFF split of the fly comes out of the transmitter signs alone: on a
-full-field brightness step the OFF cells rise in the dark (L1 7.5 → 17.1 Hz, T5a 7.1 → 9.2,
-T5c 13.3 → 15.4) and the ON cells fall (Tm3 13.4 → 8.7, T4a 9.6 → 6.5, T4c 14.0 → 11.0).
-The motion detectors are alive, which they were not in `vision: retina`.
+With those, the motion detectors are alive, which they were not in `vision: retina`, and
+the sign structure downstream of the lamina is partly the fly's. On a full-field
+brightness step every lamina cell depolarises in the dark, as it must when the
+photoreceptors are inhibitory (L1 7.5 → 17.1 Hz, L2 2.3 → 5.2, L3 5.2 → 16.7) — that is
+one sign inversion, not an ON/OFF split. The split is made downstream, and the model gets
+it half right: the OFF motion detectors rise in the dark (T5a 7.1 → 9.2, T5c 13.3 → 15.4)
+and the ON ones fall (T4a 9.6 → 6.5, T4c 14.0 → 11.0), as does Tm3 (13.4 → 8.7). But Mi1,
+the other canonical ON cell, comes out the wrong way (4.0 → 4.5), so the polarity of the
+ON pathway is not reproduced at its first stage. L1 feeds the ON pathway and L2/L3 the OFF
+one; the lamina rates above say nothing about which is which.
 
 Direction selectivity is not. Two pre-registered checks failed (§5c): the direction
 selectivity index of every T4 and T5 subtype is 0.00, indistinguishable from the shuffled
@@ -200,11 +226,23 @@ commands in some brain seeds (left roll: escape threshold in 3 of 5). On a robot
 | read-out | neurons | use |
 |---|---|---|
 | escape | DNp01 (Giant Fiber), either side | rate / 60 Hz → escape activity; the decoder reverses at ≥ 0.3 |
+
 | steering | DNa01 + DNa02, left minus right | ipsilateral turning (Rayshubskiy et al. 2020); 60 Hz difference = full turn |
 | forward | none | constant `cruise` setting in the controller |
 
 DNp02, DNp04, DNp11, DNp09, MDN, DNp18 and DNp20 are logged but do not drive
 motors.
+
+Three things about this read-out are engineering, not biology, and a reader should have
+them in front of the numbers. The Giant Fiber commands an escape **takeoff** in the fly,
+not backward walking; backward walking is commanded by MDN, which is in this model and is
+not used, so mapping the Giant Fiber onto a reverse is a choice made for a wheeled robot.
+The model's Giant Fiber also fires 127 spikes during one approach where the fly fires
+about one action potential (VALIDATION.md §5f), so the read-out reads a rate from a cell
+that does not rate-code. And the two scale constants, 60 Hz for a full turn and 60 Hz for
+full escape, are fitted to the robot, not taken from a recording: Rayshubskiy et al.
+support the sign and the linear relation between the left-right DNa02 difference and
+turning, not an absolute rate.
 
 The interfaces were chosen after an exploratory screen of 33 visual projection
 types (appendix of VALIDATION.md). The screen, the pathway checks and the scene
@@ -243,4 +281,12 @@ desktop CPU, and the status line prints the ratio as `brain_x_realtime`.
 - No legs or proprioception. Tilt can enter through Johnston's organ, as an
   experimental option with a hypothetical mapping; by default IMU telemetry is
   used by the safety watchdog only.
+- The senses are empty and the body is not there. 17,901 sensory neurons are
+  simulated at zero: no olfaction, no taste, no mechanosensation, no wind, no leg
+  load, and in `flow` mode no photoreceptors either, since the camera enters at
+  the visual projection neurons. The 20,239 nerve-cord neurons include 708 motor
+  neurons that are simulated and then ignored, because there are no muscles and
+  no body to drive; the motor command is read from three descending types
+  instead. Every threshold in this report is therefore calibrated in a brain that
+  receives one sense and moves nothing.
 - Synthetic scenes are not a physical test. See [HARDWARE.md](HARDWARE.md).

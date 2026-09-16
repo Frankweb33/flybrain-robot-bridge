@@ -732,6 +732,51 @@ def sensitivity_section(data, graph):
     )  # fmt: skip
 
 
+# Cells whose rates this report prints although they do not fire action potentials in the
+# fly. Listed so that no table of Hz can be read as a physiological measurement.
+NON_SPIKING = (
+    ("R1-R6, R7, R8", "photoreceptors are graded and non-spiking"),
+    ("L1-L5", "large monopolar cells are graded (Laughlin & Hardie 1978)"),
+    ("Mi1, Tm1, Tm2, Tm3, Tm9, Mi4, Mi9", "graded medulla interneurons (Behnia et al. 2014)"),
+    ("CT1", "a non-spiking amacrine cell with isolated units (Meier & Borst 2019)"),
+    ("HSE, HSN, HSS, VS", "graded with small spikelets (Joesch et al. 2008); VS cells are "
+                          "also coupled by gap junctions, which this model does not have"),
+    ("T4, T5", "graded depolarisations with at most small spikes (Gruntman et al. 2018)"),
+)  # fmt: skip
+
+
+def physiology_section(data, graph):
+    """Model rates next to what recordings report, including where they disagree."""
+    backend = MaleCNSBackend(data, seed=0, device=DEVICE)
+    gf = np.concatenate([backend.graph.select(f"DNp01:{s}") for s in "LR"])
+    dna02 = np.concatenate([backend.graph.select(f"DNa02:{s}") for s in "LR"])
+    backend.reset()
+    encoder = backend.make_encoder()
+    spikes, frames_firing, peak = np.zeros(backend.graph.size), 0, {}
+    for i in range(TOUR_SEGMENT):
+        backend.step(encoder.encode(scene_frame("approach_left", i)), Telemetry(), 1 / 30)
+        spikes += backend.last_counts
+        frames_firing += backend.last_counts[gf].sum() > 0
+        for name, cells in (("DNp01", gf), ("DNa02", dna02)):
+            peak[name] = max(peak.get(name, 0.0), float(backend.rates[cells].max()))
+    silent = make_simulator(graph, seed=0, device=DEVICE)
+    silent.run(TRIAL_MS)
+    spontaneous = silent.take_counts()
+    params = LIFParams.matched_to(graph.manifest)
+    return dict(
+        scene="approach_left",
+        giant_fiber_spikes_per_cell=round(float(spikes[gf].mean()), 1),
+        giant_fiber_firing_frames=int(frames_firing),
+        giant_fiber_peak_hz=round(peak["DNp01"], 1),
+        dna02_peak_hz=round(peak["DNa02"], 1),
+        refractory_ceiling_hz=round(1000.0 / params.t_rfc_ms, 1),
+        spontaneous_spikes_per_s=int(spontaneous.sum()),
+        spontaneous_active_neurons=int((spontaneous > 0).sum()),
+        neurons=int(graph.size),
+        non_spiking=[dict(types=t, note=note) for t, note in NON_SPIKING],
+    )  # fmt: skip
+
+
 def participation_section(data, scenes=("approach_left", "pass_left")):
     """How much of the brain fires at all, and how little of it reproduces the commands.
 
@@ -1135,6 +1180,7 @@ def main(argv=None):
         ("retina", lambda: retina_section(args.data, graph)),
         ("eye", lambda: eye_section(args.data, seeds)),
         ("participation", lambda: participation_section(args.data)),
+        ("physiology", lambda: physiology_section(args.data, graph)),
         ("sensitivity", lambda: sensitivity_section(args.data, graph)),
         ("performance", lambda: performance_section(graph)),
     ]

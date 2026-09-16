@@ -6,4 +6,3 @@ data
 .ruff_cache
 config.yaml
 .env
-PLAN.md

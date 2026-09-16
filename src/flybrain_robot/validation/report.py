@@ -71,7 +71,13 @@ def _pathways(section):
         ))  # fmt: skip
     return (
         f"Each stimulus population fires Poisson spikes at {section['stimulus_hz']:.0f} Hz for "
-        f"{section['duration_ms'] / 1000:.0f} s in the whole 166,700-neuron model. "
+        f"{section['duration_ms'] / 1000:.0f} s in the whole 166,700-neuron model, and the "
+        f"target rate is the mean over seeds {', '.join(map(str, section.get('seeds', [])))}. "
+        "**These conditions were not pre-registered**: they were revised after the first run "
+        "and before the first commit, and the pathways themselves were chosen from the screen "
+        "in the appendix, so this section confirms rather than predicts. Note also that the "
+        "shuffled controls sit at 0 Hz, so the '≥ 3× shuffled' clause is never the binding one: "
+        "what a row has to clear is the 20 Hz floor and, where marked, the lateralization. "
         "Pass: target ≥ 20 Hz and ≥ 3× the strongest response in any of the shuffled-wiring "
         f"controls (seeds {', '.join(map(str, section['control_seeds']))}); where marked, also "
         "≥ 3× the same cell type on the other side. The first full run required that for the "
@@ -457,6 +463,39 @@ def skipped(results):
     return missing
 
 
+def _physiology(x):
+    gap = chr(10) * 2
+    rows = [
+        ('Giant Fiber (DNp01) spikes per cell, one approach',
+         f"{x['giant_fiber_spikes_per_cell']:.0f} over {x['giant_fiber_firing_frames']} frames",
+         'one action potential per escape takeoff',
+         'von Reyn et al. 2014; Ache et al. 2019'),
+        ('Giant Fiber peak rate', f"{x['giant_fiber_peak_hz']:.0f} Hz",
+         f"the fly does not fire the Giant Fiber in a train; this model's own refractory "
+         f"ceiling is {x['refractory_ceiling_hz']:.0f} Hz", 'same'),
+        ('DNa02 peak rate', f"{x['dna02_peak_hz']:.0f} Hz",
+         'the difference between left and right DNa02 rates predicts turning; the papers '
+         'give the relation, not an absolute rate in the text',
+         'Rayshubskiy et al. 2020/2025'),
+        ('Spontaneous activity, no input',
+         f"{x['spontaneous_spikes_per_s']} spikes in 1 s, "
+         f"{x['spontaneous_active_neurons']} of {x['neurons']:,} neurons",
+         'a fly brain is never silent; ongoing activity is everywhere', 'general'),
+    ]  # fmt: skip
+    return (
+        'Where this model can be compared with recordings, it is compared here, including '
+        'where it disagrees. These rows are not pass conditions: they are the distance '
+        'between a connectome-constrained point-neuron model and the animal.'
+        + gap
+        + _table(['quantity', 'this model', 'what recordings report', 'source'], rows)
+        + gap
+        + '**Rates are printed above for cells that do not fire action potentials in the '
+        'fly.** Their Hz here is a model quantity, not a measurement, and the pass conditions that use it (20 Hz floors) inherit that:'
+        + gap
+        + _table(['cell types', 'why a rate is the wrong unit'],
+                 [(n['types'], n['note']) for n in x['non_spiking']])
+    )  # fmt: skip
+
 def failures(results):
     failed = [r["name"] for r in results["pathways"]["rows"] if not r["passed"]]
     if "feeding" in results and not results["feeding"]["passed"]:
@@ -588,6 +627,9 @@ def render_markdown(results):
     if "participation" in results:
         parts += ["## 5d. How much of the brain participates",
                   _participation(results["participation"])]  # fmt: skip
+    if "physiology" in results:
+        parts += ["## 5f. Rates against what recordings report",
+                  _physiology(results["physiology"])]  # fmt: skip
     if "sensitivity" in results:
         parts += ["## 5e. Dependence on the hand-chosen constants",
                   _sensitivity(results["sensitivity"])]  # fmt: skip

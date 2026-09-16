@@ -31,7 +31,7 @@ Every ✅ row can be checked on your own machine with the command or file listed
 | ✅ | Loads the full MaleCNS v1.0 connectome: 166,700 neurons, 25,582,938 connections, 124,177,617 synapses, from SHA-256-pinned public files | `python -m flybrain_robot.connectome.build compile` |
 | ✅ | Simulates every neuron with the leaky integrate-and-fire model of [Shiu et al. 2024](https://www.nature.com/articles/s41586-024-07763-9) | `src/flybrain_robot/brain/lif.py` |
 | ✅ | Simulation kernel reproduces Brian2, the reference simulator, **spike for spike** | `pytest tests/test_lif_reference.py` |
-| ✅ | The GPU kernel reproduces the CPU kernel **bit for bit**, including 540 frames of motor commands in the closed loop | [VALIDATION.md §2b](docs/VALIDATION.md#2b-cpu-and-gpu-kernels-agree-exactly), `pytest tests/test_lif_cuda.py` |
+| ✅ | The GPU kernel reproduces the CPU kernel **bit for bit** on one machine, including 540 frames of motor commands in the closed loop (across machines the per-step constants come from the platform's `exp`, which is not correctly rounded) | [VALIDATION.md §2b](docs/VALIDATION.md#2b-cpu-and-gpu-kernels-agree-exactly), `pytest tests/test_lif_cuda.py` |
 | ✅ | Faster than real time on a desktop GPU: closed loop 2.2–5.8×, strongest looming stimulus 2.8× (RTX 3050); on the CPU 0.3–0.5× under strong input | [VALIDATION.md §5, §6](docs/VALIDATION.md#6-speed) |
 | ✅ | Looming on one side drives the Giant Fiber; a moving object drives same-side DNa02 steering; shuffled wiring does not | [VALIDATION.md §4](docs/VALIDATION.md#4-visual-pathways-in-the-whole-brain-model) |
 | ✅ | Closed loop on synthetic camera scenes: turns toward a passing object, escapes from approaching ones, ignores camera pans; all behaviour disappears with shuffled wiring | [VALIDATION.md §5](docs/VALIDATION.md#5-closed-loop-synthetic-camera-scenes--connectome--motor-commands) |
@@ -39,7 +39,7 @@ Every ✅ row can be checked on your own machine with the command or file listed
 | ✅ | ESP32 receiver firmware (servos, IMU telemetry, arming, watchdog) compiles | CI `firmware` job, [firmware/](firmware/atom_matrix/README.md) |
 | ✅ | Johnston's organ, the fly's gravity sensor, drives mirror-image descending responses that vanish on shuffled wiring (21 pairs, pre-registered) | [VALIDATION.md §4c](docs/VALIDATION.md#4c-body-sense-johnstons-organ-pre-registered) |
 | ⬜ | Body feedback in the loop: robot tilt reaches hundreds of descending cells and pitch leaves motor commands unchanged, but a 20° roll onto the left side reaches the escape threshold in 3 of 5 brain seeds (a right roll turns the robot in 1 of 5), so `body_feedback` is experimental and off by default | [VALIDATION.md §4d](docs/VALIDATION.md#4d-tilted-robot-in-the-closed-loop-pre-registered) |
-| ⬜ | Vision from pixels through the fly's own motion circuits: driving the 5,826 photoreceptors reaches the motion detectors T4 and T5 and reproduces the fly's ON/OFF split from the transmitter signs alone (in the dark T5a 7.1 → 9.2 Hz, T4a 9.6 → 6.5 Hz), but two pre-registered checks find **no direction selectivity at all** (index 0.00, same as shuffled wiring), so the robot uses optical-flow features (`vision: eye` and `vision: retina` are experimental) | [VALIDATION.md §5c](docs/VALIDATION.md#5c-motion-detectors-from-pixels-pre-registered) |
+| ⬜ | Vision from pixels through the fly's own motion circuits: driving the 5,826 photoreceptors reaches the motion detectors T4 and T5, whose ON/OFF polarity then follows from the transmitter signs (in the dark T5a 7.1 → 9.2 Hz, T4a 9.6 → 6.5 Hz, though Mi1 comes out the wrong way), but two pre-registered checks find **no direction selectivity** (index 0.00 with one synaptic time constant, −0.015 with the reported slow inputs, against 0.001 on shuffled wiring), so the robot uses optical-flow features (`vision: eye` and `vision: retina` are experimental) | [VALIDATION.md §5c](docs/VALIDATION.md#5c-motion-detectors-from-pixels-pre-registered) |
 | ⬜ | Reproduce the published sugar → MN9 feeding circuit ([Shiu et al.](https://www.nature.com/articles/s41586-024-07763-9)): sugar neurons engage G2N-1, Zorro, Phantom, Roundup and Fudog and drive MN9 to 30 Hz (0 Hz with shuffled wiring), but taste-peg neurons also reach MN9 through Roundup, so the pre-registered specificity check fails | [VALIDATION.md §4b](docs/VALIDATION.md#4b-published-feeding-circuit-pre-registered) |
 | ⬜ | Run on a physical Strandbeest robot | [HARDWARE.md](docs/HARDWARE.md): not done yet, no recording in this repository |
 | ⬜ | Biologically accurate fly behaviour | out of scope for an LIF approximation, see [Limits](#limits) |
@@ -54,8 +54,9 @@ robot recording.*
 
 ![Peak Giant Fiber rate and mean turn per scene, MaleCNS wiring versus shuffled wiring](assets/connectome-vs-shuffled.png)
 
-The control keeps every neuron, its transmitter, its synapse counts and its number of
-inputs and outputs, and randomly permutes which neuron each synapse reaches. With the same
+The control keeps every neuron, its transmitter, its outgoing synapse counts and its
+number of incoming and outgoing connections, and randomly permutes which neuron each
+synapse reaches. With the same
 camera input, the Giant Fiber peaks at 190–260 Hz on the real wiring and at most 17 Hz on
 shuffled wiring, and steering disappears.
 
