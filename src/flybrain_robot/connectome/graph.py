@@ -69,15 +69,33 @@ class Connectome:
         weight = np.where(per_edge, 0, self.weight).astype(self.weight.dtype)
         return Connectome(**{**self.__dict__, "weight": weight, "manifest": manifest})
 
-    def shuffled(self, seed=0):
+    def shuffled(self, seed=0, within=None):
         """Control graph: postsynaptic targets are permuted across all edges.
 
         Every neuron keeps its number of outgoing and incoming connections, its
         transmitter sign and its outgoing synapse counts; only who connects to whom
-        is destroyed.
+        is destroyed. Permuting the targets keeps the multiset of targets, so each
+        neuron keeps its in-degree exactly.
+
+        ``within`` restricts each permutation to edges whose target shares a field
+        (``"superclass"`` or ``"type"``), which is a harder control: the regional or
+        cell-type structure of the connectome survives and only the specific partner
+        of each synapse is destroyed.
         """
-        indices = np.random.default_rng(seed).permutation(np.asarray(self.indices))
-        manifest = dict(self.manifest, control=f"permuted targets, seed {seed}")
+        rng = np.random.default_rng(seed)
+        indices = np.array(self.indices)
+        if within is None:
+            indices = rng.permutation(indices)
+            control = f"permuted targets, seed {seed}"
+        else:
+            labels = np.asarray(getattr(self, within))[indices]
+            order = np.argsort(labels, kind="stable")
+            groups = np.flatnonzero(np.r_[True, labels[order][1:] != labels[order][:-1]])
+            for start, end in zip(groups, np.r_[groups[1:], len(order)]):
+                block = order[start:end]
+                indices[block] = indices[rng.permutation(block)]
+            control = f"targets permuted within the same {within}, seed {seed}"
+        manifest = dict(self.manifest, control=control)
         return Connectome(**{**self.__dict__, "indices": indices, "manifest": manifest})
 
 

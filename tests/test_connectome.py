@@ -18,7 +18,11 @@ from flybrain_robot.brain.lif import (  # noqa: E402
     LIFParams,
     LIFSimulator,
 )
-from flybrain_robot.connectome.graph import load_connectome, save_connectome  # noqa: E402
+from flybrain_robot.connectome.graph import (  # noqa: E402
+    Connectome,
+    load_connectome,
+    save_connectome,
+)
 from flybrain_robot.connectome.synthetic import (  # noqa: E402
     connectome_from_edges,
     random_connectome,
@@ -182,6 +186,22 @@ def test_shuffled_control_keeps_degrees_and_weights():
     assert np.array_equal(np.bincount(control.indices, minlength=300),
                           np.bincount(graph.indices, minlength=300))  # fmt: skip
     assert not np.array_equal(control.indices, graph.indices)
+
+
+def test_shuffle_within_a_group_keeps_that_structure():
+    graph = random_connectome(n=200, density=0.05, seed=2)
+    kinds = np.where(np.arange(graph.size) % 3 == 0, "left", "right")
+    graph = Connectome(**{**graph.__dict__, "superclass": kinds})
+    control = graph.shuffled(seed=1, within="superclass")
+    assert np.array_equal(np.diff(control.indptr), np.diff(graph.indptr))  # out-degrees
+    before = np.bincount(np.asarray(graph.indices), minlength=graph.size)
+    assert np.array_equal(np.bincount(np.asarray(control.indices), minlength=graph.size), before)
+    # Every synapse still lands on a neuron of the group it landed on before...
+    assert np.array_equal(np.sort(kinds[np.asarray(control.indices)]),
+                          np.sort(kinds[np.asarray(graph.indices)]))  # fmt: skip
+    for edge in range(len(np.asarray(graph.indices))):
+        assert kinds[control.indices[edge]] == kinds[graph.indices[edge]]
+    assert (np.asarray(control.indices) != np.asarray(graph.indices)).mean() > 0.5  # ...but rarely the same one
 
 
 def test_silencing_transmitters_zeroes_outgoing_weights():

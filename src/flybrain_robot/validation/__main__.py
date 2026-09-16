@@ -331,11 +331,18 @@ def top_intermediates(graph, sources, target, limit=3):
 
 def pathway_section(graph, control_seeds):
     controls = [graph.shuffled(seed) for seed in control_seeds]
+    # Added on 2026-09-16, reported rather than required: a harder control that keeps the
+    # regional structure of the connectome and destroys only the specific partner of each
+    # synapse. The pass condition is still the pre-registered one above.
+    regional = [graph.shuffled(seed, within="superclass") for seed in control_seeds]
     rows = []
     for p in PATHWAYS:
         target, counterpart = graph.select(p["target"]), graph.select(p["counterpart"])
         _, rates, _ = trial(graph, p["stimulus"])
-        shuffled = []
+        shuffled, within_superclass = [], []
+        for control in regional:
+            _, control_rates, _ = trial(control, p["stimulus"])
+            within_superclass.append(float(control_rates[target].mean()))
         for control in controls:
             _, control_rates, _ = trial(control, p["stimulus"])
             shuffled.append(float(control_rates[target].mean()))
@@ -344,6 +351,7 @@ def pathway_section(graph, control_seeds):
         rows.append(dict(
             p, target_hz=round(hz, 1), counterpart_hz=round(other, 1),
             shuffled_hz=[round(x, 1) for x in shuffled],
+            shuffled_within_superclass_hz=[round(x, 1) for x in within_superclass],
             direct_synapses=synapses_between(graph, source, target),
             routes=top_intermediates(graph, source, target),
             lateral_ratio=round(hz / (other + 1), 2),
@@ -661,6 +669,56 @@ def closed_loop_section(data, control_seeds):
     return sections
 
 
+def participation_section(data, scenes=("approach_left", "pass_left")):
+    """How much of the brain fires at all, and how little of it reproduces the commands.
+
+    Measured, not a hypothesis test: the same scenes are run with the whole brain, with
+    everything except the driven and read-out cells silenced (so only synapses directly
+    between them survive), and with the neurons on two-synapse paths added back.
+    """
+    backend = MaleCNSBackend(data, seed=0, device=DEVICE)
+    graph = backend.graph
+    driven = np.unique(np.concatenate(list(backend.populations.values())))
+    readout = np.unique(np.concatenate([np.concatenate(v) for v in backend.readout.values()]))
+    indptr, indices = np.asarray(graph.indptr), np.asarray(graph.indices)
+    is_readout = np.zeros(graph.size, bool)
+    is_readout[readout] = True
+    reached = np.zeros(graph.size, bool)
+    for i in driven:
+        reached[indices[indptr[i] : indptr[i + 1]]] = True
+    between = np.zeros(graph.size, bool)
+    for i in np.flatnonzero(reached):
+        between[i] = is_readout[indices[indptr[i] : indptr[i + 1]]].any()
+    core = np.zeros(graph.size, bool)
+    core[driven] = True
+    core[readout] = True
+    conditions = [("whole brain", None), ("driven and read-out cells only", ~core),
+                  ("+ neurons on two-synapse paths", ~(core | between))]  # fmt: skip
+    rows = []
+    for label, silence in conditions:
+        net = graph if silence is None else graph.silenced(np.flatnonzero(silence))
+        backend.sim = make_simulator(net, params=backend.sim.params, seed=0, device=DEVICE)
+        for scene in scenes:
+            backend.reset()
+            encoder = backend.make_encoder()
+            fired = np.zeros(graph.size, bool)
+            escape, turns, peak_gf = 0.0, [], 0.0
+            for i in range(TOUR_SEGMENT):
+                activity = backend.step(encoder.encode(scene_frame(scene, i)), Telemetry(), 1 / 30)
+                fired |= backend.last_counts > 0
+                escape = max(escape, activity.escape)
+                turns.append((activity.right - activity.left) / 2)
+                peak_gf = max(peak_gf, *(backend.named_rates()[f"DNp01:{s}"] for s in "LR"))
+            rows.append(dict(
+                condition=label, scene=scene,
+                neurons_kept=int(graph.size if silence is None else graph.size - silence.sum()),
+                max_escape=round(escape, 3), mean_turn=round(float(np.mean(turns)), 3),
+                peak_giant_fiber_hz=round(peak_gf, 1), neurons_that_fired=int(fired.sum()),
+            ))  # fmt: skip
+    return dict(neurons=int(graph.size), driven=int(len(driven)), readout=int(len(readout)),
+                two_step_intermediates=int(between.sum()), rows=rows)  # fmt: skip
+
+
 SPEED_CONDITIONS = [
     ("no input (silent brain)", []),
     ("LPLC2:L at 150 Hz", ["LPLC2:L"]),
@@ -958,6 +1016,7 @@ def main(argv=None):
         ("closed_loop", lambda: closed_loop_section(args.data, seeds)),
         ("retina", lambda: retina_section(args.data, graph)),
         ("eye", lambda: eye_section(args.data, seeds)),
+        ("participation", lambda: participation_section(args.data)),
         ("performance", lambda: performance_section(graph)),
     ]
     if not args.skip_screen:

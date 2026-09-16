@@ -65,6 +65,7 @@ def _pathways(section):
         rows.append((
             r["name"], " + ".join(r["stimulus"]), r["target"], r["target_hz"], r["counterpart_hz"],
             " / ".join(str(x) for x in r["shuffled_hz"]),
+            " / ".join(str(x) for x in r.get("shuffled_within_superclass_hz", [])) or "-",
             f"{r['lateral_ratio']}×" + (" (required ≥ 3×)" if r["lateral"] else " (reported)"),
             r["direct_synapses"], routes or "none", r["role"], _mark(r["passed"]),
         ))  # fmt: skip
@@ -76,11 +77,14 @@ def _pathways(section):
         "≥ 3× the same cell type on the other side. The first full run required that for the "
         "Giant Fiber too; it failed at 1.8× and 2.2× while the controls stayed at 0 Hz. Escape "
         "reads both Giant Fibers, so their ratio is now reported rather than required. "
+        "The *within superclass* column is a harder control added later and reported only: "
+        "targets are permuted among neurons of the same superclass, so the regional structure "
+        "of the connectome survives and only the specific partner of each synapse is destroyed. "
         "*Direct synapses* and *top two-step routes* (synapses into → out of the intermediate "
         "neuron) are read from the compiled graph.\n\n"
         + _table(["check", "stimulus", "target", "target Hz", "other side Hz", "shuffled Hz",
-                  "target / other side", "direct synapses", "top two-step routes", "robot use",
-                  "result"], rows)  # fmt: skip
+                  "shuffled within superclass Hz", "target / other side", "direct synapses",
+                  "top two-step routes", "robot use", "result"], rows)  # fmt: skip
     )
 
 
@@ -395,6 +399,29 @@ def _eye(r):
     )  # fmt: skip
     return header + gap.join(_eye_configuration(c, crit) for c in r['configurations'])
 
+def _participation(p):
+    gap = chr(10) * 2
+    rows = [
+        (x['condition'], x['scene'], f"{x['neurons_kept']:,}", x['neurons_that_fired'],
+         x['max_escape'], f"{x['mean_turn']:+.3f}", x['peak_giant_fiber_hz'])
+        for x in p['rows']
+    ]  # fmt: skip
+    whole = [x for x in p['rows'] if x['condition'] == 'whole brain']
+    return (
+        'How much of the connectome carries the behaviour, measured by silencing the rest. '
+        f"The camera drives {p['driven']} cells and the motor read-out reads {p['readout']}; "
+        f"{p['two_step_intermediates']} neurons lie on a two-synapse path between them, out of "
+        f"{p['neurons']:,}. A silenced neuron still fires but reaches no target.{gap}"
+        + _table(['kept', 'scene', 'neurons kept', 'neurons that fired', 'max escape',
+                  'mean turn', 'peak Giant Fiber Hz'], rows)
+        + gap + 'Read this as a limit on the headline: in the approach scene '
+        f"{whole[0]['neurons_that_fired']:,} neurons of {p['neurons']:,} fire at all, the "
+        'escape command is reproduced by the driven and read-out cells alone (their direct '
+        'synapses are the Giant Fiber pathway of the fly), and the turn needs the '
+        'two-synapse neurons. The rest of the brain shifts the numbers by a few percent '
+        'rather than producing the behaviour.'
+    )  # fmt: skip
+
 def failures(results):
     failed = [r["name"] for r in results["pathways"]["rows"] if not r["passed"]]
     if "feeding" in results and not results["feeding"]["passed"]:
@@ -521,6 +548,9 @@ def render_markdown(results):
     if "eye" in results:
         parts += ["## 5c. Motion detectors from pixels (pre-registered)",
                   _eye(results["eye"])]  # fmt: skip
+    if "participation" in results:
+        parts += ["## 5d. How much of the brain participates",
+                  _participation(results["participation"])]  # fmt: skip
     parts += [
         "## 6. Speed",
         _table(["device", "condition", "simulated s", "wall s", "× real time", "spikes"],
