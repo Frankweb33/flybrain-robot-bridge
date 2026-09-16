@@ -162,8 +162,8 @@ needed to make that possible at all, and each is declared:
    rate in both directions (`brain/lif.py`, `resting_for_rate`).
 
 With those, the ON/OFF split of the fly comes out of the transmitter signs alone: on a
-full-field brightness step the OFF cells rise in the dark (L1 7.3 → 17.2 Hz, T5a 6.3 → 8.7,
-T5c 12.7 → 15.2) and the ON cells fall (Tm3 14.2 → 10.0, T4a 10.0 → 7.2, T4c 14.6 → 11.9).
+full-field brightness step the OFF cells rise in the dark (L1 7.5 → 17.1 Hz, T5a 7.1 → 9.2,
+T5c 13.3 → 15.4) and the ON cells fall (Tm3 13.4 → 8.7, T4a 9.6 → 6.5, T4c 14.0 → 11.0).
 The motion detectors are alive, which they were not in `vision: retina`.
 
 Direction selectivity is not. Two pre-registered checks failed (§5c): the direction

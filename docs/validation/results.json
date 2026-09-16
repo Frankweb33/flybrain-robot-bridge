@@ -1,7 +1,7 @@
 {
   "machine": {
-    "timestamp": "2026-09-15T23:13:10+00:00",
-    "commit": "ce1b22d",
+    "timestamp": "2026-09-16T00:12:48+00:00",
+    "commit": "bf17357",
     "source_modified_since_commit": false,
     "python": "3.13.5",
     "numpy": "2.5.3",
@@ -15,7 +15,7 @@
       "numba_cuda_mlir": "0.5.2"
     },
     "device": "auto",
-    "total_seconds": 431
+    "total_seconds": 623
   },
   "dataset": {
     "dataset": "MaleCNS v1.0 (minconf 0.5)",
@@ -2469,7 +2469,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 5.78,
+        "brain_realtime_factor": 5.73,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2515,7 +2515,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 5.11,
+        "brain_realtime_factor": 6.36,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2561,7 +2561,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.2,
+        "brain_realtime_factor": 1.75,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2607,7 +2607,7 @@
         "max_escape": 1.0,
         "reverse_frames": 20,
         "frames": 90,
-        "brain_realtime_factor": 2.98,
+        "brain_realtime_factor": 2.54,
         "peak_rates_hz": {
           "LPLC2:L": 43.8,
           "LC4:L": 45.5,
@@ -2652,7 +2652,7 @@
         "max_escape": 1.0,
         "reverse_frames": 27,
         "frames": 90,
-        "brain_realtime_factor": 2.95,
+        "brain_realtime_factor": 2.43,
         "peak_rates_hz": {
           "LPLC2:L": 122.3,
           "LC4:L": 108.8,
@@ -2697,7 +2697,7 @@
         "max_escape": 1.0,
         "reverse_frames": 30,
         "frames": 90,
-        "brain_realtime_factor": 3.0,
+        "brain_realtime_factor": 2.5,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2744,7 +2744,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 6.18,
+        "brain_realtime_factor": 6.03,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2786,7 +2786,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 5.44,
+        "brain_realtime_factor": 5.37,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -2828,7 +2828,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.04,
+        "brain_realtime_factor": 1.75,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.4,
@@ -2870,7 +2870,7 @@
         "max_escape": 0.281,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.05,
+        "brain_realtime_factor": 2.28,
         "peak_rates_hz": {
           "LPLC2:L": 44.6,
           "LC4:L": 48.3,
@@ -2912,7 +2912,7 @@
         "max_escape": 0.27,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.95,
+        "brain_realtime_factor": 2.39,
         "peak_rates_hz": {
           "LPLC2:L": 98.9,
           "LC4:L": 107.9,
@@ -2954,7 +2954,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.03,
+        "brain_realtime_factor": 2.38,
         "peak_rates_hz": {
           "LPLC2:L": 0.6,
           "LC4:L": 0.5,
@@ -2996,7 +2996,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 6.17,
+        "brain_realtime_factor": 6.26,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3038,7 +3038,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 6.15,
+        "brain_realtime_factor": 6.27,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3080,7 +3080,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.18,
+        "brain_realtime_factor": 1.78,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.1,
@@ -3122,7 +3122,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.13,
+        "brain_realtime_factor": 2.25,
         "peak_rates_hz": {
           "LPLC2:L": 47.5,
           "LC4:L": 45.9,
@@ -3164,7 +3164,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.14,
+        "brain_realtime_factor": 2.33,
         "peak_rates_hz": {
           "LPLC2:L": 97.2,
           "LC4:L": 97.5,
@@ -3206,7 +3206,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.11,
+        "brain_realtime_factor": 2.28,
         "peak_rates_hz": {
           "LPLC2:L": 0.7,
           "LC4:L": 1.3,
@@ -3248,7 +3248,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 5.52,
+        "brain_realtime_factor": 6.32,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3290,7 +3290,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 5.09,
+        "brain_realtime_factor": 6.6,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3332,7 +3332,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.23,
+        "brain_realtime_factor": 1.8,
         "peak_rates_hz": {
           "LPLC2:L": 0.0,
           "LC4:L": 0.0,
@@ -3374,7 +3374,7 @@
         "max_escape": 0.162,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.11,
+        "brain_realtime_factor": 2.33,
         "peak_rates_hz": {
           "LPLC2:L": 47.6,
           "LC4:L": 50.4,
@@ -3416,7 +3416,7 @@
         "max_escape": 0.0,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 2.97,
+        "brain_realtime_factor": 2.39,
         "peak_rates_hz": {
           "LPLC2:L": 97.7,
           "LC4:L": 102.7,
@@ -3458,7 +3458,7 @@
         "max_escape": 0.162,
         "reverse_frames": 0,
         "frames": 90,
-        "brain_realtime_factor": 3.05,
+        "brain_realtime_factor": 2.23,
         "peak_rates_hz": {
           "LPLC2:L": 0.7,
           "LC4:L": 0.6,
@@ -3842,53 +3842,2207 @@
     "floor": 0.05,
     "full": 0.5
   },
+  "eye": {
+    "criterion": {
+      "min_hz": 2.0,
+      "min_dsi": 0.05,
+      "pairs_required": 4,
+      "control_max_mean_abs_dsi": 0.02
+    },
+    "configurations": [
+      {
+        "name": "uniform kinetics",
+        "configuration": {
+          "tonic_hz": 20.0,
+          "tonic_cells": 72658,
+          "photoreceptors": 5826,
+          "neurons": 168477,
+          "slow_inputs": [],
+          "slow_tau_ms": null,
+          "settle_frames": 15,
+          "measured_frames": 60,
+          "imputed_columns": {
+            "rule": "synapse-weighted partner centroid, >= 20 synapses, spread <= 1.5 columns, 2 rounds",
+            "added_per_round": [
+              49947,
+              3909
+            ],
+            "neurons_with_column": 77576,
+            "accuracy": {
+              "neurons": 23600,
+              "exact": 0.9772,
+              "within_one": 0.993,
+              "median_error": 0.0
+            }
+          },
+          "compartments": {
+            "types": [
+              "CT1"
+            ],
+            "cells": 2,
+            "compartments": 1779,
+            "edges_without_partner_column": 1578
+          }
+        },
+        "rows": [
+          {
+            "group": "T4a:L",
+            "preferred_direction": "grating_left",
+            "hz": {
+              "grating_left": 8.91,
+              "grating_right": 8.99,
+              "grating_up": 8.87,
+              "grating_down": 8.96
+            },
+            "max_hz": 8.99,
+            "dsi": -0.0044
+          },
+          {
+            "group": "T4a:R",
+            "preferred_direction": "grating_right",
+            "hz": {
+              "grating_left": 9.07,
+              "grating_right": 9.03,
+              "grating_up": 9.04,
+              "grating_down": 9.07
+            },
+            "max_hz": 9.07,
+            "dsi": -0.002
+          },
+          {
+            "group": "T4b:L",
+            "preferred_direction": "grating_right",
+            "hz": {
+              "grating_left": 6.48,
+              "grating_right": 6.42,
+              "grating_up": 6.37,
+              "grating_down": 6.51
+            },
+            "max_hz": 6.51,
+            "dsi": -0.0045
+          },
+          {
+            "group": "T4b:R",
+            "preferred_direction": "grating_left",
+            "hz": {
+              "grating_left": 6.6,
+              "grating_right": 6.68,
+              "grating_up": 6.61,
+              "grating_down": 6.7
+            },
+            "max_hz": 6.7,
+            "dsi": -0.0062
+          },
+          {
+            "group": "T4c:L",
+            "preferred_direction": "grating_up",
+            "hz": {
+              "grating_left": 13.57,
+              "grating_right": 13.65,
+              "grating_up": 13.58,
+              "grating_down": 13.66
+            },
+            "max_hz": 13.66,
+            "dsi": -0.0029
+          },
+          {
+            "group": "T4c:R",
+            "preferred_direction": "grating_up",
+            "hz": {
+              "grating_left": 13.22,
+              "grating_right": 13.23,
+              "grating_up": 13.14,
+              "grating_down": 13.23
+            },
+            "max_hz": 13.23,
+            "dsi": -0.0033
+          },
+          {
+            "group": "T4d:L",
+            "preferred_direction": "grating_down",
+            "hz": {
+              "grating_left": 9.72,
+              "grating_right": 9.79,
+              "grating_up": 9.69,
+              "grating_down": 10.02
+            },
+            "max_hz": 10.02,
+            "dsi": 0.0167
+          },
+          {
+            "group": "T4d:R",
+            "preferred_direction": "grating_down",
+            "hz": {
+              "grating_left": 10.28,
+              "grating_right": 10.22,
+              "grating_up": 10.04,
+              "grating_down": 10.2
+            },
+            "max_hz": 10.28,
+            "dsi": 0.0081
+          },
+          {
+            "group": "T5a:L",
+            "preferred_direction": "grating_left",
+            "hz": {
+              "grating_left": 8.45,
+              "grating_right": 8.46,
+              "grating_up": 8.35,
+              "grating_down": 8.28
+            },
+            "max_hz": 8.46,
+            "dsi": -0.0007
+          },
+          {
+            "group": "T5a:R",
+            "preferred_direction": "grating_right",
+            "hz": {
+              "grating_left": 6.21,
+              "grating_right": 6.14,
+              "grating_up": 6.14,
+              "grating_down": 6.18
+            },
+            "max_hz": 6.21,
+            "dsi": -0.0058
+          },
+          {
+            "group": "T5b:L",
+            "preferred_direction": "grating_right",
+            "hz": {
+              "grating_left": 6.05,
+              "grating_right": 6.0,
+              "grating_up": 5.95,
+              "grating_down": 5.92
+            },
+            "max_hz": 6.05,
+            "dsi": -0.0038
+          },
+          {
+            "group": "T5b:R",
+            "preferred_direction": "grating_left",
+            "hz": {
+              "grating_left": 4.13,
+              "grating_right": 4.2,
+              "grating_up": 4.19,
+              "grating_down": 4.14
+            },
+            "max_hz": 4.2,
+            "dsi": -0.0075
+          },
+          {
+            "group": "T5c:L",
+            "preferred_direction": "grating_up",
+            "hz": {
+              "grating_left": 14.73,
+              "grating_right": 14.76,
+              "grating_up": 14.77,
+              "grating_down": 14.69
+            },
+            "max_hz": 14.77,
+            "dsi": 0.0024
+          },
+          {
+            "group": "T5c:R",
+            "preferred_direction": "grating_up",
+            "hz": {
+              "grating_left": 12.59,
+              "grating_right": 12.53,
+              "grating_up": 12.52,
+              "grating_down": 12.55
+            },
+            "max_hz": 12.59,
+            "dsi": -0.0012
+          },
+          {
+            "group": "T5d:L",
+            "preferred_direction": "grating_down",
+            "hz": {
+              "grating_left": 13.96,
+              "grating_right": 14.04,
+              "grating_up": 13.97,
+              "grating_down": 14.09
+            },
+            "max_hz": 14.09,
+            "dsi": 0.0042
+          },
+          {
+            "group": "T5d:R",
+            "preferred_direction": "grating_down",
+            "hz": {
+              "grating_left": 12.58,
+              "grating_right": 12.44,
+              "grating_up": 12.3,
+              "grating_down": 12.5
+            },
+            "max_hz": 12.58,
+            "dsi": 0.0083
+          }
+        ],
+        "hs": [
+          {
+            "group": "HSE:L",
+            "hz": {
+              "grating_left": 129.5,
+              "grating_right": 131.0,
+              "grating_up": 129.0,
+              "grating_down": 129.5
+            }
+          },
+          {
+            "group": "HSE:R",
+            "hz": {
+              "grating_left": 117.5,
+              "grating_right": 116.0,
+              "grating_up": 115.5,
+              "grating_down": 118.0
+            }
+          },
+          {
+            "group": "HSN:L",
+            "hz": {
+              "grating_left": 124.0,
+              "grating_right": 122.0,
+              "grating_up": 123.5,
+              "grating_down": 123.0
+            }
+          },
+          {
+            "group": "HSN:R",
+            "hz": {
+              "grating_left": 114.0,
+              "grating_right": 113.5,
+              "grating_up": 114.5,
+              "grating_down": 114.0
+            }
+          },
+          {
+            "group": "HSS:L",
+            "hz": {
+              "grating_left": 130.0,
+              "grating_right": 129.0,
+              "grating_up": 130.0,
+              "grating_down": 128.5
+            }
+          },
+          {
+            "group": "HSS:R",
+            "hz": {
+              "grating_left": 120.5,
+              "grating_right": 119.0,
+              "grating_up": 118.5,
+              "grating_down": 120.0
+            }
+          }
+        ],
+        "mirrored": [
+          {
+            "subtype": "T4a",
+            "difference_hz": [
+              -0.08,
+              0.04
+            ],
+            "as_predicted": true
+          },
+          {
+            "subtype": "T4b",
+            "difference_hz": [
+              0.06,
+              -0.08
+            ],
+            "as_predicted": true
+          },
+          {
+            "subtype": "T4c",
+            "difference_hz": [
+              -0.08,
+              -0.09
+            ],
+            "as_predicted": true
+          },
+          {
+            "subtype": "T4d",
+            "difference_hz": [
+              -0.33,
+              -0.16
+            ],
+            "as_predicted": true
+          },
+          {
+            "subtype": "T5a",
+            "difference_hz": [
+              -0.01,
+              0.07
+            ],
+            "as_predicted": true
+          },
+          {
+            "subtype": "T5b",
+            "difference_hz": [
+              0.05,
+              -0.07
+            ],
+            "as_predicted": true
+          },
+          {
+            "subtype": "T5c",
+            "difference_hz": [
+              0.08,
+              -0.03
+            ],
+            "as_predicted": false
+          },
+          {
+            "subtype": "T5d",
+            "difference_hz": [
+              -0.12,
+              -0.2
+            ],
+            "as_predicted": true
+          }
+        ],
+        "controls": [
+          {
+            "seed": 1,
+            "rows": [
+              {
+                "group": "T4a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.39,
+                  "grating_right": 22.39,
+                  "grating_up": 22.37,
+                  "grating_down": 22.4
+                },
+                "max_hz": 22.4,
+                "dsi": -0.0001
+              },
+              {
+                "group": "T4a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.75,
+                  "grating_right": 22.73,
+                  "grating_up": 22.73,
+                  "grating_down": 22.71
+                },
+                "max_hz": 22.75,
+                "dsi": -0.0003
+              },
+              {
+                "group": "T4b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.26,
+                  "grating_right": 22.28,
+                  "grating_up": 22.29,
+                  "grating_down": 22.25
+                },
+                "max_hz": 22.29,
+                "dsi": 0.0004
+              },
+              {
+                "group": "T4b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.68,
+                  "grating_right": 22.72,
+                  "grating_up": 22.68,
+                  "grating_down": 22.65
+                },
+                "max_hz": 22.72,
+                "dsi": -0.0007
+              },
+              {
+                "group": "T4c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 22.13,
+                  "grating_right": 22.12,
+                  "grating_up": 22.1,
+                  "grating_down": 22.11
+                },
+                "max_hz": 22.13,
+                "dsi": -0.0002
+              },
+              {
+                "group": "T4c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 22.46,
+                  "grating_right": 22.45,
+                  "grating_up": 22.44,
+                  "grating_down": 22.46
+                },
+                "max_hz": 22.46,
+                "dsi": -0.0003
+              },
+              {
+                "group": "T4d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 21.92,
+                  "grating_right": 21.89,
+                  "grating_up": 21.89,
+                  "grating_down": 21.91
+                },
+                "max_hz": 21.92,
+                "dsi": 0.0004
+              },
+              {
+                "group": "T4d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 21.83,
+                  "grating_right": 21.85,
+                  "grating_up": 21.82,
+                  "grating_down": 21.84
+                },
+                "max_hz": 21.85,
+                "dsi": 0.0005
+              },
+              {
+                "group": "T5a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.13,
+                  "grating_right": 22.09,
+                  "grating_up": 22.1,
+                  "grating_down": 22.13
+                },
+                "max_hz": 22.13,
+                "dsi": 0.0009
+              },
+              {
+                "group": "T5a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.19,
+                  "grating_right": 22.2,
+                  "grating_up": 22.2,
+                  "grating_down": 22.18
+                },
+                "max_hz": 22.2,
+                "dsi": 0.0004
+              },
+              {
+                "group": "T5b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.4,
+                  "grating_right": 22.37,
+                  "grating_up": 22.35,
+                  "grating_down": 22.35
+                },
+                "max_hz": 22.4,
+                "dsi": -0.0007
+              },
+              {
+                "group": "T5b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.42,
+                  "grating_right": 22.39,
+                  "grating_up": 22.4,
+                  "grating_down": 22.41
+                },
+                "max_hz": 22.42,
+                "dsi": 0.0007
+              },
+              {
+                "group": "T5c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 21.99,
+                  "grating_right": 22.01,
+                  "grating_up": 21.96,
+                  "grating_down": 21.98
+                },
+                "max_hz": 22.01,
+                "dsi": -0.0005
+              },
+              {
+                "group": "T5c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 22.36,
+                  "grating_right": 22.39,
+                  "grating_up": 22.35,
+                  "grating_down": 22.36
+                },
+                "max_hz": 22.39,
+                "dsi": -0.0002
+              },
+              {
+                "group": "T5d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 22.02,
+                  "grating_right": 22.01,
+                  "grating_up": 22.01,
+                  "grating_down": 22.03
+                },
+                "max_hz": 22.03,
+                "dsi": 0.0004
+              },
+              {
+                "group": "T5d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 22.42,
+                  "grating_right": 22.44,
+                  "grating_up": 22.4,
+                  "grating_down": 22.4
+                },
+                "max_hz": 22.44,
+                "dsi": -0.0001
+              }
+            ]
+          },
+          {
+            "seed": 2,
+            "rows": [
+              {
+                "group": "T4a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.1,
+                  "grating_right": 22.09,
+                  "grating_up": 22.05,
+                  "grating_down": 22.1
+                },
+                "max_hz": 22.1,
+                "dsi": 0.0002
+              },
+              {
+                "group": "T4a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.63,
+                  "grating_right": 22.66,
+                  "grating_up": 22.64,
+                  "grating_down": 22.67
+                },
+                "max_hz": 22.67,
+                "dsi": 0.0006
+              },
+              {
+                "group": "T4b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.47,
+                  "grating_right": 22.46,
+                  "grating_up": 22.49,
+                  "grating_down": 22.47
+                },
+                "max_hz": 22.49,
+                "dsi": -0.0001
+              },
+              {
+                "group": "T4b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.82,
+                  "grating_right": 22.78,
+                  "grating_up": 22.83,
+                  "grating_down": 22.77
+                },
+                "max_hz": 22.83,
+                "dsi": 0.0008
+              },
+              {
+                "group": "T4c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 21.83,
+                  "grating_right": 21.83,
+                  "grating_up": 21.82,
+                  "grating_down": 21.8
+                },
+                "max_hz": 21.83,
+                "dsi": 0.0005
+              },
+              {
+                "group": "T4c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 22.49,
+                  "grating_right": 22.48,
+                  "grating_up": 22.49,
+                  "grating_down": 22.45
+                },
+                "max_hz": 22.49,
+                "dsi": 0.0009
+              },
+              {
+                "group": "T4d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 22.1,
+                  "grating_right": 22.1,
+                  "grating_up": 22.1,
+                  "grating_down": 22.11
+                },
+                "max_hz": 22.11,
+                "dsi": 0.0
+              },
+              {
+                "group": "T4d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 21.86,
+                  "grating_right": 21.89,
+                  "grating_up": 21.87,
+                  "grating_down": 21.89
+                },
+                "max_hz": 21.89,
+                "dsi": 0.0006
+              },
+              {
+                "group": "T5a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 21.93,
+                  "grating_right": 21.93,
+                  "grating_up": 21.94,
+                  "grating_down": 21.92
+                },
+                "max_hz": 21.94,
+                "dsi": 0.0
+              },
+              {
+                "group": "T5a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 21.52,
+                  "grating_right": 21.47,
+                  "grating_up": 21.53,
+                  "grating_down": 21.52
+                },
+                "max_hz": 21.53,
+                "dsi": -0.0011
+              },
+              {
+                "group": "T5b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.23,
+                  "grating_right": 22.24,
+                  "grating_up": 22.27,
+                  "grating_down": 22.26
+                },
+                "max_hz": 22.27,
+                "dsi": 0.0002
+              },
+              {
+                "group": "T5b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.3,
+                  "grating_right": 22.33,
+                  "grating_up": 22.33,
+                  "grating_down": 22.35
+                },
+                "max_hz": 22.35,
+                "dsi": -0.0007
+              },
+              {
+                "group": "T5c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 22.26,
+                  "grating_right": 22.23,
+                  "grating_up": 22.25,
+                  "grating_down": 22.26
+                },
+                "max_hz": 22.26,
+                "dsi": -0.0004
+              },
+              {
+                "group": "T5c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 23.02,
+                  "grating_right": 23.01,
+                  "grating_up": 23.06,
+                  "grating_down": 23.05
+                },
+                "max_hz": 23.06,
+                "dsi": 0.0001
+              },
+              {
+                "group": "T5d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 21.96,
+                  "grating_right": 21.95,
+                  "grating_up": 21.98,
+                  "grating_down": 21.96
+                },
+                "max_hz": 21.98,
+                "dsi": -0.0005
+              },
+              {
+                "group": "T5d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 22.68,
+                  "grating_right": 22.7,
+                  "grating_up": 22.75,
+                  "grating_down": 22.7
+                },
+                "max_hz": 22.75,
+                "dsi": -0.001
+              }
+            ]
+          },
+          {
+            "seed": 3,
+            "rows": [
+              {
+                "group": "T4a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.28,
+                  "grating_right": 22.29,
+                  "grating_up": 22.31,
+                  "grating_down": 22.29
+                },
+                "max_hz": 22.31,
+                "dsi": -0.0002
+              },
+              {
+                "group": "T4a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.12,
+                  "grating_right": 22.13,
+                  "grating_up": 22.13,
+                  "grating_down": 22.14
+                },
+                "max_hz": 22.14,
+                "dsi": 0.0003
+              },
+              {
+                "group": "T4b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.79,
+                  "grating_right": 22.79,
+                  "grating_up": 22.79,
+                  "grating_down": 22.8
+                },
+                "max_hz": 22.8,
+                "dsi": -0.0001
+              },
+              {
+                "group": "T4b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.9,
+                  "grating_right": 22.89,
+                  "grating_up": 22.93,
+                  "grating_down": 22.9
+                },
+                "max_hz": 22.93,
+                "dsi": 0.0001
+              },
+              {
+                "group": "T4c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 22.28,
+                  "grating_right": 22.29,
+                  "grating_up": 22.31,
+                  "grating_down": 22.31
+                },
+                "max_hz": 22.31,
+                "dsi": -0.0
+              },
+              {
+                "group": "T4c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 22.01,
+                  "grating_right": 21.97,
+                  "grating_up": 21.97,
+                  "grating_down": 21.99
+                },
+                "max_hz": 22.01,
+                "dsi": -0.0003
+              },
+              {
+                "group": "T4d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 21.98,
+                  "grating_right": 21.98,
+                  "grating_up": 22.02,
+                  "grating_down": 21.99
+                },
+                "max_hz": 22.02,
+                "dsi": -0.0006
+              },
+              {
+                "group": "T4d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 21.58,
+                  "grating_right": 21.58,
+                  "grating_up": 21.57,
+                  "grating_down": 21.57
+                },
+                "max_hz": 21.58,
+                "dsi": -0.0002
+              },
+              {
+                "group": "T5a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 21.71,
+                  "grating_right": 21.69,
+                  "grating_up": 21.71,
+                  "grating_down": 21.67
+                },
+                "max_hz": 21.71,
+                "dsi": 0.0004
+              },
+              {
+                "group": "T5a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 21.62,
+                  "grating_right": 21.62,
+                  "grating_up": 21.65,
+                  "grating_down": 21.64
+                },
+                "max_hz": 21.65,
+                "dsi": -0.0002
+              },
+              {
+                "group": "T5b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 22.08,
+                  "grating_right": 22.08,
+                  "grating_up": 22.09,
+                  "grating_down": 22.1
+                },
+                "max_hz": 22.1,
+                "dsi": -0.0
+              },
+              {
+                "group": "T5b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 22.65,
+                  "grating_right": 22.65,
+                  "grating_up": 22.69,
+                  "grating_down": 22.66
+                },
+                "max_hz": 22.69,
+                "dsi": 0.0001
+              },
+              {
+                "group": "T5c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 22.6,
+                  "grating_right": 22.61,
+                  "grating_up": 22.65,
+                  "grating_down": 22.61
+                },
+                "max_hz": 22.65,
+                "dsi": 0.0007
+              },
+              {
+                "group": "T5c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 22.92,
+                  "grating_right": 22.92,
+                  "grating_up": 22.92,
+                  "grating_down": 22.93
+                },
+                "max_hz": 22.93,
+                "dsi": -0.0001
+              },
+              {
+                "group": "T5d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 22.13,
+                  "grating_right": 22.11,
+                  "grating_up": 22.13,
+                  "grating_down": 22.1
+                },
+                "max_hz": 22.13,
+                "dsi": -0.0007
+              },
+              {
+                "group": "T5d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 22.25,
+                  "grating_right": 22.25,
+                  "grating_up": 22.29,
+                  "grating_down": 22.26
+                },
+                "max_hz": 22.29,
+                "dsi": -0.0006
+              }
+            ]
+          }
+        ],
+        "mean_dsi": {
+          "T4": 0.0002,
+          "T5": -0.0005
+        },
+        "selective": {
+          "T4": 0,
+          "T5": 0
+        },
+        "quiet_groups": [],
+        "control_mean_abs_dsi": 0.0004,
+        "brightness_step": {
+          "bright": {
+            "L1": 7.52,
+            "L2": 2.3,
+            "L3": 5.21,
+            "Mi1": 3.95,
+            "Tm3": 13.42,
+            "Tm1": 2.43,
+            "Tm2": 3.4,
+            "Tm9": 16.41,
+            "T4a": 9.57,
+            "T4b": 6.78,
+            "T4c": 14.0,
+            "T4d": 10.08,
+            "T5a": 7.12,
+            "T5b": 4.97,
+            "T5c": 13.33,
+            "T5d": 12.6
+          },
+          "dark": {
+            "L1": 17.08,
+            "L2": 5.23,
+            "L3": 16.71,
+            "Mi1": 4.45,
+            "Tm3": 8.68,
+            "Tm1": 4.74,
+            "Tm2": 5.63,
+            "Tm9": 18.33,
+            "T4a": 6.48,
+            "T4b": 4.5,
+            "T4c": 11.04,
+            "T4d": 7.57,
+            "T5a": 9.21,
+            "T5b": 7.1,
+            "T5c": 15.35,
+            "T5d": 14.85
+          }
+        },
+        "passed": false,
+        "post_hoc_patterns": {
+          "still grating": {
+            "T4a:L": 8.94,
+            "T4a:R": 9.14,
+            "T4b:L": 6.39,
+            "T4b:R": 6.71,
+            "T4c:L": 13.61,
+            "T4c:R": 13.26,
+            "T4d:L": 9.95,
+            "T4d:R": 10.27,
+            "T5a:L": 8.47,
+            "T5a:R": 6.18,
+            "T5b:L": 6.01,
+            "T5b:R": 4.13,
+            "T5c:L": 14.72,
+            "T5c:R": 12.44,
+            "T5d:L": 14.11,
+            "T5d:R": 12.36,
+            "L1:L": 11.94,
+            "L2:L": 3.71,
+            "Tm1:L": 3.41,
+            "Tm9:L": 17.02,
+            "Mi1:L": 4.61
+          },
+          "drifting grating": {
+            "T4a:L": 8.91,
+            "T4a:R": 9.07,
+            "T4b:L": 6.48,
+            "T4b:R": 6.6,
+            "T4c:L": 13.57,
+            "T4c:R": 13.22,
+            "T4d:L": 9.72,
+            "T4d:R": 10.28,
+            "T5a:L": 8.45,
+            "T5a:R": 6.21,
+            "T5b:L": 6.05,
+            "T5b:R": 4.13,
+            "T5c:L": 14.73,
+            "T5c:R": 12.59,
+            "T5d:L": 13.96,
+            "T5d:R": 12.58,
+            "L1:L": 11.82,
+            "L2:L": 3.72,
+            "Tm1:L": 3.37,
+            "Tm9:L": 16.99,
+            "Mi1:L": 4.61
+          },
+          "full-field flicker": {
+            "T4a:L": 8.94,
+            "T4a:R": 9.16,
+            "T4b:L": 6.45,
+            "T4b:R": 6.59,
+            "T4c:L": 13.63,
+            "T4c:R": 13.23,
+            "T4d:L": 9.8,
+            "T4d:R": 10.27,
+            "T5a:L": 8.31,
+            "T5a:R": 6.18,
+            "T5b:L": 5.93,
+            "T5b:R": 4.1,
+            "T5c:L": 14.68,
+            "T5c:R": 12.57,
+            "T5d:L": 13.92,
+            "T5d:R": 12.43,
+            "L1:L": 11.78,
+            "L2:L": 3.71,
+            "Tm1:L": 3.35,
+            "Tm9:L": 17.0,
+            "Mi1:L": 4.61
+          }
+        }
+      },
+      {
+        "name": "slow Mi9, Tm9, Mi4, CT1 (50 ms)",
+        "configuration": {
+          "tonic_hz": 20.0,
+          "tonic_cells": 72658,
+          "photoreceptors": 5826,
+          "neurons": 168477,
+          "slow_inputs": [
+            "Mi9",
+            "Tm9",
+            "Mi4",
+            "CT1"
+          ],
+          "slow_tau_ms": 50.0,
+          "settle_frames": 15,
+          "measured_frames": 60,
+          "imputed_columns": {
+            "rule": "synapse-weighted partner centroid, >= 20 synapses, spread <= 1.5 columns, 2 rounds",
+            "added_per_round": [
+              49947,
+              3909
+            ],
+            "neurons_with_column": 77576,
+            "accuracy": {
+              "neurons": 23600,
+              "exact": 0.9772,
+              "within_one": 0.993,
+              "median_error": 0.0
+            }
+          },
+          "compartments": {
+            "types": [
+              "CT1"
+            ],
+            "cells": 2,
+            "compartments": 1779,
+            "edges_without_partner_column": 1578
+          }
+        },
+        "rows": [
+          {
+            "group": "T4a:L",
+            "preferred_direction": "grating_left",
+            "hz": {
+              "grating_left": 0.68,
+              "grating_right": 0.65,
+              "grating_up": 0.66,
+              "grating_down": 0.65
+            },
+            "max_hz": 0.68,
+            "dsi": 0.018
+          },
+          {
+            "group": "T4a:R",
+            "preferred_direction": "grating_right",
+            "hz": {
+              "grating_left": 0.24,
+              "grating_right": 0.22,
+              "grating_up": 0.22,
+              "grating_down": 0.25
+            },
+            "max_hz": 0.25,
+            "dsi": -0.0514
+          },
+          {
+            "group": "T4b:L",
+            "preferred_direction": "grating_right",
+            "hz": {
+              "grating_left": 0.31,
+              "grating_right": 0.3,
+              "grating_up": 0.36,
+              "grating_down": 0.29
+            },
+            "max_hz": 0.36,
+            "dsi": -0.0225
+          },
+          {
+            "group": "T4b:R",
+            "preferred_direction": "grating_left",
+            "hz": {
+              "grating_left": 0.15,
+              "grating_right": 0.2,
+              "grating_up": 0.16,
+              "grating_down": 0.15
+            },
+            "max_hz": 0.2,
+            "dsi": -0.1343
+          },
+          {
+            "group": "T4c:L",
+            "preferred_direction": "grating_up",
+            "hz": {
+              "grating_left": 1.03,
+              "grating_right": 1.05,
+              "grating_up": 1.08,
+              "grating_down": 1.09
+            },
+            "max_hz": 1.09,
+            "dsi": -0.0018
+          },
+          {
+            "group": "T4c:R",
+            "preferred_direction": "grating_up",
+            "hz": {
+              "grating_left": 0.46,
+              "grating_right": 0.33,
+              "grating_up": 0.41,
+              "grating_down": 0.4
+            },
+            "max_hz": 0.46,
+            "dsi": 0.0118
+          },
+          {
+            "group": "T4d:L",
+            "preferred_direction": "grating_down",
+            "hz": {
+              "grating_left": 0.47,
+              "grating_right": 0.49,
+              "grating_up": 0.47,
+              "grating_down": 0.45
+            },
+            "max_hz": 0.49,
+            "dsi": -0.0154
+          },
+          {
+            "group": "T4d:R",
+            "preferred_direction": "grating_down",
+            "hz": {
+              "grating_left": 0.28,
+              "grating_right": 0.29,
+              "grating_up": 0.26,
+              "grating_down": 0.31
+            },
+            "max_hz": 0.31,
+            "dsi": 0.0799
+          },
+          {
+            "group": "T5a:L",
+            "preferred_direction": "grating_left",
+            "hz": {
+              "grating_left": 3.01,
+              "grating_right": 3.06,
+              "grating_up": 3.2,
+              "grating_down": 3.16
+            },
+            "max_hz": 3.2,
+            "dsi": -0.0091
+          },
+          {
+            "group": "T5a:R",
+            "preferred_direction": "grating_right",
+            "hz": {
+              "grating_left": 2.13,
+              "grating_right": 2.1,
+              "grating_up": 1.91,
+              "grating_down": 2.05
+            },
+            "max_hz": 2.13,
+            "dsi": -0.0052
+          },
+          {
+            "group": "T5b:L",
+            "preferred_direction": "grating_right",
+            "hz": {
+              "grating_left": 2.53,
+              "grating_right": 2.56,
+              "grating_up": 2.6,
+              "grating_down": 2.56
+            },
+            "max_hz": 2.6,
+            "dsi": 0.0071
+          },
+          {
+            "group": "T5b:R",
+            "preferred_direction": "grating_left",
+            "hz": {
+              "grating_left": 1.63,
+              "grating_right": 1.64,
+              "grating_up": 1.57,
+              "grating_down": 1.56
+            },
+            "max_hz": 1.64,
+            "dsi": -0.0011
+          },
+          {
+            "group": "T5c:L",
+            "preferred_direction": "grating_up",
+            "hz": {
+              "grating_left": 6.71,
+              "grating_right": 6.84,
+              "grating_up": 6.81,
+              "grating_down": 6.93
+            },
+            "max_hz": 6.93,
+            "dsi": -0.0092
+          },
+          {
+            "group": "T5c:R",
+            "preferred_direction": "grating_up",
+            "hz": {
+              "grating_left": 4.21,
+              "grating_right": 4.25,
+              "grating_up": 3.86,
+              "grating_down": 3.98
+            },
+            "max_hz": 4.25,
+            "dsi": -0.0142
+          },
+          {
+            "group": "T5d:L",
+            "preferred_direction": "grating_down",
+            "hz": {
+              "grating_left": 5.1,
+              "grating_right": 5.21,
+              "grating_up": 5.17,
+              "grating_down": 5.18
+            },
+            "max_hz": 5.21,
+            "dsi": 0.0003
+          },
+          {
+            "group": "T5d:R",
+            "preferred_direction": "grating_down",
+            "hz": {
+              "grating_left": 3.6,
+              "grating_right": 3.67,
+              "grating_up": 3.36,
+              "grating_down": 3.53
+            },
+            "max_hz": 3.67,
+            "dsi": 0.0242
+          }
+        ],
+        "hs": [
+          {
+            "group": "HSE:L",
+            "hz": {
+              "grating_left": 57.5,
+              "grating_right": 59.0,
+              "grating_up": 63.5,
+              "grating_down": 62.0
+            }
+          },
+          {
+            "group": "HSE:R",
+            "hz": {
+              "grating_left": 49.5,
+              "grating_right": 49.0,
+              "grating_up": 42.0,
+              "grating_down": 47.0
+            }
+          },
+          {
+            "group": "HSN:L",
+            "hz": {
+              "grating_left": 47.0,
+              "grating_right": 44.5,
+              "grating_up": 50.5,
+              "grating_down": 49.5
+            }
+          },
+          {
+            "group": "HSN:R",
+            "hz": {
+              "grating_left": 41.0,
+              "grating_right": 39.0,
+              "grating_up": 35.0,
+              "grating_down": 39.0
+            }
+          },
+          {
+            "group": "HSS:L",
+            "hz": {
+              "grating_left": 51.5,
+              "grating_right": 54.0,
+              "grating_up": 54.5,
+              "grating_down": 53.0
+            }
+          },
+          {
+            "group": "HSS:R",
+            "hz": {
+              "grating_left": 40.0,
+              "grating_right": 38.5,
+              "grating_up": 33.5,
+              "grating_down": 39.0
+            }
+          }
+        ],
+        "mirrored": [
+          {
+            "subtype": "T4a",
+            "difference_hz": [
+              0.03,
+              0.02
+            ],
+            "as_predicted": false
+          },
+          {
+            "subtype": "T4b",
+            "difference_hz": [
+              0.01,
+              -0.05
+            ],
+            "as_predicted": true
+          },
+          {
+            "subtype": "T4c",
+            "difference_hz": [
+              -0.01,
+              0.01
+            ],
+            "as_predicted": false
+          },
+          {
+            "subtype": "T4d",
+            "difference_hz": [
+              0.02,
+              -0.05
+            ],
+            "as_predicted": false
+          },
+          {
+            "subtype": "T5a",
+            "difference_hz": [
+              -0.05,
+              0.03
+            ],
+            "as_predicted": true
+          },
+          {
+            "subtype": "T5b",
+            "difference_hz": [
+              -0.03,
+              -0.01
+            ],
+            "as_predicted": false
+          },
+          {
+            "subtype": "T5c",
+            "difference_hz": [
+              -0.12,
+              -0.12
+            ],
+            "as_predicted": true
+          },
+          {
+            "subtype": "T5d",
+            "difference_hz": [
+              -0.01,
+              -0.17
+            ],
+            "as_predicted": true
+          }
+        ],
+        "controls": [
+          {
+            "seed": 1,
+            "rows": [
+              {
+                "group": "T4a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 19.02,
+                  "grating_right": 19.13,
+                  "grating_up": 18.97,
+                  "grating_down": 18.98
+                },
+                "max_hz": 19.13,
+                "dsi": -0.0029
+              },
+              {
+                "group": "T4a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 19.51,
+                  "grating_right": 19.63,
+                  "grating_up": 19.54,
+                  "grating_down": 19.6
+                },
+                "max_hz": 19.63,
+                "dsi": 0.0032
+              },
+              {
+                "group": "T4b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 19.55,
+                  "grating_right": 19.61,
+                  "grating_up": 19.51,
+                  "grating_down": 19.54
+                },
+                "max_hz": 19.61,
+                "dsi": 0.0015
+              },
+              {
+                "group": "T4b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 19.18,
+                  "grating_right": 19.29,
+                  "grating_up": 19.21,
+                  "grating_down": 19.2
+                },
+                "max_hz": 19.29,
+                "dsi": -0.0029
+              },
+              {
+                "group": "T4c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 19.02,
+                  "grating_right": 19.03,
+                  "grating_up": 18.98,
+                  "grating_down": 18.96
+                },
+                "max_hz": 19.03,
+                "dsi": 0.0004
+              },
+              {
+                "group": "T4c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 19.14,
+                  "grating_right": 19.19,
+                  "grating_up": 19.1,
+                  "grating_down": 19.15
+                },
+                "max_hz": 19.19,
+                "dsi": -0.0012
+              },
+              {
+                "group": "T4d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 18.33,
+                  "grating_right": 18.45,
+                  "grating_up": 18.31,
+                  "grating_down": 18.31
+                },
+                "max_hz": 18.45,
+                "dsi": 0.0001
+              },
+              {
+                "group": "T4d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 18.51,
+                  "grating_right": 18.65,
+                  "grating_up": 18.44,
+                  "grating_down": 18.58
+                },
+                "max_hz": 18.65,
+                "dsi": 0.0036
+              },
+              {
+                "group": "T5a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 19.33,
+                  "grating_right": 19.39,
+                  "grating_up": 19.26,
+                  "grating_down": 19.26
+                },
+                "max_hz": 19.39,
+                "dsi": -0.0015
+              },
+              {
+                "group": "T5a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 19.4,
+                  "grating_right": 19.42,
+                  "grating_up": 19.32,
+                  "grating_down": 19.35
+                },
+                "max_hz": 19.42,
+                "dsi": 0.0005
+              },
+              {
+                "group": "T5b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 19.11,
+                  "grating_right": 19.28,
+                  "grating_up": 19.17,
+                  "grating_down": 19.11
+                },
+                "max_hz": 19.28,
+                "dsi": 0.0045
+              },
+              {
+                "group": "T5b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 18.78,
+                  "grating_right": 18.8,
+                  "grating_up": 18.73,
+                  "grating_down": 18.78
+                },
+                "max_hz": 18.8,
+                "dsi": -0.0006
+              },
+              {
+                "group": "T5c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 18.94,
+                  "grating_right": 19.1,
+                  "grating_up": 18.91,
+                  "grating_down": 18.92
+                },
+                "max_hz": 19.1,
+                "dsi": -0.0004
+              },
+              {
+                "group": "T5c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 19.44,
+                  "grating_right": 19.64,
+                  "grating_up": 19.39,
+                  "grating_down": 19.41
+                },
+                "max_hz": 19.64,
+                "dsi": -0.0005
+              },
+              {
+                "group": "T5d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 18.92,
+                  "grating_right": 19.0,
+                  "grating_up": 18.86,
+                  "grating_down": 18.89
+                },
+                "max_hz": 19.0,
+                "dsi": 0.0009
+              },
+              {
+                "group": "T5d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 19.32,
+                  "grating_right": 19.49,
+                  "grating_up": 19.31,
+                  "grating_down": 19.32
+                },
+                "max_hz": 19.49,
+                "dsi": 0.0003
+              }
+            ]
+          },
+          {
+            "seed": 2,
+            "rows": [
+              {
+                "group": "T4a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 19.32,
+                  "grating_right": 19.22,
+                  "grating_up": 19.22,
+                  "grating_down": 19.32
+                },
+                "max_hz": 19.32,
+                "dsi": 0.0026
+              },
+              {
+                "group": "T4a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 19.32,
+                  "grating_right": 19.3,
+                  "grating_up": 19.4,
+                  "grating_down": 19.36
+                },
+                "max_hz": 19.4,
+                "dsi": -0.0005
+              },
+              {
+                "group": "T4b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 18.96,
+                  "grating_right": 18.99,
+                  "grating_up": 18.96,
+                  "grating_down": 18.99
+                },
+                "max_hz": 18.99,
+                "dsi": 0.0008
+              },
+              {
+                "group": "T4b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 19.18,
+                  "grating_right": 19.16,
+                  "grating_up": 19.25,
+                  "grating_down": 19.27
+                },
+                "max_hz": 19.27,
+                "dsi": 0.0007
+              },
+              {
+                "group": "T4c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 19.27,
+                  "grating_right": 19.25,
+                  "grating_up": 19.23,
+                  "grating_down": 19.22
+                },
+                "max_hz": 19.27,
+                "dsi": 0.0001
+              },
+              {
+                "group": "T4c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 19.29,
+                  "grating_right": 19.35,
+                  "grating_up": 19.33,
+                  "grating_down": 19.37
+                },
+                "max_hz": 19.37,
+                "dsi": -0.0011
+              },
+              {
+                "group": "T4d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 19.25,
+                  "grating_right": 19.22,
+                  "grating_up": 19.22,
+                  "grating_down": 19.23
+                },
+                "max_hz": 19.25,
+                "dsi": 0.0002
+              },
+              {
+                "group": "T4d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 18.82,
+                  "grating_right": 18.81,
+                  "grating_up": 18.81,
+                  "grating_down": 18.85
+                },
+                "max_hz": 18.85,
+                "dsi": 0.0012
+              },
+              {
+                "group": "T5a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 19.04,
+                  "grating_right": 18.96,
+                  "grating_up": 18.96,
+                  "grating_down": 19.02
+                },
+                "max_hz": 19.04,
+                "dsi": 0.0022
+              },
+              {
+                "group": "T5a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 18.71,
+                  "grating_right": 18.7,
+                  "grating_up": 18.78,
+                  "grating_down": 18.74
+                },
+                "max_hz": 18.78,
+                "dsi": -0.0003
+              },
+              {
+                "group": "T5b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 19.0,
+                  "grating_right": 19.0,
+                  "grating_up": 19.02,
+                  "grating_down": 18.99
+                },
+                "max_hz": 19.02,
+                "dsi": 0.0001
+              },
+              {
+                "group": "T5b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 19.12,
+                  "grating_right": 19.11,
+                  "grating_up": 19.2,
+                  "grating_down": 19.19
+                },
+                "max_hz": 19.2,
+                "dsi": 0.0003
+              },
+              {
+                "group": "T5c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 19.17,
+                  "grating_right": 19.1,
+                  "grating_up": 19.15,
+                  "grating_down": 19.2
+                },
+                "max_hz": 19.2,
+                "dsi": -0.0012
+              },
+              {
+                "group": "T5c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 19.42,
+                  "grating_right": 19.46,
+                  "grating_up": 19.37,
+                  "grating_down": 19.44
+                },
+                "max_hz": 19.46,
+                "dsi": -0.0018
+              },
+              {
+                "group": "T5d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 18.79,
+                  "grating_right": 18.79,
+                  "grating_up": 18.78,
+                  "grating_down": 18.78
+                },
+                "max_hz": 18.79,
+                "dsi": 0.0
+              },
+              {
+                "group": "T5d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 19.51,
+                  "grating_right": 19.46,
+                  "grating_up": 19.47,
+                  "grating_down": 19.5
+                },
+                "max_hz": 19.51,
+                "dsi": 0.0008
+              }
+            ]
+          },
+          {
+            "seed": 3,
+            "rows": [
+              {
+                "group": "T4a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 19.19,
+                  "grating_right": 19.16,
+                  "grating_up": 19.17,
+                  "grating_down": 19.17
+                },
+                "max_hz": 19.19,
+                "dsi": 0.0009
+              },
+              {
+                "group": "T4a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 19.04,
+                  "grating_right": 19.06,
+                  "grating_up": 19.09,
+                  "grating_down": 19.06
+                },
+                "max_hz": 19.09,
+                "dsi": 0.0004
+              },
+              {
+                "group": "T4b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 19.74,
+                  "grating_right": 19.67,
+                  "grating_up": 19.73,
+                  "grating_down": 19.72
+                },
+                "max_hz": 19.74,
+                "dsi": -0.0016
+              },
+              {
+                "group": "T4b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 19.38,
+                  "grating_right": 19.26,
+                  "grating_up": 19.37,
+                  "grating_down": 19.32
+                },
+                "max_hz": 19.38,
+                "dsi": 0.0031
+              },
+              {
+                "group": "T4c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 18.95,
+                  "grating_right": 18.92,
+                  "grating_up": 18.98,
+                  "grating_down": 18.94
+                },
+                "max_hz": 18.98,
+                "dsi": 0.0011
+              },
+              {
+                "group": "T4c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 18.42,
+                  "grating_right": 18.46,
+                  "grating_up": 18.42,
+                  "grating_down": 18.46
+                },
+                "max_hz": 18.46,
+                "dsi": -0.001
+              },
+              {
+                "group": "T4d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 18.51,
+                  "grating_right": 18.48,
+                  "grating_up": 18.49,
+                  "grating_down": 18.54
+                },
+                "max_hz": 18.54,
+                "dsi": 0.0013
+              },
+              {
+                "group": "T4d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 18.39,
+                  "grating_right": 18.33,
+                  "grating_up": 18.4,
+                  "grating_down": 18.37
+                },
+                "max_hz": 18.4,
+                "dsi": -0.0009
+              },
+              {
+                "group": "T5a:L",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 18.69,
+                  "grating_right": 18.65,
+                  "grating_up": 18.68,
+                  "grating_down": 18.68
+                },
+                "max_hz": 18.69,
+                "dsi": 0.0012
+              },
+              {
+                "group": "T5a:R",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 18.54,
+                  "grating_right": 18.55,
+                  "grating_up": 18.56,
+                  "grating_down": 18.52
+                },
+                "max_hz": 18.56,
+                "dsi": 0.0004
+              },
+              {
+                "group": "T5b:L",
+                "preferred_direction": "grating_right",
+                "hz": {
+                  "grating_left": 18.64,
+                  "grating_right": 18.62,
+                  "grating_up": 18.67,
+                  "grating_down": 18.68
+                },
+                "max_hz": 18.68,
+                "dsi": -0.0005
+              },
+              {
+                "group": "T5b:R",
+                "preferred_direction": "grating_left",
+                "hz": {
+                  "grating_left": 18.8,
+                  "grating_right": 18.76,
+                  "grating_up": 18.78,
+                  "grating_down": 18.8
+                },
+                "max_hz": 18.8,
+                "dsi": 0.0012
+              },
+              {
+                "group": "T5c:L",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 18.88,
+                  "grating_right": 18.8,
+                  "grating_up": 18.84,
+                  "grating_down": 18.78
+                },
+                "max_hz": 18.88,
+                "dsi": 0.0017
+              },
+              {
+                "group": "T5c:R",
+                "preferred_direction": "grating_up",
+                "hz": {
+                  "grating_left": 19.44,
+                  "grating_right": 19.5,
+                  "grating_up": 19.46,
+                  "grating_down": 19.48
+                },
+                "max_hz": 19.5,
+                "dsi": -0.0007
+              },
+              {
+                "group": "T5d:L",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 18.83,
+                  "grating_right": 18.87,
+                  "grating_up": 18.85,
+                  "grating_down": 18.82
+                },
+                "max_hz": 18.87,
+                "dsi": -0.0008
+              },
+              {
+                "group": "T5d:R",
+                "preferred_direction": "grating_down",
+                "hz": {
+                  "grating_left": 18.41,
+                  "grating_right": 18.39,
+                  "grating_up": 18.42,
+                  "grating_down": 18.36
+                },
+                "max_hz": 18.42,
+                "dsi": -0.0016
+              }
+            ]
+          }
+        ],
+        "mean_dsi": {
+          "T4": -0.0145,
+          "T5": -0.0009
+        },
+        "selective": {
+          "T4": 1,
+          "T5": 0
+        },
+        "quiet_groups": [
+          "T4a:L",
+          "T4a:R",
+          "T4b:L",
+          "T4b:R",
+          "T4c:L",
+          "T4c:R",
+          "T4d:L",
+          "T4d:R",
+          "T5b:R"
+        ],
+        "control_mean_abs_dsi": 0.0012,
+        "brightness_step": {
+          "bright": {
+            "L1": 7.73,
+            "L2": 3.49,
+            "L3": 5.14,
+            "Mi1": 4.1,
+            "Tm3": 11.4,
+            "Tm1": 2.26,
+            "Tm2": 4.4,
+            "Tm9": 2.7,
+            "T4a": 0.52,
+            "T4b": 0.3,
+            "T4c": 0.84,
+            "T4d": 0.48,
+            "T5a": 2.26,
+            "T5b": 1.8,
+            "T5c": 4.43,
+            "T5d": 3.4
+          },
+          "dark": {
+            "L1": 16.93,
+            "L2": 6.09,
+            "L3": 16.33,
+            "Mi1": 4.72,
+            "Tm3": 5.58,
+            "Tm1": 3.19,
+            "Tm2": 6.05,
+            "Tm9": 5.33,
+            "T4a": 0.3,
+            "T4b": 0.17,
+            "T4c": 0.52,
+            "T4d": 0.2,
+            "T5a": 3.27,
+            "T5b": 2.92,
+            "T5c": 7.67,
+            "T5d": 6.01
+          }
+        },
+        "passed": false,
+        "post_hoc_patterns": {
+          "still grating": {
+            "T4a:L": 0.75,
+            "T4a:R": 0.29,
+            "T4b:L": 0.32,
+            "T4b:R": 0.14,
+            "T4c:L": 0.98,
+            "T4c:R": 0.31,
+            "T4d:L": 0.49,
+            "T4d:R": 0.31,
+            "T5a:L": 2.9,
+            "T5a:R": 2.11,
+            "T5b:L": 2.45,
+            "T5b:R": 1.61,
+            "T5c:L": 6.47,
+            "T5c:R": 4.05,
+            "T5d:L": 4.76,
+            "T5d:R": 3.47,
+            "L1:L": 11.77,
+            "L2:L": 4.59,
+            "Tm1:L": 2.34,
+            "Tm9:L": 3.85,
+            "Mi1:L": 4.89
+          },
+          "drifting grating": {
+            "T4a:L": 0.68,
+            "T4a:R": 0.24,
+            "T4b:L": 0.31,
+            "T4b:R": 0.15,
+            "T4c:L": 1.03,
+            "T4c:R": 0.46,
+            "T4d:L": 0.47,
+            "T4d:R": 0.28,
+            "T5a:L": 3.01,
+            "T5a:R": 2.13,
+            "T5b:L": 2.53,
+            "T5b:R": 1.63,
+            "T5c:L": 6.71,
+            "T5c:R": 4.21,
+            "T5d:L": 5.1,
+            "T5d:R": 3.6,
+            "L1:L": 11.66,
+            "L2:L": 4.57,
+            "Tm1:L": 2.36,
+            "Tm9:L": 4.06,
+            "Mi1:L": 4.83
+          },
+          "full-field flicker": {
+            "T4a:L": 0.7,
+            "T4a:R": 0.23,
+            "T4b:L": 0.3,
+            "T4b:R": 0.16,
+            "T4c:L": 1.02,
+            "T4c:R": 0.41,
+            "T4d:L": 0.51,
+            "T4d:R": 0.31,
+            "T5a:L": 2.98,
+            "T5a:R": 2.17,
+            "T5b:L": 2.45,
+            "T5b:R": 1.65,
+            "T5c:L": 6.57,
+            "T5c:R": 4.18,
+            "T5d:L": 5.09,
+            "T5d:R": 3.62,
+            "L1:L": 11.6,
+            "L2:L": 4.55,
+            "Tm1:L": 2.33,
+            "Tm9:L": 4.0,
+            "Mi1:L": 4.89
+          }
+        }
+      }
+    ],
+    "passed": false
+  },
   "performance": [
     {
       "device": "cpu",
       "condition": "no input (silent brain)",
       "simulated_s": 1.0,
       "wall_s": 0.0,
-      "realtime_factor": 13123.36,
+      "realtime_factor": 11520.74,
       "spikes": 0
     },
     {
       "device": "cpu",
       "condition": "LPLC2:L at 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 1.863,
-      "realtime_factor": 0.54,
+      "wall_s": 2.928,
+      "realtime_factor": 0.34,
       "spikes": 54690
     },
     {
       "device": "cpu",
       "condition": "LPLC2 + LC4, both sides, 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 3.188,
-      "realtime_factor": 0.31,
+      "wall_s": 4.213,
+      "realtime_factor": 0.24,
       "spikes": 154158
     },
     {
       "device": "cuda",
       "condition": "no input (silent brain)",
       "simulated_s": 1.0,
-      "wall_s": 0.195,
-      "realtime_factor": 5.13,
+      "wall_s": 0.184,
+      "realtime_factor": 5.44,
       "spikes": 0
     },
     {
       "device": "cuda",
       "condition": "LPLC2:L at 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 0.311,
-      "realtime_factor": 3.22,
+      "wall_s": 0.466,
+      "realtime_factor": 2.15,
       "spikes": 54690
     },
     {
       "device": "cuda",
       "condition": "LPLC2 + LC4, both sides, 150 Hz",
       "simulated_s": 1.0,
-      "wall_s": 0.357,
-      "realtime_factor": 2.8,
+      "wall_s": 0.552,
+      "realtime_factor": 1.81,
       "spikes": 154158
     }
   ],
