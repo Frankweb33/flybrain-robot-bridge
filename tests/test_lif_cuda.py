@@ -71,6 +71,23 @@ def test_gpu_matches_cpu_with_tonic_resting_potentials():
     assert np.array_equal(counts[0], counts[1])
 
 
+def test_gpu_matches_cpu_with_slow_synapses():
+    import dataclasses
+
+    graph = random_connectome(n=400, density=0.03, seed=5)
+    params = dataclasses.replace(LIFParams(w_syn=1.5), tau_slow_ms=30.0)
+    rng = np.random.default_rng(5)
+    slow = rng.random(graph.size) < 0.4
+    counts = []
+    for cls in (LIFSimulator, lif_cuda.CudaLIFSimulator):
+        sim = cls(graph, params=params, seed=1, slow=slow)
+        sim.set_stimulus([(np.arange(0, 40), 120.0)])
+        sim.run(150.0)
+        counts.append(sim.take_counts())
+    assert counts[0].sum() > 500
+    assert np.array_equal(counts[0], counts[1])
+
+
 def test_make_simulator_devices():
     graph = random_connectome(n=50, seed=4)
     assert isinstance(make_simulator(graph, device="cpu"), LIFSimulator)

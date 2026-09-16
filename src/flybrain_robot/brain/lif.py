@@ -54,6 +54,11 @@ class LIFParams:
     v_th: float = -45.0
     t_mbr_ms: float = 20.0
     tau_ms: float = 5.0
+    # Synapses of cells marked slow use this time constant instead. Direction selectivity
+    # in the fly needs inputs with different kinetics (Mi9 slow and sign-inverting against
+    # fast Mi1/Tm3: Arenz et al. 2017; Strother et al. 2017); the connectome fixes which
+    # cell contacts which, not how fast. Equal to tau_ms it changes nothing.
+    tau_slow_ms: float = 5.0
     t_rfc_ms: float = 2.2
     t_dly_ms: float = 1.8
     w_syn: float = SHIU_W_SYN_MV
@@ -86,13 +91,15 @@ class KernelConstants:
         self.a_v = math.exp(-p.dt_ms / p.t_mbr_ms)
         self.b_g = math.exp(-p.dt_ms / p.tau_ms)
         self.c_vg = p.tau_ms / (p.tau_ms - p.t_mbr_ms) * (self.b_g - self.a_v)
+        self.b_h = math.exp(-p.dt_ms / p.tau_slow_ms)
+        self.c_vh = p.tau_slow_ms / (p.tau_slow_ms - p.t_mbr_ms) * (self.b_h - self.a_v)
         self.inv_scale = 2.0**-lif_kernel.FIXED_SHIFT
         scaled = np.rint(np.asarray(connectome.weight, np.float64) * p.w_syn * 2**lif_kernel.FIXED_SHIFT)
         if scaled.size and np.abs(scaled).max() >= 2**31:
             raise ValueError("w_syn too large for 32-bit fixed-point synaptic weights")
         self.weight_fixed = _kernel_array(scaled, np.int32)
         self.scalars = (
-            float(p.v_rst), float(p.v_th), self.a_v, self.b_g, self.c_vg,
+            float(p.v_rst), float(p.v_th), self.a_v, self.b_g, self.b_h, self.c_vg, self.c_vh,
             float(p.poisson_kick_mv), self.inv_scale, float(p.rest_tolerance),
         )  # fmt: skip
 
@@ -118,30 +125,33 @@ _neuron_block = njit(inline="always")(lif_kernel.specialize(lif_kernel.neuron_bl
 
 @njit(cache=True)
 def _advance(
-    active, n_active, s0, s1, block_start, seed, v, g, refractory_until, refractory_steps, dg,
-    bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
+    active, n_active, s0, s1, block_start, seed, v, g, h, refractory_until, refractory_steps,
+    dg, dh, bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g, b_h, c_vg, c_vh, kick,
+    inv_scale, tol, block_len,
 ):  # fmt: skip
     for a in range(n_active):
-        _neuron_block(active[a], s0, s1, block_start, seed, v, g, refractory_until,
-                      refractory_steps, dg, bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g,
-                      c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
+        _neuron_block(active[a], s0, s1, block_start, seed, v, g, h, refractory_until,
+                      refractory_steps, dg, dh, bits, counts, prob, v_rest, v_rst, v_th, a_v,
+                      b_g, b_h, c_vg, c_vh, kick, inv_scale, tol, block_len)  # fmt: skip
 
 
 @njit(cache=True, parallel=True)
 def _advance_parallel(
-    active, n_active, s0, s1, block_start, seed, v, g, refractory_until, refractory_steps, dg,
-    bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len,
+    active, n_active, s0, s1, block_start, seed, v, g, h, refractory_until, refractory_steps,
+    dg, dh, bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g, b_h, c_vg, c_vh, kick,
+    inv_scale, tol, block_len,
 ):  # fmt: skip
     for a in prange(n_active):
-        _neuron_block(active[a], s0, s1, block_start, seed, v, g, refractory_until,
-                      refractory_steps, dg, bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g,
-                      c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
+        _neuron_block(active[a], s0, s1, block_start, seed, v, g, h, refractory_until,
+                      refractory_steps, dg, dh, bits, counts, prob, v_rest, v_rst, v_th, a_v,
+                      b_g, b_h, c_vg, c_vh, kick, inv_scale, tol, block_len)  # fmt: skip
 
 
 @njit(cache=True)
 def _finish_block(
-    active, n_active, active_flag, entrants, indptr, indices, weight_fixed, dg_cur, dg_next,
-    pending_cur, pending_next, bits, prob, v, g, v_rest, v_th, block_len,
+    active, n_active, active_flag, entrants, indptr, indices, weight_fixed, slow, dg_cur,
+    dg_next, dh_cur, dh_next, pending_cur, pending_next, bits, prob, v, g, h, v_rest, v_th,
+    block_len,
 ):  # fmt: skip
     """Deliver this block's spikes into the next block, clear used input, retire at rest."""
     n_entrants = 0
@@ -151,14 +161,19 @@ def _finish_block(
             row = i * block_len
             for s in range(block_len):
                 dg_cur[row + s] = 0
+                dh_cur[row + s] = 0
             pending_cur[i] = False
         b = bits[i]
         if b != 0:
+            is_slow = slow[i]
             for s in range(block_len):
                 if (b >> s) & 1:
                     for e in range(indptr[i], indptr[i + 1]):
                         target = indices[e]
-                        dg_next[target * block_len + s] += weight_fixed[e]
+                        if is_slow:
+                            dh_next[target * block_len + s] += weight_fixed[e]
+                        else:
+                            dg_next[target * block_len + s] += weight_fixed[e]
                         if not pending_next[target]:
                             pending_next[target] = True
                             if not active_flag[target]:
@@ -170,7 +185,7 @@ def _finish_block(
     for a in range(n_active):
         i = active[a]
         if (pending_next[i] or prob[i] > 0.0 or v[i] != v_rest[i] or g[i] != 0.0
-                or v_rest[i] > v_th):  # a tonically firing neuron never rests
+                or h[i] != 0.0 or v_rest[i] > v_th):  # a tonically firing neuron never rests
             active[kept] = i
             kept += 1
         else:
@@ -190,10 +205,10 @@ def _finish_block(
 
 @njit(cache=True)
 def _run(
-    steps, t0, block_len, seed, indptr, indices, weight_fixed, v, g, refractory_until,
-    refractory_steps, dg_cur, dg_next, pending_cur, pending_next, bits, counts, prob,
-    active_flag, active, n_active, entrants,
-    v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol,
+    steps, t0, block_len, seed, indptr, indices, weight_fixed, slow, v, g, h,
+    refractory_until, refractory_steps, dg_cur, dg_next, dh_cur, dh_next, pending_cur,
+    pending_next, bits, counts, prob, active_flag, active, n_active, entrants,
+    v_rest, v_rst, v_th, a_v, b_g, b_h, c_vg, c_vh, kick, inv_scale, tol,
 ):  # fmt: skip
     step = t0
     end = t0 + steps
@@ -203,20 +218,22 @@ def _run(
         s0 = step - block_start
         s1 = min(block_len, end - block_start)
         if n_active >= PARALLEL_MIN_ACTIVE:
-            _advance_parallel(active, n_active, s0, s1, block_start, seed, v, g,
-                              refractory_until, refractory_steps, dg_cur, bits, counts, prob,
-                              v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol,
-                              block_len)  # fmt: skip
+            _advance_parallel(active, n_active, s0, s1, block_start, seed, v, g, h,
+                              refractory_until, refractory_steps, dg_cur, dh_cur, bits, counts,
+                              prob, v_rest, v_rst, v_th, a_v, b_g, b_h, c_vg, c_vh, kick,
+                              inv_scale, tol, block_len)  # fmt: skip
         else:
-            _advance(active, n_active, s0, s1, block_start, seed, v, g, refractory_until,
-                     refractory_steps, dg_cur, bits, counts, prob, v_rest, v_rst, v_th, a_v,
-                     b_g, c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
+            _advance(active, n_active, s0, s1, block_start, seed, v, g, h, refractory_until,
+                     refractory_steps, dg_cur, dh_cur, bits, counts, prob, v_rest, v_rst, v_th,
+                     a_v, b_g, b_h, c_vg, c_vh, kick, inv_scale, tol, block_len)  # fmt: skip
         step = block_start + s1
         if s1 == block_len:
             n_active = _finish_block(active, n_active, active_flag, entrants, indptr, indices,
-                                     weight_fixed, dg_cur, dg_next, pending_cur, pending_next,
-                                     bits, prob, v, g, v_rest, v_th, block_len)  # fmt: skip
+                                     weight_fixed, slow, dg_cur, dg_next, dh_cur, dh_next,
+                                     pending_cur, pending_next, bits, prob, v, g, h, v_rest,
+                                     v_th, block_len)  # fmt: skip
             dg_cur, dg_next = dg_next, dg_cur
+            dh_cur, dh_next = dh_next, dh_cur
             pending_cur, pending_next = pending_next, pending_cur
             swaps += 1
     return n_active, swaps
@@ -263,7 +280,7 @@ def _kernel_array(values, dtype):
     return np.require(np.asarray(values, dtype=dtype), dtype, flags)
 
 
-def make_simulator(connectome, params=None, seed=0, device="auto", v_rest=None):
+def make_simulator(connectome, params=None, seed=0, device="auto", v_rest=None, slow=None):
     """CPU or GPU simulator. Both give bit-identical spikes, so "auto" is safe."""
     if device not in ("auto", "cpu", "cuda"):
         raise ValueError("device must be 'auto', 'cpu' or 'cuda'")
@@ -275,16 +292,17 @@ def make_simulator(connectome, params=None, seed=0, device="auto", v_rest=None):
                 raise ValueError(f"device 'cuda' needs the gpu extra: {exc}") from exc
         else:
             if cuda_available():
-                return CudaLIFSimulator(connectome, params=params, seed=seed, v_rest=v_rest)
+                return CudaLIFSimulator(connectome, params=params, seed=seed, v_rest=v_rest,
+                                        slow=slow)
             if device == "cuda":
                 raise ValueError("device 'cuda' requested but no CUDA GPU is available")
-    return LIFSimulator(connectome, params=params, seed=seed, v_rest=v_rest)
+    return LIFSimulator(connectome, params=params, seed=seed, v_rest=v_rest, slow=slow)
 
 
 class LIFSimulator:
     device = "cpu"
 
-    def __init__(self, connectome, params=None, seed=0, v_rest=None):
+    def __init__(self, connectome, params=None, seed=0, v_rest=None, slow=None):
         self.connectome = connectome
         self.params = params or LIFParams.matched_to(connectome.manifest)
         self.seed = seed
@@ -294,6 +312,9 @@ class LIFSimulator:
         )
         if self.v_rest.shape != (n,):
             raise ValueError("v_rest needs one resting potential per neuron")
+        self.slow = _kernel_array(np.zeros(n) if slow is None else np.asarray(slow), np.bool_)
+        if self.slow.shape != (n,):
+            raise ValueError("slow needs one flag per neuron")
         # One array type per argument keeps numba to a single compiled specialization.
         # Several cached specializations of a kernel that calls a parallel function
         # crashed on load (read-only memmaps and writable arrays type differently).
@@ -304,10 +325,13 @@ class LIFSimulator:
         self.default_refractory = k.refractory
         self.v = np.empty(n, np.float64)
         self.g = np.empty(n, np.float64)
+        self.h = np.empty(n, np.float64)
         self.refractory_until = np.empty(n, np.int64)
         self.refractory_steps = np.full(n, k.refractory, np.int64)
         self.dg_cur = np.zeros(n * k.block, np.int64)
         self.dg_next = np.zeros(n * k.block, np.int64)
+        self.dh_cur = np.zeros(n * k.block, np.int64)
+        self.dh_next = np.zeros(n * k.block, np.int64)
         self.pending_cur = np.zeros(n, np.bool_)
         self.pending_next = np.zeros(n, np.bool_)
         self.bits = np.zeros(n, np.uint32)
@@ -320,8 +344,9 @@ class LIFSimulator:
         self.reset()
 
     def reset(self):
-        for array in (self.g, self.refractory_until, self.dg_cur, self.dg_next, self.bits,
-                      self.counts, self.pending_cur, self.pending_next):  # fmt: skip
+        for array in (self.g, self.h, self.refractory_until, self.dg_cur, self.dg_next,
+                      self.dh_cur, self.dh_next, self.bits, self.counts, self.pending_cur,
+                      self.pending_next):  # fmt: skip
             array.fill(0)
         self.v[:] = self.v_rest
         self.active_flag.fill(False)
@@ -362,14 +387,16 @@ class LIFSimulator:
         k = self.constants
         n_active, swaps = _run(
             int(steps), int(self.step_index), int(k.block), int(self.seed), self.indptr,
-            self.indices, self.weight_fixed, self.v, self.g, self.refractory_until,
-            self.refractory_steps, self.dg_cur, self.dg_next, self.pending_cur,
-            self.pending_next, self.bits, self.counts, self.prob, self.active_flag,
-            self.active, int(self.n_active), self.entrants, self.v_rest, *k.scalars,
+            self.indices, self.weight_fixed, self.slow, self.v, self.g, self.h,
+            self.refractory_until, self.refractory_steps, self.dg_cur, self.dg_next,
+            self.dh_cur, self.dh_next, self.pending_cur, self.pending_next, self.bits,
+            self.counts, self.prob, self.active_flag, self.active, int(self.n_active),
+            self.entrants, self.v_rest, *k.scalars,
         )  # fmt: skip
         self.n_active = int(n_active)
         if swaps % 2:
             self.dg_cur, self.dg_next = self.dg_next, self.dg_cur
+            self.dh_cur, self.dh_next = self.dh_next, self.dh_cur
             self.pending_cur, self.pending_next = self.pending_next, self.pending_cur
         self.step_index += steps
         return steps

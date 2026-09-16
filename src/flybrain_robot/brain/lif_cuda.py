@@ -39,8 +39,9 @@ _neuron_block = cuda.jit(device=True, inline=True)(
 
 @cuda.jit
 def _advance_all(
-    n, s0, s1, block_start, seed, v, g, refractory_until, refractory_steps, dg, pending, bits,
-    counts, prob, v_rest, v_rst, v_th, a_v, b_g, c_vg, kick, inv_scale, tol, block_len, clear,
+    n, s0, s1, block_start, seed, v, g, h, refractory_until, refractory_steps, dg, dh, pending,
+    bits, counts, prob, v_rest, v_rst, v_th, a_v, b_g, b_h, c_vg, c_vh, kick, inv_scale, tol,
+    block_len, clear,
 ):  # fmt: skip
     i = cuda.grid(1)
     if i < n:
@@ -49,34 +50,41 @@ def _advance_all(
         # A neuron at rest without Poisson drive or synaptic input in this block would
         # stay exactly at rest, so skipping it changes nothing. A neuron whose resting
         # potential is above threshold never rests and is always advanced.
-        if (pending[i] != 0 or v[i] != v_rest[i] or g[i] != 0.0 or prob[i] > 0.0
-                or v_rest[i] > v_th):  # fmt: skip
-            _neuron_block(i, s0, s1, block_start, seed, v, g, refractory_until,
-                          refractory_steps, dg, bits, counts, prob, v_rest, v_rst, v_th, a_v,
-                          b_g, c_vg, kick, inv_scale, tol, block_len)  # fmt: skip
+        if (pending[i] != 0 or v[i] != v_rest[i] or g[i] != 0.0 or h[i] != 0.0
+                or prob[i] > 0.0 or v_rest[i] > v_th):  # fmt: skip
+            _neuron_block(i, s0, s1, block_start, seed, v, g, h, refractory_until,
+                          refractory_steps, dg, dh, bits, counts, prob, v_rest, v_rst, v_th,
+                          a_v, b_g, b_h, c_vg, c_vh, kick, inv_scale, tol, block_len)  # fmt: skip
         if clear and pending[i] != 0:  # the block is finished: its input row is used up
             row = i * block_len
             for s in range(block_len):
                 dg[row + s] = 0
+                dh[row + s] = 0
             pending[i] = 0
 
 
 @cuda.jit
 def _deliver(n_chunks, block_len, bits, chunk_source, chunk_start, chunk_end, indices,
-             weight_fixed, dg_next, pending_next):  # fmt: skip
+             weight_fixed, slow, dg_next, dh_next, pending_next):  # fmt: skip
     # One thread per chunk of at most EDGES_PER_CHUNK outgoing edges, so a neuron with
     # thousands of targets is delivered by many threads instead of one.
     c = cuda.grid(1)
     if c < n_chunks:
         b = bits[chunk_source[c]]
         if b != 0:
+            is_slow = slow[chunk_source[c]]
             for s in range(block_len):
                 if (b >> s) & 1:
                     for e in range(chunk_start[c], chunk_end[c]):
                         target = indices[e]
                         # The explicit int64 matters: numba-cuda-mlir 0.5.2 zero-extends an
                         # int32 value added to an int64 array, turning -3 into 4294967293.
-                        cuda.atomic.add(dg_next, target * block_len + s, np.int64(weight_fixed[e]))
+                        if is_slow:
+                            cuda.atomic.add(dh_next, target * block_len + s,
+                                            np.int64(weight_fixed[e]))
+                        else:
+                            cuda.atomic.add(dg_next, target * block_len + s,
+                                            np.int64(weight_fixed[e]))
                         pending_next[target] = 1  # every writer stores the same value
 
 
@@ -103,7 +111,7 @@ class CudaLIFSimulator:
 
     device = "cuda"
 
-    def __init__(self, connectome, params=None, seed=0, v_rest=None):
+    def __init__(self, connectome, params=None, seed=0, v_rest=None, slow=None):
         if not cuda_available():
             raise ValueError("No CUDA GPU available")
         self.connectome = connectome
@@ -116,6 +124,10 @@ class CudaLIFSimulator:
         if self.host_v_rest.shape != (n,):
             raise ValueError("v_rest needs one resting potential per neuron")
         self.v_rest = cuda.to_device(self.host_v_rest)
+        host_slow = _kernel_array(np.zeros(n) if slow is None else np.asarray(slow), np.bool_)
+        if host_slow.shape != (n,):
+            raise ValueError("slow needs one flag per neuron")
+        self.slow = cuda.to_device(host_slow)
         self.constants = k = KernelConstants(self.params, connectome)
         self.default_refractory = k.refractory
         self.launch = (math.ceil(n / THREADS_PER_BLOCK), THREADS_PER_BLOCK)
@@ -131,11 +143,14 @@ class CudaLIFSimulator:
         self.weight_fixed = cuda.to_device(k.weight_fixed)
         self._v = cuda.device_array(n, np.float64)
         self._g = cuda.device_array(n, np.float64)
+        self._h = cuda.device_array(n, np.float64)
         self.refractory_until = cuda.device_array(n, np.int64)
         self.host_refractory_steps = np.full(n, k.refractory, np.int64)
         self.refractory_steps = cuda.to_device(self.host_refractory_steps)
         self.dg_cur = cuda.device_array(n * k.block, np.int64)
         self.dg_next = cuda.device_array(n * k.block, np.int64)
+        self.dh_cur = cuda.device_array(n * k.block, np.int64)
+        self.dh_next = cuda.device_array(n * k.block, np.int64)
         self.pending_cur = cuda.device_array(n, np.uint8)
         self.pending_next = cuda.device_array(n, np.uint8)
         self.bits = cuda.device_array(n, np.uint32)
@@ -146,8 +161,9 @@ class CudaLIFSimulator:
         self.reset()
 
     def reset(self):
-        for array in (self._g, self.refractory_until, self.dg_cur, self.dg_next, self.bits,
-                      self._counts, self.pending_cur, self.pending_next):  # fmt: skip
+        for array in (self._g, self._h, self.refractory_until, self.dg_cur, self.dg_next,
+                      self.dh_cur, self.dh_next, self.bits, self._counts, self.pending_cur,
+                      self.pending_next):  # fmt: skip
             array[:] = 0
         self._v.copy_to_device(self.host_v_rest)
         self.step_index = 0
@@ -163,6 +179,10 @@ class CudaLIFSimulator:
     @property
     def g(self):
         return self._g.copy_to_host()
+
+    @property
+    def h(self):
+        return self._h.copy_to_host()
 
     @property
     def counts(self):
@@ -191,16 +211,18 @@ class CudaLIFSimulator:
             s1 = min(k.block, end - block_start)
             finished = s1 == k.block
             _advance_all[self.launch](
-                self.n, s0, s1, block_start, self.seed, self._v, self._g,
-                self.refractory_until, self.refractory_steps, self.dg_cur, self.pending_cur,
-                self.bits, self._counts, self.prob, self.v_rest, *k.scalars, k.block, finished,
+                self.n, s0, s1, block_start, self.seed, self._v, self._g, self._h,
+                self.refractory_until, self.refractory_steps, self.dg_cur, self.dh_cur,
+                self.pending_cur, self.bits, self._counts, self.prob, self.v_rest, *k.scalars,
+                k.block, finished,
             )  # fmt: skip
             if finished:
                 _deliver[self.chunk_launch](self.n_chunks, k.block, self.bits, self.chunk_source,
                                             self.chunk_start, self.chunk_end, self.indices,
-                                            self.weight_fixed, self.dg_next,
-                                            self.pending_next)  # fmt: skip
+                                            self.weight_fixed, self.slow, self.dg_next,
+                                            self.dh_next, self.pending_next)  # fmt: skip
                 self.dg_cur, self.dg_next = self.dg_next, self.dg_cur
+                self.dh_cur, self.dh_next = self.dh_next, self.dh_cur
                 self.pending_cur, self.pending_next = self.pending_next, self.pending_cur
             step = block_start + s1
         cuda.synchronize()

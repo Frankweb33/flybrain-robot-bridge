@@ -128,6 +128,28 @@ def test_tonic_resting_potential_is_graded_by_synaptic_input():
     assert 49 <= rates[0] <= 52 and rates[-40] <= 5
 
 
+def test_slow_synapses_decay_with_their_own_time_constant():
+    """Inputs from cells marked slow last longer, which direction selectivity needs."""
+    import dataclasses
+
+    from flybrain_robot.brain.lif import make_simulator
+
+    graph = connectome_from_edges(2, [0], [1], [5])
+    base = LIFParams(w_syn=0.4)
+    tails = {}
+    for label, params, slow in (("fast", base, [False, False]),
+                                ("slow", dataclasses.replace(base, tau_slow_ms=40.0),
+                                 [True, False])):  # fmt: skip
+        sim = make_simulator(graph, params=params, seed=0, device="cpu", slow=slow)
+        sim.set_stimulus([([0], 1000 / params.dt_ms)])  # one Poisson event per step
+        sim.run(params.dt_ms)
+        sim.set_stimulus([([0], 0.0)])
+        sim.run(20.0)
+        tails[label] = abs(sim.g[1]) + abs(sim.h[1])
+    assert tails["fast"] < 0.1 < 1.0 < tails["slow"]  # 5 ms is spent after 20 ms, 40 ms is not
+    assert LIFParams().tau_slow_ms == LIFParams().tau_ms  # off unless asked for
+
+
 def test_silent_network_returns_to_rest_and_sleeps():
     graph = random_connectome(n=200, seed=3)
     sim = LIFSimulator(graph, params=LIFParams(w_syn=0.5), seed=4)
