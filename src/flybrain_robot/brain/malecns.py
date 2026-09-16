@@ -95,6 +95,14 @@ RETINA_MONITOR = ("T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d", "HSE",
 #      single point neuron it inhibited every column of the eye at once.
 # Columns missing from the release (T4, T5, Tm3, L4, the photoreceptors) are recovered
 # from the wiring by connectome/columns.py.
+# The inputs of T4 and T5 that recordings report as slow and sustained, against the fast
+# transient ones (Mi1, Tm3, Tm1, Tm2): Mi9 and Tm9 (Arenz et al. 2017; Strother et al.
+# 2017; Serbe et al. 2016) and the delayed inhibition of Mi4 and CT1 (Arenz et al. 2017;
+# Meier & Borst 2019). With one time constant for every synapse, a moving pattern
+# delivers the same input in both directions and no motion detector can be selective.
+# EYE_SLOW_TAU_MS is a hand-chosen value in the reported range, not a measurement.
+EYE_SLOW_TYPES = ("Mi9", "Tm9", "Mi4", "CT1")
+EYE_SLOW_TAU_MS = 50.0
 EYE_PHOTORECEPTORS = ("R1-R6", "R7*", "R8*")
 EYE_TONIC_HZ = 20.0
 EYE_FULL_HZ = 150.0  # photoreceptor rate at full brightness
@@ -120,6 +128,7 @@ class MaleCNSBackend(BrainBackend):
         body_feedback=False,
         device="auto",
         vision="flow",
+        slow_inputs=True,
     ):
         from flybrain_robot.connectome.graph import load_connectome
 
@@ -133,7 +142,7 @@ class MaleCNSBackend(BrainBackend):
         if vision not in VISION_MODES:
             raise ValueError(f"vision must be one of {VISION_MODES}")
         self.vision = vision
-        self.v_rest = None
+        self.v_rest = self.slow = None
         if vision == "eye":
             from flybrain_robot.connectome.columns import compartmentalize, impute_columns
 
@@ -161,15 +170,21 @@ class MaleCNSBackend(BrainBackend):
         # DNa02 through the connectome and changes motor commands.
         self.body_feedback = body_feedback
         if vision == "eye":
+            from dataclasses import replace
+
             from .lif import LIFParams, resting_for_rate
 
             settings = params or LIFParams.matched_to(graph.manifest)
+            if slow_inputs:
+                settings = replace(settings, tau_slow_ms=EYE_SLOW_TAU_MS)
+                self.slow = np.isin(np.asarray(graph.type), list(EYE_SLOW_TYPES))
+            params = settings
             tonic = (np.asarray(graph.superclass) == "ol_intrinsic") & (np.asarray(graph.hex1) >= 0)
             self.v_rest = np.full(graph.size, settings.v_0)
             self.v_rest[tonic] = resting_for_rate(settings, EYE_TONIC_HZ)
             self.tonic_cells = int(tonic.sum())
         self.sim = make_simulator(graph, params=params, seed=seed, device=device,
-                                  v_rest=self.v_rest)  # fmt: skip
+                                  v_rest=self.v_rest, slow=self.slow)  # fmt: skip
         visual = SENSORY_MAP if vision == "flow" else ()
         self.populations = {p: graph.select(p) for d in visual + BODY_MAP for p in d.populations}
         self.readout = {

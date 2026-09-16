@@ -21,6 +21,8 @@ import numpy as np
 
 from flybrain_robot.brain.lif import LIFParams, LIFSimulator, make_simulator
 from flybrain_robot.brain.malecns import (
+    EYE_SLOW_TAU_MS,
+    EYE_SLOW_TYPES,
     EYE_TONIC_HZ,
     MODULATORS,
     READOUT,
@@ -201,6 +203,17 @@ EYE_CONTROL_MAX_DSI = 0.02
 # dark, so it is exploratory and is reported as such.
 EYE_HS_TYPES = ("HSE", "HSN", "HSS")
 EYE_STEP_MS = 200.0
+# Second PRE-REGISTRATION, committed on 2026-09-16 after the first configuration failed
+# with no direction selectivity at all (DSI 0.00, shuffled 0.0004). The model changes in
+# one declared way: the inputs that recordings report as slow and sustained (Mi9, Tm9,
+# Mi4, CT1) get their own synaptic time constant of 50 ms, because with one time constant
+# for every synapse a drifting grating delivers the same input in both directions no
+# matter how the cells are wired. The pass conditions above are unchanged and are applied
+# to each configuration separately; both are reported.
+EYE_CONFIGURATIONS = (
+    ("uniform kinetics", False),
+    (f"slow {', '.join(EYE_SLOW_TYPES)} ({EYE_SLOW_TAU_MS:.0f} ms)", True),
+)
 
 SCENE_EXPECTATIONS = {
     "static": dict(escape=False, turn=0),
@@ -782,8 +795,9 @@ def eye_direction_rows(backend):
     return rows, hs
 
 
-def eye_section(data, seeds):
-    backend = MaleCNSBackend(data, seed=0, vision="eye", device=DEVICE)
+def eye_configuration(data, seeds, slow_inputs):
+    """One model configuration of the eye mode, measured against the same criteria."""
+    backend = MaleCNSBackend(data, seed=0, vision="eye", device=DEVICE, slow_inputs=slow_inputs)
     graph = backend.graph
     rows, hs = eye_direction_rows(backend)
     step = {}
@@ -794,10 +808,9 @@ def eye_section(data, seeds):
         step[phase] = {t: round(float(hz[graph.select(t)].mean()), 2)
                        for t in ("L1", "L2", "L3", "Mi1", "Tm3", "Tm1", "Tm2", "Tm9",
                                  "T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d")}  # fmt: skip
-    # Post hoc, added after the pre-registered check failed with no direction selectivity
-    # at all: does anything about the stimulus reach the motion detectors? A grating that
-    # does not move, and a full-field contrast reversal, which has temporal change
-    # everywhere and no direction.
+    # Post hoc, added after the first configuration showed no direction selectivity at
+    # all: a grating that does not move and a full-field contrast reversal, to show what
+    # a population mean over the whole eye can and cannot see.
     groups = {f"{t}{letter}:{side}": graph.select(f"{t}{letter}:{side}")
               for t in ("T4", "T5") for letter in "abcd" for side in "LR"}  # fmt: skip
     groups.update({f"{t}:L": graph.select(f"{t}:L") for t in ("L1", "L2", "Tm1", "Tm9", "Mi1")})
@@ -807,9 +820,20 @@ def eye_section(data, seeds):
         "drifting grating": eye_rates(backend, "grating_left", groups),
         "full-field flicker": eye_rates(backend, "flicker", groups),
     }  # fmt: skip
+    configuration = dict(
+        tonic_hz=EYE_TONIC_HZ, tonic_cells=backend.tonic_cells,
+        photoreceptors=int(len(backend.retina_cells)), neurons=int(graph.size),
+        slow_inputs=list(EYE_SLOW_TYPES) if slow_inputs else [],
+        slow_tau_ms=EYE_SLOW_TAU_MS if slow_inputs else None,
+        settle_frames=EYE_SETTLE_FRAMES, measured_frames=EYE_MEASURE_FRAMES,
+        imputed_columns=graph.manifest.get("imputed_columns"),
+        compartments=graph.manifest.get("compartments"),
+    )  # fmt: skip
+    del backend
     controls = []
     for seed in seeds:
-        control = MaleCNSBackend(data, seed=seed, vision="eye", wiring="shuffled", device=DEVICE)
+        control = MaleCNSBackend(data, seed=seed, vision="eye", wiring="shuffled", device=DEVICE,
+                                 slow_inputs=slow_inputs)  # fmt: skip
         control_rows, _ = eye_direction_rows(control)
         controls.append(dict(seed=seed, rows=control_rows))
         del control
@@ -826,7 +850,8 @@ def eye_section(data, seeds):
             pair = ("grating_left", "grating_right") if horizontal else ("grating_up", "grating_down")
             diff = [row["hz"][pair[0]] - row["hz"][pair[1]] for row in (left, right)]
             agree = (diff[0] * diff[1] < 0) if horizontal else (diff[0] * diff[1] > 0)
-            mirrored.append(dict(subtype=f"{cell_type}{letter}", difference_hz=[round(d, 2) for d in diff],
+            mirrored.append(dict(subtype=f"{cell_type}{letter}",
+                                 difference_hz=[round(d, 2) for d in diff],
                                  as_predicted=bool(agree)))  # fmt: skip
     control_dsi = [abs(r["dsi"]) for c in controls for r in c["rows"]]
     passed = bool(
@@ -837,25 +862,28 @@ def eye_section(data, seeds):
         and max(r["dsi"] for c in controls for r in c["rows"]) < EYE_MIN_DSI
     )
     return dict(
-        configuration=dict(
-            tonic_hz=EYE_TONIC_HZ,
-            tonic_cells=backend.tonic_cells, photoreceptors=int(len(backend.retina_cells)),
-            neurons=int(graph.size), settle_frames=EYE_SETTLE_FRAMES,
-            measured_frames=EYE_MEASURE_FRAMES,
-            imputed_columns=graph.manifest.get("imputed_columns"),
-            compartments=graph.manifest.get("compartments"),
-        ),
-        criterion=dict(min_hz=EYE_MIN_HZ, min_dsi=EYE_MIN_DSI, pairs_required=4,
-                       control_max_mean_abs_dsi=EYE_CONTROL_MAX_DSI),
-        rows=rows, hs=hs, mirrored=mirrored, controls=controls,
+        configuration=configuration, rows=rows, hs=hs, mirrored=mirrored, controls=controls,
         mean_dsi={t: round(v, 4) for t, v in mean_dsi.items()},
-        selective={t: len(v) for t, v in selective.items()},
-        quiet_groups=quiet,
+        selective={t: len(v) for t, v in selective.items()}, quiet_groups=quiet,
         control_mean_abs_dsi=round(float(np.mean(control_dsi)), 4) if control_dsi else None,
         brightness_step=step, passed=passed,
         post_hoc_patterns={k: {g: round(v, 2) for g, v in row.items()}
                            for k, row in post_hoc.items()},
     )  # fmt: skip
+
+
+def eye_section(data, seeds):
+    configurations = []
+    for name, slow_inputs in EYE_CONFIGURATIONS:
+        result = eye_configuration(data, seeds, slow_inputs)
+        configurations.append(dict(name=name, **result))
+    return dict(
+        criterion=dict(min_hz=EYE_MIN_HZ, min_dsi=EYE_MIN_DSI, pairs_required=4,
+                       control_max_mean_abs_dsi=EYE_CONTROL_MAX_DSI),
+        configurations=configurations,
+        passed=all(c["passed"] for c in configurations),
+    )  # fmt: skip
+
 
 
 def machine():
