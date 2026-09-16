@@ -238,9 +238,10 @@ def indices(graph, specs):
 DEVICE = "auto"
 
 
-def trial(graph, stimulus, duration_ms=TRIAL_MS, seed=1, params=None, device=None):
+def trial(graph, stimulus, duration_ms=TRIAL_MS, seed=1, params=None, device=None,
+          rate_hz=STIM_HZ):  # fmt: skip
     sim = make_simulator(graph, params=params, seed=seed, device=device or DEVICE)
-    sim.set_stimulus([(indices(graph, stimulus), STIM_HZ)] if stimulus else [])
+    sim.set_stimulus([(indices(graph, stimulus), rate_hz)] if stimulus else [])
     started = time.perf_counter()
     sim.run(duration_ms)
     wall = time.perf_counter() - started
@@ -669,6 +670,56 @@ def closed_loop_section(data, control_seeds):
     return sections
 
 
+# How much the results depend on the constants that were chosen by hand: the 150 Hz
+# stimulation rate of the reference model, the rescaled synaptic weight, and the brain
+# seed that sets the Poisson draws. Reported, not a pass/fail check.
+SENSITIVITY_RATES = (25.0, 50.0, 100.0, 150.0)
+SENSITIVITY_WEIGHT_SCALES = (0.7, 1.0, 1.3)
+SENSITIVITY_SEEDS = (0, 1, 2, 3, 4)
+SENSITIVITY_SCENES = ("approach_left", "pass_left")
+
+
+def sensitivity_section(data, graph):
+    rates = []
+    for rate in SENSITIVITY_RATES:
+        row = dict(stimulus_hz=rate)
+        for name, stimulus, target in (("giant_fiber", ["LPLC2:L", "LC4:L"], "DNp01:L"),
+                                       ("dna02", ["LC10a:L"], "DNa02:L")):  # fmt: skip
+            _, counts, _ = trial(graph, stimulus, rate_hz=rate)
+            row[name] = round(float(counts[graph.select(target)].mean()), 1)
+        rates.append(row)
+    weights = []
+    base = LIFParams.matched_to(graph.manifest)
+    for scale in SENSITIVITY_WEIGHT_SCALES:
+        from dataclasses import replace
+
+        params = replace(base, w_syn=base.w_syn * scale)
+        row = dict(w_syn_scale=scale, w_syn_mv=round(params.w_syn, 4))
+        for name, stimulus, target in (("giant_fiber", ["LPLC2:L", "LC4:L"], "DNp01:L"),
+                                       ("dna02", ["LC10a:L"], "DNa02:L")):  # fmt: skip
+            _, counts, _ = trial(graph, stimulus, params=params)
+            row[name] = round(float(counts[graph.select(target)].mean()), 1)
+        weights.append(row)
+    seeds = []
+    for seed in SENSITIVITY_SEEDS:
+        backend = MaleCNSBackend(data, seed=seed, device=DEVICE)
+        for scene in SENSITIVITY_SCENES:
+            row = run_scene(backend, scene)
+            seeds.append(dict(seed=seed, scene=scene, max_escape=row["max_escape"],
+                              mean_turn=row["mean_turn"],
+                              peak_giant_fiber_hz=max(row["peak_rates_hz"][f"DNp01:{s}"]
+                                                      for s in "LR")))  # fmt: skip
+        del backend
+    escaped = [r for r in seeds if r["scene"] == "approach_left"]
+    turned = [r for r in seeds if r["scene"] == "pass_left"]
+    return dict(
+        stimulus_rate=rates, synaptic_weight=weights, brain_seeds=seeds,
+        seeds_with_escape=sum(r["max_escape"] >= 0.3 for r in escaped),
+        seeds_with_left_turn=sum(r["mean_turn"] > 0.3 for r in turned),
+        seeds=len(SENSITIVITY_SEEDS),
+    )  # fmt: skip
+
+
 def participation_section(data, scenes=("approach_left", "pass_left")):
     """How much of the brain fires at all, and how little of it reproduces the commands.
 
@@ -1017,6 +1068,7 @@ def main(argv=None):
         ("retina", lambda: retina_section(args.data, graph)),
         ("eye", lambda: eye_section(args.data, seeds)),
         ("participation", lambda: participation_section(args.data)),
+        ("sensitivity", lambda: sensitivity_section(args.data, graph)),
         ("performance", lambda: performance_section(graph)),
     ]
     if not args.skip_screen:

@@ -422,6 +422,31 @@ def _participation(p):
         'rather than producing the behaviour.'
     )  # fmt: skip
 
+def _sensitivity(x):
+    gap = chr(10) * 2
+    rate_rows = [(f"{r['stimulus_hz']:.0f} Hz", r['giant_fiber'], r['dna02'])
+                 for r in x['stimulus_rate']]  # fmt: skip
+    weight_rows = [(f"{r['w_syn_scale']:.1f}x ({r['w_syn_mv']} mV)", r['giant_fiber'],
+                    r['dna02']) for r in x['synaptic_weight']]  # fmt: skip
+    seed_rows = [(r['seed'], r['scene'], r['max_escape'], f"{r['mean_turn']:+.3f}",
+                  r['peak_giant_fiber_hz']) for r in x['brain_seeds']]  # fmt: skip
+    return (
+        'Three constants of the model were chosen rather than measured: the 150 Hz '
+        'stimulation rate of the reference model, the rescaled synaptic weight, and the seed '
+        'that sets every Poisson draw. These tables show how much the results depend on them. '
+        'Reported, with no pass condition.'
+        + gap + 'Stimulation rate of the driven population (mean rate of the read-out, Hz):'
+        + gap
+        + _table(['drive', 'Giant Fiber (LPLC2+LC4 left)', 'DNa02 left (LC10a left)'], rate_rows)
+        + gap + 'Synaptic weight, scaled around the matched value:' + gap
+        + _table(['w_syn', 'Giant Fiber', 'DNa02 left'], weight_rows)
+        + gap
+        + f"Closed loop over {x['seeds']} brain seeds: escape in "
+        f"{x['seeds_with_escape']}/{x['seeds']} seeds for the approach scene, a left turn in "
+        f"{x['seeds_with_left_turn']}/{x['seeds']} for the passing object.{gap}"
+        + _table(['seed', 'scene', 'max escape', 'mean turn', 'peak Giant Fiber Hz'], seed_rows)
+    )  # fmt: skip
+
 def failures(results):
     failed = [r["name"] for r in results["pathways"]["rows"] if not r["passed"]]
     if "feeding" in results and not results["feeding"]["passed"]:
@@ -551,6 +576,9 @@ def render_markdown(results):
     if "participation" in results:
         parts += ["## 5d. How much of the brain participates",
                   _participation(results["participation"])]  # fmt: skip
+    if "sensitivity" in results:
+        parts += ["## 5e. Dependence on the hand-chosen constants",
+                  _sensitivity(results["sensitivity"])]  # fmt: skip
     parts += [
         "## 6. Speed",
         _table(["device", "condition", "simulated s", "wall s", "× real time", "spikes"],
