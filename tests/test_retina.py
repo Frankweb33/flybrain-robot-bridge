@@ -87,12 +87,17 @@ def test_columns_are_recovered_from_partner_columns():
     assert measured["exact"] >= 0.8 and measured["within_one"] == 1.0
 
     split = compartmentalize(filled)
-    assert split.size == graph.size + 11  # CT1 becomes one neuron per column it touches
+    # One compartment per column and partner group: the T4 partners of a column are kept
+    # apart from the rest, as the medulla and lobula compartments of CT1 are in the fly.
+    assert split.manifest["compartments"]["compartments"] == 23 and split.size == graph.size + 22
     assert len(np.asarray(split.indices)) == len(np.asarray(graph.indices))
     assert np.abs(np.asarray(split.weight)).sum() == np.abs(np.asarray(graph.weight)).sum()
     compartments = np.flatnonzero(np.asarray(split.type) == "CT1")
     degree = np.diff(np.asarray(split.indptr))[compartments]
     assert degree.max() == 1  # each compartment reaches only its own column
+    instances = {str(x) for x in np.asarray(split.instance)[compartments]}
+    assert any(name.endswith("_T4") for name in instances)  # the T4 side is its own unit
+    assert any(not name.endswith("_T4") and "_col" in name for name in instances)
 
 
 def test_luminance_encoder_reports_brightness():

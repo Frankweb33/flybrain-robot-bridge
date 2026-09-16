@@ -279,15 +279,21 @@ def test_cli_subprocess():
     assert "motor=" in result.stdout
 
 
-def test_imports_without_python_313_fma(monkeypatch):
+def test_imports_without_python_313_fma():
     """math.fma arrived in 3.13; the package must still import on the versions CI uses."""
     import importlib
     import math
 
-    monkeypatch.delattr(math, "fma", raising=False)
-    kernel = importlib.reload(importlib.import_module("flybrain_robot.brain.lif_kernel"))
-    assert kernel.fma(2.0, 3.0, 1.0) == 7.0
-    importlib.reload(importlib.import_module("flybrain_robot.vision"))
+    module = importlib.import_module("flybrain_robot.brain.lif_kernel")
+    real = getattr(math, "fma", None)
+    try:
+        if real is not None:
+            del math.fma
+        assert importlib.reload(module).fma(2.0, 3.0, 1.0) == 7.0
+    finally:
+        if real is not None:
+            math.fma = real
+        importlib.reload(module)  # leave the process as it was found
 
 
 def test_imports():
