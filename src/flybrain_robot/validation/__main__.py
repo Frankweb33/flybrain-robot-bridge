@@ -256,8 +256,9 @@ def trial(graph, stimulus, duration_ms=TRIAL_MS, seed=1, params=None, device=Non
 def dataset_section(graph):
     keys = ("dataset", "license", "attribution", "sources", "neurons", "edges_in_release",
             "neuron_to_neuron_edges", "synapses", "inhibitory_neurons", "transmitter_counts",
-            "sign_rule", "side_rule", "neurons_with_optic_column")  # fmt: skip
-    return {k: graph.manifest[k] for k in keys}
+            "sign_rule", "side_rule", "neurons_with_optic_column", "compile_seconds",
+            "compile_peak_memory_gb")  # fmt: skip
+    return {k: graph.manifest[k] for k in keys if k in graph.manifest}
 
 
 def reference_section(seeds):

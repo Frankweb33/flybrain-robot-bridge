@@ -94,6 +94,29 @@ def hex_column(neurons, name):
     return neurons[name].fillna(-1).to_numpy().astype(np.int16)
 
 
+def peak_memory_gb():
+    """Peak memory of this process, so the README figure is measured, not remembered.
+
+    ``None`` where it cannot be read: psutil is optional, and resource.getrusage is
+    absent on Windows.
+    """
+    try:
+        import psutil
+
+        info = psutil.Process().memory_info()
+        peak = getattr(info, "peak_wset", None) or info.rss
+        return round(peak / 2**30, 2)
+    except ImportError:
+        pass
+    try:
+        import resource
+
+        kilobytes = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        return round(kilobytes / 2**20, 2)  # Linux reports kB, macOS bytes
+    except (ImportError, AttributeError):
+        return None
+
+
 def compile_graph(data_dir, verify=True):
     import pandas as pd
     import pyarrow as pa
@@ -150,6 +173,7 @@ def compile_graph(data_dir, verify=True):
         "side_rule": "somaSide, else rootSide (sensory neurons), else instance suffix",
         "neurons_with_optic_column": int(neurons["assignedOlHex1"].notna().sum()),
         "compile_seconds": round(time.monotonic() - started, 1),
+        "compile_peak_memory_gb": peak_memory_gb(),
     }
     graph = Connectome(
         body_id=body_ids,
