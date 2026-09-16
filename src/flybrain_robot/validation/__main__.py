@@ -739,13 +739,14 @@ def screen_section(graph):
     return {"duration_ms": 400, "stimulus_hz": STIM_HZ, "rows": rows}
 
 
-def eye_rates(backend, direction, groups):
-    """Mean rate (Hz) per group while a grating drifts, after the settling frames."""
+def eye_rates(backend, direction, groups, frames=None):
+    """Mean rate (Hz) per group while a pattern is shown, after the settling frames."""
     backend.reset()
     encoder = backend.make_encoder()
     counts = np.zeros(backend.graph.size)
+    frame_of = frames or (lambda i: scene_frame(direction, i))
     for i in range(EYE_SETTLE_FRAMES + EYE_MEASURE_FRAMES):
-        backend.step(encoder.encode(scene_frame(direction, i)), Telemetry(), 1 / 30)
+        backend.step(encoder.encode(frame_of(i)), Telemetry(), 1 / 30)
         if i >= EYE_SETTLE_FRAMES:
             counts += backend.last_counts
     hz = counts / (EYE_MEASURE_FRAMES / 30)
@@ -793,6 +794,19 @@ def eye_section(data, seeds):
         step[phase] = {t: round(float(hz[graph.select(t)].mean()), 2)
                        for t in ("L1", "L2", "L3", "Mi1", "Tm3", "Tm1", "Tm2", "Tm9",
                                  "T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d")}  # fmt: skip
+    # Post hoc, added after the pre-registered check failed with no direction selectivity
+    # at all: does anything about the stimulus reach the motion detectors? A grating that
+    # does not move, and a full-field contrast reversal, which has temporal change
+    # everywhere and no direction.
+    groups = {f"{t}{letter}:{side}": graph.select(f"{t}{letter}:{side}")
+              for t in ("T4", "T5") for letter in "abcd" for side in "LR"}  # fmt: skip
+    groups.update({f"{t}:L": graph.select(f"{t}:L") for t in ("L1", "L2", "Tm1", "Tm9", "Mi1")})
+    post_hoc = {
+        "still grating": eye_rates(backend, None, groups,
+                                   frames=lambda i: scene_frame("grating_left", 0)),
+        "drifting grating": eye_rates(backend, "grating_left", groups),
+        "full-field flicker": eye_rates(backend, "flicker", groups),
+    }  # fmt: skip
     controls = []
     for seed in seeds:
         control = MaleCNSBackend(data, seed=seed, vision="eye", wiring="shuffled", device=DEVICE)
@@ -839,6 +853,8 @@ def eye_section(data, seeds):
         quiet_groups=quiet,
         control_mean_abs_dsi=round(float(np.mean(control_dsi)), 4) if control_dsi else None,
         brightness_step=step, passed=passed,
+        post_hoc_patterns={k: {g: round(v, 2) for g, v in row.items()}
+                           for k, row in post_hoc.items()},
     )  # fmt: skip
 
 
