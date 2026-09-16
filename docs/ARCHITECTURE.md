@@ -30,6 +30,14 @@ Farneback optical flow. For each image half it reports:
 `connectome/retinotopy.py`) and reports how much darker each became since the last
 frame.
 
+`LuminanceEncoder` (experimental `vision: eye`) reports the brightness at each
+photoreceptor's pixel, with no temporal difference at all: the connectome's own
+circuits have to compute change and motion. `connectome/columns.py` gives the
+optic-lobe neurons the release leaves without a column one from their partners'
+columns, and splits CT1 into its columns; `resting_for_rate` (`brain/lif.py`)
+gives columnar optic-lobe cells a resting potential above threshold so that they
+fire tonically and a release from inhibition carries signal.
+
 `scene_frame` renders deterministic test scenes (`static`, `pan`, `pass_left`,
 `approach_center`, `approach_left`, `approach_right`, or `tour` through all of
 them). `tests/test_core.py` checks that pans and sideways passes do not register

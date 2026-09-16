@@ -5,7 +5,8 @@ import numpy as np
 from flybrain_robot.connectome.graph import FORMAT_VERSION, Connectome
 
 
-def connectome_from_edges(n, pre, post, weight, types=None, sides=None, hex1=None, hex2=None):
+def connectome_from_edges(n, pre, post, weight, types=None, sides=None, hex1=None, hex2=None,
+                          superclass=None):  # fmt: skip
     pre, post, weight = (np.asarray(x) for x in (pre, post, weight))
     order = np.lexsort((post, pre))
     indptr = np.zeros(n + 1, np.int64)
@@ -20,7 +21,7 @@ def connectome_from_edges(n, pre, post, weight, types=None, sides=None, hex1=Non
         side=np.asarray(sides) if sides is not None else text,
         hex1=np.asarray(hex1, np.int16) if hex1 is not None else no_column,
         hex2=np.asarray(hex2, np.int16) if hex2 is not None else no_column,
-        superclass=text,
+        superclass=np.asarray(superclass) if superclass is not None else text,
         transmitter=np.array(["acetylcholine"] * n),
         sign=np.ones(n, np.int8),
         indptr=indptr,

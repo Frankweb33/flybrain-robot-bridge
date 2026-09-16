@@ -60,11 +60,13 @@ def estimate(graph, hex1, hex2, partners=None):
     return np.rint(centre1).astype(np.int32), np.rint(centre2).astype(np.int32), total, spread
 
 
-def accuracy(graph):
+def accuracy(graph, min_synapses=MIN_SYNAPSES):
     """How often the rule recovers the column of the neurons that already have one."""
     hex1, hex2 = np.asarray(graph.hex1).astype(np.int32), np.asarray(graph.hex2).astype(np.int32)
     guess1, guess2, total, _ = estimate(graph, hex1, hex2)
-    checked = (hex1 >= 0) & (total >= MIN_SYNAPSES)
+    checked = (hex1 >= 0) & (total >= min_synapses)
+    if not checked.any():
+        return dict(neurons=0, exact=None, within_one=None, median_error=None)
     error = hex_distance(guess1[checked], guess2[checked], hex1[checked], hex2[checked])
     return dict(neurons=int(checked.sum()), exact=round(float((error == 0).mean()), 4),
                 within_one=round(float((error <= 1).mean()), 4),
@@ -88,7 +90,7 @@ def impute_columns(graph, rounds=ROUNDS, min_synapses=MIN_SYNAPSES, max_spread=M
         rule=f"synapse-weighted partner centroid, >= {min_synapses} synapses, "
              f"spread <= {max_spread} columns, {rounds} rounds",
         added_per_round=added, neurons_with_column=int((hex1 >= 0).sum()),
-        accuracy=accuracy(graph),
+        accuracy=accuracy(graph, min_synapses),
     ))  # fmt: skip
     return Connectome(**{**graph.__dict__, "hex1": hex1.astype(np.int16),
                          "hex2": hex2.astype(np.int16), "manifest": manifest})  # fmt: skip

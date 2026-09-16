@@ -48,6 +48,64 @@ def test_eye_axes_follow_mi9_to_mi4_offsets():
         column_image_positions(eye_graph(), "L3", axes)
 
 
+def columnar_graph(columns=12, spread=1):
+    """Two cells per column plus one wide-field cell that touches every column."""
+    cells, hex1, hex2 = [], [], []
+
+    def add(cell_type, h1=-1, h2=-1):
+        cells.append(cell_type), hex1.append(h1), hex2.append(h2)
+        return len(cells) - 1
+
+    known = [add("L2", h, 3) for h in range(columns)]
+    unknown = [add("T4a") for _ in range(columns)]  # same columns, no coordinates
+    wide = add("CT1")
+    pre, post, weight = [], [], []
+    for column, (source, target) in enumerate(zip(known, unknown)):
+        for neighbour in range(max(0, column - spread), min(columns, column + spread + 1)):
+            pre.append(known[neighbour]), post.append(target), weight.append(10)
+            if neighbour != column:  # lamina cells also contact their neighbours
+                pre.append(source), post.append(known[neighbour]), weight.append(10)
+        pre.append(target), post.append(wide), weight.append(5)
+        pre.append(wide), post.append(source), weight.append(-3)
+    return connectome_from_edges(len(cells), pre, post, weight, types=cells,
+                                 sides=["L"] * len(cells), hex1=hex1, hex2=hex2)  # fmt: skip
+
+
+def test_columns_are_recovered_from_partner_columns():
+    from flybrain_robot.connectome.columns import accuracy, compartmentalize, impute_columns
+
+    graph = columnar_graph()
+    filled = impute_columns(graph, min_synapses=10)
+    manifest = filled.manifest["imputed_columns"]
+    assert manifest["neurons_with_column"] == 24  # the 12 T4a cells gained one, CT1 did not
+    t4 = filled.hex1[np.asarray(filled.type) == "T4a"]
+    # Each gets the column of its inputs; at the edge of the eye the centroid is half a
+    # column short, because a border column has neighbours on one side only.
+    assert np.abs(t4 - np.arange(12)).max() <= 1 and (t4 == np.arange(12)).sum() >= 10
+    assert filled.hex1[np.asarray(filled.type) == "CT1"][0] == -1
+    measured = accuracy(graph, min_synapses=10)  # the cells that do have a column
+    assert measured["exact"] >= 0.8 and measured["within_one"] == 1.0
+
+    split = compartmentalize(filled)
+    assert split.size == graph.size + 11  # CT1 becomes one neuron per column it touches
+    assert len(np.asarray(split.indices)) == len(np.asarray(graph.indices))
+    assert np.abs(np.asarray(split.weight)).sum() == np.abs(np.asarray(graph.weight)).sum()
+    compartments = np.flatnonzero(np.asarray(split.type) == "CT1")
+    degree = np.diff(np.asarray(split.indptr))[compartments]
+    assert degree.max() == 1  # each compartment reaches only its own column
+
+
+def test_luminance_encoder_reports_brightness():
+    from flybrain_robot.vision import LuminanceEncoder
+
+    encoder = LuminanceEncoder([10, 100], [20, 60])
+    frame = np.full((240, 320, 3), 255, np.uint8)
+    frame[30:50, 10:30] = 0  # around pixel (10, 20) at 160x120
+    values = encoder.encode(frame).retina
+    assert values[0] < 0.1 < 0.9 < values[1]
+    assert np.array_equal(values, encoder.encode(frame).retina)  # no temporal difference
+
+
 def test_retina_encoder_reports_darkening_only():
     encoder = RetinaEncoder([10, 100], [20, 60])
     bright = np.full((240, 320, 3), 200, np.uint8)

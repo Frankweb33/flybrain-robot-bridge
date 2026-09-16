@@ -67,6 +67,13 @@ built so that they give the same result to the last bit:
   default, which rounds differently in about a quarter of cases. The membrane update
   calls a correctly rounded `fma` on both devices instead.
 
+Two options extend the reference model and are off unless a mode asks for them. Each
+neuron has its own resting potential, so a cell can be given a tonic firing rate that
+synaptic input grades in both directions (used by `vision: eye`; with one constant for
+every neuron nothing changes). And each neuron carries a flag that sends its outgoing
+synapses into a second conductance with its own time constant, for inputs that
+recordings report as slow; with both constants equal the two pools behave identically.
+
 The CPU kernel skips neurons at rest; the GPU kernel skips resting neurons without
 input in the block. Neither changes a result, because such a neuron stays exactly at
 rest. Section 2b of VALIDATION.md compares the devices on random networks, on the
@@ -131,6 +138,44 @@ L3 lacks column coordinates in the left eye. The ON pathway cannot be driven,
 because glutamatergic L1 signals light by releasing less transmitter. Section 5b of
 VALIDATION.md has the numbers; vision therefore stays on optical flow.
 
+**Vision from the photoreceptors (experimental, `vision: eye`).** The camera drives the
+5,826 photoreceptors of the two eyes themselves, each at a rate proportional to the
+brightness of its pixel, and everything after that is the connectome. Three changes are
+needed to make that possible at all, and each is declared:
+
+1. **Columns from the wiring.** The release assigns optic-lobe columns to 23,720 neurons
+   but not to T4, T5, Tm3, L4 or the photoreceptors. A columnar cell's partners sit in and
+   around its own column, so the synapse-weighted centroid of the partner columns recovers
+   it: measured on the neurons that do have a column, and using only their partners, it is
+   exact for 97.7 % and within one column for 99.3 % (`connectome/columns.py`). Wide-field
+   cells stay without a column because their partner columns are spread out (2.1 columns
+   for LPLC2, 3.0 for LC4, 14.0 for CT1, against 0.8–1.3 for the columnar cells).
+2. **CT1 compartments.** One CT1 cell per eye contacts every column, and its compartments
+   are electrically isolated in the fly (Meier & Borst 2019). As a single point neuron it
+   fired at over 100 Hz and inhibited the whole eye at once, so it is split into one
+   neuron per column, keeping every synapse.
+3. **Tonic release.** Most optic-lobe neurons do not spike; they release transmitter
+   continuously, and photoreceptors are histaminergic, so the fly's lamina signals
+   *darkness as a release from inhibition*. A spiking model whose neurons are silent at
+   rest cannot express that at all. Columnar optic-lobe neurons therefore get a resting
+   potential above threshold and fire at 20 Hz without input; synaptic input grades that
+   rate in both directions (`brain/lif.py`, `resting_for_rate`).
+
+With those, the ON/OFF split of the fly comes out of the transmitter signs alone: on a
+full-field brightness step the OFF cells rise in the dark (L1 7.3 → 17.2 Hz, T5a 6.3 → 8.7,
+T5c 12.7 → 15.2) and the ON cells fall (Tm3 14.2 → 10.0, T4a 10.0 → 7.2, T4c 14.6 → 11.9).
+The motion detectors are alive, which they were not in `vision: retina`.
+
+Direction selectivity is not. Two pre-registered checks failed (§5c): the direction
+selectivity index of every T4 and T5 subtype is 0.00, indistinguishable from the shuffled
+controls, both with one synaptic time constant for every synapse and with the 50 ms
+constant that recordings report for the slow inputs Mi9, Tm9, Mi4 and CT1 — the latter
+suppresses T4 and T5 about tenfold (T4a of the left eye 8.9 → 0.7 Hz) without making them
+selective. With identical kinetics that is what theory predicts: a drifting grating then
+delivers the same input in both directions however the cells are wired. The connectome
+supplies the spatial offsets (§5b) but not the time constants and nonlinearities that turn
+them into direction selectivity, so vision stays on optical flow.
+
 **Body input (experimental, off by default).** With `body_feedback: true`, the
 tilt of the robot, from its accelerometer, drives Johnston's organ neurons, the
 fly's antennal gravity and wind sensors. Tilt features rise linearly from 0 at 3°
@@ -188,8 +233,13 @@ desktop CPU, and the status line prints the ratio as `brain_x_realtime`.
   strong simplification: no graded potentials, gap junctions, neuromodulation,
   plasticity, dendritic computation or measured synaptic strengths. Transmitter
   identity is predicted from EM, not measured.
-- The fly's own motion vision (photoreceptors → T4/T5 → lobula plate) is not
-  simulated from pixels; a flow estimate is injected into projection neurons.
+- The fly's own motion vision is simulated from pixels only as an experiment
+  (`vision: eye`): the photoreceptors reach T4 and T5 with the right ON/OFF
+  polarity, but the motion detectors show no direction selectivity, so by default
+  a flow estimate is injected into projection neurons instead. Every synapse of
+  this model shares one time constant and one weight per synapse count, and
+  direction selectivity needs input-specific kinetics, which a connectome does
+  not contain.
 - No legs or proprioception. Tilt can enter through Johnston's organ, as an
   experimental option with a hypothetical mapping; by default IMU telemetry is
   used by the safety watchdog only.
