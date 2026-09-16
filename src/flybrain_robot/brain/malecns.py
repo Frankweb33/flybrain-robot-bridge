@@ -101,6 +101,8 @@ RETINA_MONITOR = ("T4a", "T4b", "T4c", "T4d", "T5a", "T5b", "T5c", "T5d", "HSE",
 # Meier & Borst 2019). With one time constant for every synapse, a moving pattern
 # delivers the same input in both directions and no motion detector can be selective.
 # EYE_SLOW_TAU_MS is a hand-chosen value in the reported range, not a measurement.
+# Off by default: VALIDATION.md 5c measures no direction selectivity either way, and the
+# slow inhibitory arms suppress T4 and T5 about tenfold (T4a of the left eye 8.9 -> 0.7 Hz).
 EYE_SLOW_TYPES = ("Mi9", "Tm9", "Mi4", "CT1")
 EYE_SLOW_TAU_MS = 50.0
 EYE_PHOTORECEPTORS = ("R1-R6", "R7*", "R8*")
@@ -128,7 +130,7 @@ class MaleCNSBackend(BrainBackend):
         body_feedback=False,
         device="auto",
         vision="flow",
-        slow_inputs=True,
+        slow_inputs=False,
     ):
         from flybrain_robot.connectome.graph import load_connectome
 
