@@ -169,11 +169,29 @@ of the run ([Recording a run](docs/HARDWARE.md#recording-a-run)).
   synapse counts and EM-predicted transmitters. No graded potentials, gap junctions,
   neuromodulation, plasticity or body. Published LIF models of the fly brain reproduce some
   sensorimotor circuits, not full behaviour.
+- **The rates are model quantities, not measurements.** The model's Giant Fiber fires 127
+  spikes during one approach where the fly fires about one action potential, and this
+  report prints firing rates for cells that do not spike in the fly at all — the lamina,
+  the medulla interneurons, CT1, HS and VS cells, T4 and T5. Where the model can be
+  compared with recordings, the comparison is in [VALIDATION.md §5f](docs/VALIDATION.md).
+- **Most of the brain is along for the ride.** In an approach scene 2,529 of the 166,700
+  neurons fire at all, and a 2,011-neuron subnetwork — the driven cells, the read-out cells
+  and the neurons on two-synapse paths between them — reproduces the motor commands to
+  within a few percent ([§5d](docs/VALIDATION.md)). The whole connectome is simulated; it
+  is not what produces the behaviour here.
+- **No senses but one, and no body.** 17,901 sensory neurons are simulated at zero: no
+  smell, taste, mechanosensation, wind or leg load, and in the default mode no
+  photoreceptors either. 708 nerve-cord motor neurons are simulated and ignored, because
+  there are no muscles. Without input the model is completely silent (0 spikes per second),
+  which a fly brain never is.
 - **Hand-made interfaces.** Camera features are optical-flow heuristics injected into whole
   neuron populations with hemifield resolution; the fly's own photoreceptors and motion
-  circuits are bypassed by default. Driving the photoreceptors instead reaches T4 and T5
-  with the right ON/OFF polarity but gives no direction selectivity (§5c). Forward cruise
-  is a controller constant.
+  circuits are bypassed by default. Driving the photoreceptors instead reaches T4 and T5,
+  whose ON/OFF polarity mostly follows, but gives no direction selectivity (§5c). The
+  read-out constants (60 Hz for a full turn, 60 Hz for full escape) are fitted to the
+  robot, and mapping the Giant Fiber onto a reverse is an engineering choice: in the fly it
+  commands a takeoff, and backward walking is commanded by MDN. Forward cruise is a
+  controller constant.
 - **Speed.** The brain advances one camera frame (33 ms) per step. A desktop GPU keeps up
   with every synthetic scene; on a CPU alone, strong visual input takes 2–3 times longer than
   real time, so a live robot gets fewer commands per second.
