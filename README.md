@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/hNXbI.png" alt="BRAIN banner (artistic illustration, not a rendering of simulation data)" width="100%">
+<img src="assets/architecture.svg" alt="FlyBrain Robot Bridge signal-flow architecture" width="100%">
 
 # FlyBrain Robot Bridge
 
